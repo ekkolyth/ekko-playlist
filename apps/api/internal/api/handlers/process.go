@@ -69,17 +69,14 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 	defer cancel()
 
 	processed := make([]ProcessedVideoInfo, 0, len(req.Videos))
-	validCount := 0
-	invalidCount := 0
+	validURLs := make([]string, 0)
+	failedURLs := make([]string, 0)
 
 	// Process each video URL
-	for i, video := range req.Videos {
-		logging.Info("Processing video %d/%d: %s", i+1, len(req.Videos), video.Title)
-
+	for _, video := range req.Videos {
 		// Normalize URL using Lua script
 		result, err := h.luaService.NormalizeURL(ctx, video.URL)
 		if err != nil {
-			logging.Info("Lua script error for video %d: %s", i+1, err.Error())
 			processed = append(processed, ProcessedVideoInfo{
 				Channel:       video.Channel,
 				OriginalURL:   video.URL,
@@ -88,7 +85,7 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 				IsValid:       false,
 				Error:         "Failed to normalize URL: " + err.Error(),
 			})
-			invalidCount++
+			failedURLs = append(failedURLs, video.URL)
 			continue
 		}
 
@@ -130,13 +127,10 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 			processedVideo.Error = errorMsg
 		}
 
-		// Print to console in real time
 		if isValid {
-			logging.Info("✅ [%d/%d] Valid: %s -> %s", i+1, len(req.Videos), video.Title, normalizedURL)
-			validCount++
+			validURLs = append(validURLs, normalizedURL)
 		} else {
-			logging.Info("❌ [%d/%d] Invalid: %s - %s", i+1, len(req.Videos), video.Title, errorMsg)
-			invalidCount++
+			failedURLs = append(failedURLs, video.URL)
 		}
 
 		processed = append(processed, processedVideo)
@@ -146,11 +140,28 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 	response := ProcessPlaylistResponse{
 		Processed: processed,
 		Total:     len(req.Videos),
-		Valid:     validCount,
-		Invalid:   invalidCount,
+		Valid:     len(validURLs),
+		Invalid:   len(failedURLs),
 	}
 
-	logging.Info("Playlist processing complete: %d total, %d valid, %d invalid", response.Total, response.Valid, response.Invalid)
+	// Log summary
+	if len(validURLs) > 0 {
+		logging.Info("[SUCCESS]")
+		logging.Info("%d urls extracted successfully", len(validURLs))
+		for _, url := range validURLs {
+			logging.Info("%s", url)
+		}
+	}
+	if len(failedURLs) > 0 {
+		if len(validURLs) > 0 {
+			logging.Info("")
+		}
+		logging.Info("[FAILED]")
+		logging.Info("%d urls failed", len(failedURLs))
+		for _, url := range failedURLs {
+			logging.Info("%s", url)
+		}
+	}
 	httpx.RespondJSON(w, http.StatusOK, response)
 }
 
@@ -184,12 +195,9 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	logging.Info("Processing video: %s", req.Video.Title)
-
 	// Normalize URL using Lua script
 	result, err := h.luaService.NormalizeURL(ctx, req.Video.URL)
 	if err != nil {
-		logging.Info("Lua script error: %s", err.Error())
 		httpx.RespondJSON(w, http.StatusOK, ProcessVideoResponse{
 			Processed: ProcessedVideoInfo{
 				Channel:       req.Video.Channel,
@@ -200,6 +208,9 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 				Error:         "Failed to normalize URL: " + err.Error(),
 			},
 		})
+		logging.Info("[FAILED]")
+		logging.Info("1 urls failed")
+		logging.Info("%s", req.Video.URL)
 		return
 	}
 
@@ -241,11 +252,15 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 		processedVideo.Error = errorMsg
 	}
 
-	// Print to console
+	// Log result
 	if isValid {
-		logging.Info("✅ Valid: %s -> %s", req.Video.Title, normalizedURL)
+		logging.Info("[SUCCESS]")
+		logging.Info("1 urls extracted successfully")
+		logging.Info("%s", normalizedURL)
 	} else {
-		logging.Info("❌ Invalid: %s - %s", req.Video.Title, errorMsg)
+		logging.Info("[FAILED]")
+		logging.Info("1 urls failed")
+		logging.Info("%s", req.Video.URL)
 	}
 
 	httpx.RespondJSON(w, http.StatusOK, ProcessVideoResponse{

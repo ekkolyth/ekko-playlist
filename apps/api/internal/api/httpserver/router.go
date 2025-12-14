@@ -29,6 +29,20 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	// cors
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: allowedOrigins,
+		// Allow any chrome-extension:// origin for browser extension testing
+		AllowOriginFunc: func(r *http.Request, origin string) bool {
+			// Check if origin is in the allowed list
+			for _, allowed := range allowedOrigins {
+				if origin == allowed {
+					return true
+				}
+			}
+			// Allow chrome-extension:// origins for testing
+			if strings.HasPrefix(origin, "chrome-extension://") {
+				return true
+			}
+			return false
+		},
 		AllowedMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{
 			"Accept",

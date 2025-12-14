@@ -1,7 +1,7 @@
 export interface VideoInfo {
-  channelName: string;
-  link: string;
-  videoTitle: string;
+  channel: string;
+  url: string;
+  title: string;
 }
 
 export interface ScanMessage {
@@ -20,8 +20,8 @@ export interface GetCurrentVideoInfoMessage {
 
 export interface CurrentVideoInfoResponse {
   type: 'CURRENT_VIDEO_INFO';
-  videoTitle: string;
-  channelName: string;
+  title: string;
+  channel: string;
   error?: string;
 }
 

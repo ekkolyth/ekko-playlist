@@ -3,7 +3,7 @@
   "name": "YouTube Playlist Scanner",
   "version": "1.0.0",
   "description": "Scan YouTube playlists and save video information to JSON",
-  "permissions": ["activeTab", "downloads"],
+  "permissions": ["activeTab", "downloads", "scripting"],
   "host_permissions": ["https://www.youtube.com/*"],
   "action": {
     "default_popup": "popup.html",

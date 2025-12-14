@@ -12,6 +12,7 @@ import (
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpserver"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
+	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
 	"github.com/joho/godotenv"
 )
@@ -47,7 +48,15 @@ func main() {
 	defer dbService.DB.Close()
 	logging.Info("Database connection established")
 
-	router := httpserver.NewRouter(dbService)
+	// Lua service init
+	luaService, err := lua.NewService()
+	if err != nil {
+		log.Fatal("Failed to initialize Lua service:", err)
+	}
+	defer luaService.Close()
+	logging.Info("Lua service initialized")
+
+	router := httpserver.NewRouter(dbService, luaService)
 	server := &http.Server{
 		Addr:         ":" + port,
 		Handler:      router,

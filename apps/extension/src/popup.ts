@@ -1,5 +1,149 @@
-import { ScanMessage, ScanResponse, VideoInfo, GetCurrentVideoInfoMessage, CurrentVideoInfoResponse } from './types';
-import { parseYouTubeUrl, isValidYouTubeUrl } from './youtube-url-parser';
+// Inline all types and functions to avoid ES module issues in Chrome extension popup
+
+// Types
+interface VideoInfo {
+  channel: string;
+  url: string;
+  title: string;
+}
+
+interface ScanMessage {
+  type: 'SCAN_PLAYLIST';
+}
+
+interface ScanResponse {
+  type: 'SCAN_RESULT';
+  videos: VideoInfo[];
+  error?: string;
+}
+
+interface GetCurrentVideoInfoMessage {
+  type: 'GET_CURRENT_VIDEO_INFO';
+}
+
+interface CurrentVideoInfoResponse {
+  type: 'CURRENT_VIDEO_INFO';
+  title: string;
+  channel: string;
+  error?: string;
+}
+
+// YouTube URL parser functions
+interface ParsedYouTubeUrl {
+  isValid: boolean;
+  videoId: string | null;
+  normalizedUrl: string | null;
+  error?: string;
+}
+
+function parseYouTubeUrl(url: string): ParsedYouTubeUrl {
+  if (!url || typeof url !== 'string') {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: URL must be a non-empty string'
+    };
+  }
+
+  const trimmedUrl = url.trim();
+  const youtubeDomainPattern = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
+  if (!youtubeDomainPattern.test(trimmedUrl)) {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: Not a YouTube URL'
+    };
+  }
+
+  // Check for playlist URLs
+  const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
+  const playlistMatch = trimmedUrl.match(playlistPattern);
+  if (playlistMatch) {
+    // This is a playlist URL, which is valid for scanning
+    return {
+      isValid: true,
+      videoId: null,
+      normalizedUrl: trimmedUrl
+    };
+  }
+
+  let videoId: string | null = null;
+  const watchPattern = /[?&]v[i]?=([a-zA-Z0-9_-]{11})/;
+  const watchMatch = trimmedUrl.match(watchPattern);
+  if (watchMatch) {
+    videoId = watchMatch[1];
+  }
+
+  if (!videoId) {
+    const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]{11})/;
+    const shortMatch = trimmedUrl.match(shortPattern);
+    if (shortMatch) {
+      videoId = shortMatch[1];
+    }
+  }
+
+  if (!videoId) {
+    const embedPattern = /\/(?:v|embed)\/([a-zA-Z0-9_-]{11})/;
+    const embedMatch = trimmedUrl.match(embedPattern);
+    if (embedMatch) {
+      videoId = embedMatch[1];
+    }
+  }
+
+  if (!videoId) {
+    const directPattern = /youtube\.com\/([a-zA-Z0-9_-]{11})(?:\?|$|&)/;
+    const directMatch = trimmedUrl.match(directPattern);
+    if (directMatch) {
+      videoId = directMatch[1];
+    }
+  }
+
+  if (!videoId) {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: Could not extract video ID from YouTube URL'
+    };
+  }
+
+  if (videoId.length !== 11) {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: Video ID must be 11 characters'
+    };
+  }
+
+  const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  return {
+    isValid: true,
+    videoId: videoId,
+    normalizedUrl: normalizedUrl
+  };
+}
+
+function isValidYouTubeUrl(url: string): boolean {
+  const trimmedUrl = url.trim();
+  const youtubeDomainPattern = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
+  
+  // First check if it's a YouTube domain
+  if (!youtubeDomainPattern.test(trimmedUrl)) {
+    return false;
+  }
+  
+  // Check for playlist URLs
+  const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
+  if (playlistPattern.test(trimmedUrl)) {
+    return true;
+  }
+  
+  // Otherwise, check if it's a valid video URL
+  return parseYouTubeUrl(url).isValid;
+}
 
 const scanButton = document.getElementById('scanButton') as HTMLButtonElement;
 const saveUrlButton = document.getElementById('saveUrlButton') as HTMLButtonElement;
@@ -17,10 +161,13 @@ function clearStatus(): void {
 }
 
 async function scanPlaylist(): Promise<void> {
+  console.log('scanPlaylist called');
   if (!scanButton || !statusDiv) {
+    console.error('Missing elements:', { scanButton, statusDiv });
     return;
   }
 
+  console.log('Starting scan...');
   scanButton.disabled = true;
   setStatus('Scanning playlist...', 'info');
 
@@ -39,10 +186,32 @@ async function scanPlaylist(): Promise<void> {
       throw new Error('Current page is not a valid YouTube URL');
     }
 
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'SCAN_PLAYLIST' } as ScanMessage);
+    let response: ScanResponse | undefined;
+    try {
+      response = await chrome.tabs.sendMessage(tab.id, { type: 'SCAN_PLAYLIST' } as ScanMessage);
+    } catch (error) {
+      // Content script might not be injected, try to inject it
+      if (error instanceof Error && error.message.includes('Could not establish connection')) {
+        // Try to inject the content script
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js']
+          });
+          // Wait a bit for the script to initialize
+          await new Promise(resolve => setTimeout(resolve, 500));
+          // Try again
+          response = await chrome.tabs.sendMessage(tab.id, { type: 'SCAN_PLAYLIST' } as ScanMessage);
+        } catch (injectError) {
+          throw new Error('Failed to inject content script. Please refresh the page and try again.');
+        }
+      } else {
+        throw error;
+      }
+    }
 
     if (!response) {
-      throw new Error('No response from content script');
+      throw new Error('No response from content script. Please refresh the page and try again.');
     }
 
     const scanResponse = response as ScanResponse;
@@ -117,28 +286,28 @@ async function saveCurrentUrl(): Promise<void> {
       // Try to get video info from the page
       const response = await chrome.tabs.sendMessage(tab.id, { type: 'GET_CURRENT_VIDEO_INFO' } as GetCurrentVideoInfoMessage) as CurrentVideoInfoResponse | undefined;
       
-      if (response && response.type === 'CURRENT_VIDEO_INFO' && response.videoTitle && response.channelName) {
+      if (response && response.type === 'CURRENT_VIDEO_INFO' && response.title && response.channel) {
         videoInfo = {
-          channelName: response.channelName,
-          link: parsedUrl.normalizedUrl,
-          videoTitle: response.videoTitle
+          channel: response.channel,
+          url: parsedUrl.normalizedUrl,
+          title: response.title
         };
       } else {
         // Fallback: use page title or default values
         const pageTitle = tab.title?.replace(' - YouTube', '').trim() || 'Unknown Title';
         videoInfo = {
-          channelName: 'Unknown Channel',
-          link: parsedUrl.normalizedUrl,
-          videoTitle: pageTitle
+          channel: 'Unknown Channel',
+          url: parsedUrl.normalizedUrl,
+          title: pageTitle
         };
       }
     } catch {
       // If content script fails, use fallback
       const pageTitle = tab.title?.replace(' - YouTube', '').trim() || 'Unknown Title';
       videoInfo = {
-        channelName: 'Unknown Channel',
-        link: parsedUrl.normalizedUrl,
-        videoTitle: pageTitle
+        channel: 'Unknown Channel',
+        url: parsedUrl.normalizedUrl,
+        title: pageTitle
       };
     }
 
@@ -186,8 +355,32 @@ async function initializeUrlInput(): Promise<void> {
   }
 }
 
-scanButton?.addEventListener('click', scanPlaylist);
-saveUrlButton?.addEventListener('click', saveCurrentUrl);
+// Add debug logging
+console.log('Popup script loaded');
+console.log('scanButton:', scanButton);
+console.log('saveUrlButton:', saveUrlButton);
+
+if (scanButton) {
+  scanButton.addEventListener('click', (e) => {
+    console.log('Scan button clicked!', e);
+    scanPlaylist().catch(err => {
+      console.error('Error in scanPlaylist:', err);
+    });
+  });
+} else {
+  console.error('scanButton not found!');
+}
+
+if (saveUrlButton) {
+  saveUrlButton.addEventListener('click', (e) => {
+    console.log('Save URL button clicked!', e);
+    saveCurrentUrl().catch(err => {
+      console.error('Error in saveCurrentUrl:', err);
+    });
+  });
+} else {
+  console.error('saveUrlButton not found!');
+}
 
 // Initialize URL input when popup opens
 initializeUrlInput();

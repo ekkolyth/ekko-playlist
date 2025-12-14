@@ -39,6 +39,18 @@ export function parseYouTubeUrl(url: string): ParsedYouTubeUrl {
     };
   }
 
+  // Check for playlist URLs
+  const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
+  const playlistMatch = trimmedUrl.match(playlistPattern);
+  if (playlistMatch) {
+    // This is a playlist URL, which is valid for scanning
+    return {
+      isValid: true,
+      videoId: null,
+      normalizedUrl: trimmedUrl
+    };
+  }
+
   let videoId: string | null = null;
 
   // Pattern 1: youtube.com/watch?v=VIDEO_ID or youtube.com/watch?vi=VIDEO_ID
@@ -105,9 +117,28 @@ export function parseYouTubeUrl(url: string): ParsedYouTubeUrl {
 }
 
 /**
- * Validates if a URL is a valid YouTube URL
+ * Validates if a URL is a valid YouTube URL (including playlists)
  */
 export function isValidYouTubeUrl(url: string): boolean {
+  if (!url || typeof url !== 'string') {
+    return false;
+  }
+  
+  const trimmedUrl = url.trim();
+  const youtubeDomainPattern = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
+  
+  // First check if it's a YouTube domain
+  if (!youtubeDomainPattern.test(trimmedUrl)) {
+    return false;
+  }
+  
+  // Check for playlist URLs
+  const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
+  if (playlistPattern.test(trimmedUrl)) {
+    return true;
+  }
+  
+  // Otherwise, check if it's a valid video URL
   return parseYouTubeUrl(url).isValid;
 }
 

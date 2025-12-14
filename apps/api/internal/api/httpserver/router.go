@@ -12,9 +12,10 @@ import (
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/handlers"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
+	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 )
 
-func NewRouter(dbService *db.Service) http.Handler {
+func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	router := chi.NewRouter()
 
 	// standard middleware
@@ -51,7 +52,9 @@ func NewRouter(dbService *db.Service) http.Handler {
 	router.Get("/api/healthz", handlers.Health)
 
 	router.Route("/api", func(api chi.Router) {
-		// Add your API routes here
+		// URL normalization routes
+		urlHandler := handlers.NewURLHandler(luaService)
+		api.Post("/url/normalize", urlHandler.NormalizeURL)
 	})
 
 	return router

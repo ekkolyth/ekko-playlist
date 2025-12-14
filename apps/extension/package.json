@@ -1,0 +1,17 @@
+{
+  "name": "youtube-playlist-scanner",
+  "version": "1.0.0",
+  "description": "Chrome extension to scan YouTube playlists",
+  "packageManager": "bun@1.3.4",
+  "scripts": {
+    "build": "tsc && bun run copy",
+    "copy": "cp src/popup.html dist/popup.html && cp src/popup.css dist/popup.css && cp manifest.json dist/manifest.json && [ -d icons ] && cp -r icons dist/ || true",
+    "watch": "tsc --watch",
+    "create-icons": "node scripts/create-icons.js"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "typescript": "^5.3.3"
+  }
+}
+

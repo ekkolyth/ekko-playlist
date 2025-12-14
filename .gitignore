@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+# bun.lockb is binary format, should be ignored
+bun.lockb
+# Note: bun.lock (text format) should be tracked
+
+# Build outputs
+dist/
+build/
+.output/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go specific
+# Binaries
+*.test
+*.out
+bin/
+
+# SQLC generated files
+# Uncomment these lines if you want to ignore SQLC generated files
+# (Many teams track these, so they're commented out by default)
+# apps/api/internal/db/*.sql.go
+# apps/api/internal/db/models.go
+# apps/api/internal/db/querier.go
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Coverage reports
+coverage/
+*.cover
+*.coverprofile
+.nyc_output/
+
+# Vite (web app)
+apps/web/.vite/
+apps/web/dist/
+
+# TypeScript
+*.tsbuildinfo
+
+# Misc
+*.zip
+*.tar.gz
+*.rar

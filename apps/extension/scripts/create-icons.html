@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Icon Generator</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+      canvas {
+        border: 1px solid #ccc;
+        margin: 10px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 5px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>YouTube Playlist Scanner - Icon Generator</h1>
+    <p>Click the buttons below to generate and download icons:</p>
+
+    <div>
+      <canvas
+        id="canvas16"
+        width="16"
+        height="16"
+      ></canvas>
+      <button onclick="downloadIcon(16)">Download icon16.png</button>
+    </div>
+
+    <div>
+      <canvas
+        id="canvas48"
+        width="48"
+        height="48"
+      ></canvas>
+      <button onclick="downloadIcon(48)">Download icon48.png</button>
+    </div>
+
+    <div>
+      <canvas
+        id="canvas128"
+        width="128"
+        height="128"
+      ></canvas>
+      <button onclick="downloadIcon(128)">Download icon128.png</button>
+    </div>
+
+    <script>
+      function drawIcon(canvas, size) {
+        const ctx = canvas.getContext('2d');
+
+        // Red background (YouTube red)
+        ctx.fillStyle = '#FF0000';
+        ctx.fillRect(0, 0, size, size);
+
+        // White play icon (simplified triangle)
+        ctx.fillStyle = '#FFFFFF';
+        const centerX = size / 2;
+        const centerY = size / 2;
+        const triangleSize = size * 0.4;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - triangleSize * 0.3, centerY - triangleSize * 0.5);
+        ctx.lineTo(centerX - triangleSize * 0.3, centerY + triangleSize * 0.5);
+        ctx.lineTo(centerX + triangleSize * 0.7, centerY);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      function downloadIcon(size) {
+        const canvas = document.getElementById(`canvas${size}`);
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `icon${size}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 'image/png');
+      }
+
+      // Draw icons on load
+      window.onload = () => {
+        drawIcon(document.getElementById('canvas16'), 16);
+        drawIcon(document.getElementById('canvas48'), 48);
+        drawIcon(document.getElementById('canvas128'), 128);
+      };
+    </script>
+  </body>
+</html>

@@ -14,3 +14,12 @@ type Config struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Video struct {
+	ID            int64              `json:"id"`
+	VideoID       string             `json:"video_id"`
+	NormalizedUrl string             `json:"normalized_url"`
+	OriginalUrl   string             `json:"original_url"`
+	Title         string             `json:"title"`
+	Channel       string             `json:"channel"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}

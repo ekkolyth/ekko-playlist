@@ -27,9 +27,15 @@ func getenvDefault(key, def string) string {
 }
 
 func main() {
-	if _, err := os.Stat(".env.local"); err == nil {
+	// Load .env.local from API root
+	if _, err := os.Stat("apps/api/.env.local"); err == nil {
+		if err := godotenv.Load("apps/api/.env.local"); err != nil {
+			log.Println("Warning: .env.local present but could not be loaded:", err)
+		}
+	} else if _, err := os.Stat(".env.local"); err == nil {
+		// Fallback to current directory
 		if err := godotenv.Load(".env.local"); err != nil {
-			log.Println("Warning: .env present but could not be loaded:", err)
+			log.Println("Warning: .env.local present but could not be loaded:", err)
 		}
 	}
 

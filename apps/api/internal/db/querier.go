@@ -9,10 +9,12 @@ import (
 )
 
 type Querier interface {
+	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
 	GetConfig(ctx context.Context, key string) (*Config, error)
-	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
+	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
+	ListVideos(ctx context.Context) ([]*Video, error)
+	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 
 var _ Querier = (*Queries)(nil)
-

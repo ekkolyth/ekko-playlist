@@ -67,7 +67,7 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 
 	router.Route("/api", func(api chi.Router) {
 		// Process routes (playlist and video)
-		processHandler := handlers.NewProcessHandler(luaService)
+		processHandler := handlers.NewProcessHandler(luaService, dbService)
 		api.Route("/process", func(process chi.Router) {
 			process.Post("/playlist", processHandler.Playlist)
 			process.Post("/video", processHandler.Video)

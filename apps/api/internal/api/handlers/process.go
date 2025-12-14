@@ -2,21 +2,28 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
+	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
 )
 
 type ProcessHandler struct {
 	luaService *lua.Service
+	dbService  *db.Service
 }
 
-func NewProcessHandler(luaService *lua.Service) *ProcessHandler {
+func NewProcessHandler(luaService *lua.Service, dbService *db.Service) *ProcessHandler {
 	return &ProcessHandler{
 		luaService: luaService,
+		dbService:  dbService,
 	}
 }
 
@@ -46,9 +53,24 @@ type ProcessPlaylistResponse struct {
 	Invalid   int                  `json:"invalid"`
 }
 
+// extractVideoID extracts the video ID from a normalized YouTube URL
+// Expected format: https://www.youtube.com/watch?v=VIDEO_ID
+func extractVideoID(normalizedURL string) string {
+	// Extract video ID from normalized URL format: https://www.youtube.com/watch?v=VIDEO_ID
+	parts := strings.Split(normalizedURL, "v=")
+	if len(parts) == 2 {
+		// Remove any query parameters after the video ID
+		videoID := strings.Split(parts[1], "&")[0]
+		return videoID
+	}
+	return ""
+}
+
 // Playlist handles POST /api/process/playlist
 // Receives a playlist of videos and normalizes all YouTube URLs using Lua
 func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
+	logging.Info("Received POST /api/process/playlist request")
+	
 	var req ProcessPlaylistRequest
 
 	// Decode JSON request body (allow up to 10MB for large playlists)
@@ -57,6 +79,8 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 		httpx.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	logging.Info("Decoded request with %d videos", len(req.Videos))
 
 	// Validate videos array
 	if len(req.Videos) == 0 {
@@ -136,6 +160,63 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 		processed = append(processed, processedVideo)
 	}
 
+	// Store valid videos in database using a transaction
+	if len(validURLs) > 0 {
+		logging.Info("Preparing to save %d valid videos to database", len(validURLs))
+		validVideos := make([]ProcessedVideoInfo, 0)
+		for _, p := range processed {
+			if p.IsValid && p.NormalizedURL != "" {
+				validVideos = append(validVideos, p)
+			}
+		}
+
+		if len(validVideos) > 0 {
+			logging.Info("Starting database transaction for %d videos", len(validVideos))
+			// Use transaction for batch insert
+			err := h.dbService.DB.WithTx(ctx, func(q *db.Queries) error {
+				logging.Info("Inside transaction, processing %d videos", len(validVideos))
+				savedCount := 0
+				for i, video := range validVideos {
+					videoID := extractVideoID(video.NormalizedURL)
+					if videoID == "" {
+						logging.Info("Warning: Could not extract video ID from URL: %s", video.NormalizedURL)
+						continue
+					}
+
+					logging.Info("DB: Creating video %d/%d: %s (ID: %s, URL: %s)", i+1, len(validVideos), video.Title, videoID, video.NormalizedURL)
+					result, err := q.CreateVideo(ctx, &db.CreateVideoParams{
+						VideoID:       videoID,
+						NormalizedUrl: video.NormalizedURL,
+						OriginalUrl:   video.OriginalURL,
+						Title:         video.Title,
+						Channel:       video.Channel,
+					})
+
+					if err != nil {
+						// ON CONFLICT DO NOTHING returns no rows, which is expected for duplicates
+						if errors.Is(err, pgx.ErrNoRows) {
+							logging.Info("DB: Video already exists (duplicate, skipped): '%s' (normalized URL: %s)", video.Title, video.NormalizedURL)
+							continue
+						}
+						// Log actual errors but continue processing other videos
+						logging.Info("DB: Error saving video '%s': %s (error type: %T)", video.Title, err.Error(), err)
+					} else {
+						logging.Info("DB: Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", video.Title, result.ID, result.NormalizedUrl)
+						savedCount++
+					}
+				}
+				logging.Info("DB: Processed %d videos, successfully saved %d new videos, skipped %d duplicates", len(validVideos), savedCount, len(validVideos)-savedCount)
+				return nil
+			})
+
+			if err != nil {
+				logging.Info("DB: Database transaction error: %s", err.Error())
+			} else {
+				logging.Info("DB: Transaction completed successfully")
+			}
+		}
+	}
+
 	// Create response
 	response := ProcessPlaylistResponse{
 		Processed: processed,
@@ -162,7 +243,10 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 			logging.Info("%s", url)
 		}
 	}
+	
+	logging.Info("Sending response: %d total, %d valid, %d invalid", response.Total, response.Valid, response.Invalid)
 	httpx.RespondJSON(w, http.StatusOK, response)
+	logging.Info("Response sent successfully")
 }
 
 type ProcessVideoRequest struct {
@@ -261,6 +345,34 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 		logging.Info("[FAILED]")
 		logging.Info("1 urls failed")
 		logging.Info("%s", req.Video.URL)
+	}
+
+	// Store valid video in database
+	if isValid && normalizedURL != "" {
+		videoID := extractVideoID(normalizedURL)
+		if videoID != "" {
+			logging.Info("DB: Creating video: %s (ID: %s, URL: %s)", req.Video.Title, videoID, normalizedURL)
+			result, err := h.dbService.Queries.CreateVideo(ctx, &db.CreateVideoParams{
+				VideoID:       videoID,
+				NormalizedUrl: normalizedURL,
+				OriginalUrl:   req.Video.URL,
+				Title:         req.Video.Title,
+				Channel:       req.Video.Channel,
+			})
+
+			if err != nil {
+				// ON CONFLICT DO NOTHING returns no rows, which is expected for duplicates
+				if errors.Is(err, pgx.ErrNoRows) {
+					logging.Info("DB: Video already exists in database (duplicate, skipped): '%s' (normalized URL: %s)", req.Video.Title, normalizedURL)
+				} else {
+					logging.Info("DB: Error saving video to database: %s - %s (error type: %T)", req.Video.Title, err.Error(), err)
+				}
+			} else {
+				logging.Info("DB: Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", req.Video.Title, result.ID, result.NormalizedUrl)
+			}
+		} else {
+			logging.Info("Warning: Could not extract video ID from URL: %s", normalizedURL)
+		}
 	}
 
 	httpx.RespondJSON(w, http.StatusOK, ProcessVideoResponse{

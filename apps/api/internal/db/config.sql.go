@@ -9,24 +9,46 @@ import (
 	"context"
 )
 
-const getConfig = `-- name: GetConfig :one
+const GetConfig = `-- name: GetConfig :one
 SELECT key, value, updated_at
 FROM config
 WHERE key = $1
 `
 
 func (q *Queries) GetConfig(ctx context.Context, key string) (*Config, error) {
-	row := q.db.QueryRow(ctx, getConfig, key)
+	row := q.db.QueryRow(ctx, GetConfig, key)
 	var i Config
-	err := row.Scan(
-		&i.Key,
-		&i.Value,
-		&i.UpdatedAt,
-	)
+	err := row.Scan(&i.Key, &i.Value, &i.UpdatedAt)
 	return &i, err
 }
 
-const upsertConfig = `-- name: UpsertConfig :one
+const ListConfigs = `-- name: ListConfigs :many
+SELECT key, value, updated_at
+FROM config
+ORDER BY key
+`
+
+func (q *Queries) ListConfigs(ctx context.Context) ([]*Config, error) {
+	rows, err := q.db.Query(ctx, ListConfigs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Config{}
+	for rows.Next() {
+		var i Config
+		if err := rows.Scan(&i.Key, &i.Value, &i.UpdatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const UpsertConfig = `-- name: UpsertConfig :one
 INSERT INTO config (key, value)
 VALUES ($1, $2)
 ON CONFLICT (key) DO UPDATE
@@ -41,43 +63,8 @@ type UpsertConfigParams struct {
 }
 
 func (q *Queries) UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error) {
-	row := q.db.QueryRow(ctx, upsertConfig, arg.Key, arg.Value)
+	row := q.db.QueryRow(ctx, UpsertConfig, arg.Key, arg.Value)
 	var i Config
-	err := row.Scan(
-		&i.Key,
-		&i.Value,
-		&i.UpdatedAt,
-	)
+	err := row.Scan(&i.Key, &i.Value, &i.UpdatedAt)
 	return &i, err
 }
-
-const listConfigs = `-- name: ListConfigs :many
-SELECT key, value, updated_at
-FROM config
-ORDER BY key
-`
-
-func (q *Queries) ListConfigs(ctx context.Context) ([]*Config, error) {
-	rows, err := q.db.Query(ctx, listConfigs)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []*Config
-	for rows.Next() {
-		var i Config
-		if err := rows.Scan(
-			&i.Key,
-			&i.Value,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, &i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-

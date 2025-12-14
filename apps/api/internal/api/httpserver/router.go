@@ -52,9 +52,12 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	router.Get("/api/healthz", handlers.Health)
 
 	router.Route("/api", func(api chi.Router) {
-		// URL normalization routes
-		urlHandler := handlers.NewURLHandler(luaService)
-		api.Post("/url/normalize", urlHandler.NormalizeURL)
+		// Process routes (playlist and video)
+		processHandler := handlers.NewProcessHandler(luaService)
+		api.Route("/process", func(process chi.Router) {
+			process.Post("/playlist", processHandler.Playlist)
+			process.Post("/video", processHandler.Video)
+		})
 	})
 
 	return router

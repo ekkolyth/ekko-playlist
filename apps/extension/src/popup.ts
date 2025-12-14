@@ -28,6 +28,20 @@ interface CurrentVideoInfoResponse {
   error?: string;
 }
 
+interface ProcessPlaylistResponse {
+  processed: Array<{
+    channel: string;
+    originalUrl: string;
+    normalizedUrl: string;
+    title: string;
+    isValid: boolean;
+    error?: string;
+  }>;
+  total: number;
+  valid: number;
+  invalid: number;
+}
+
 // YouTube URL parser functions
 interface ParsedYouTubeUrl {
   isValid: boolean;
@@ -160,6 +174,34 @@ function clearStatus(): void {
   statusDiv.className = 'status';
 }
 
+// API configuration
+const API_BASE_URL = 'http://localhost:1337';
+
+async function sendPlaylistToAPI(videos: VideoInfo[]): Promise<ProcessPlaylistResponse> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/process/playlist`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ videos }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error('Failed to connect to API. Make sure the API server is running on ' + API_BASE_URL);
+    }
+    throw error;
+  }
+}
+
 async function scanPlaylist(): Promise<void> {
   console.log('scanPlaylist called');
   if (!scanButton || !statusDiv) {
@@ -226,24 +268,16 @@ async function scanPlaylist(): Promise<void> {
       return;
     }
 
-    const jsonData = JSON.stringify(scanResponse.videos, null, 2);
-    const blob = new Blob([jsonData], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
+    // Send to API instead of downloading
+    setStatus('Sending to API and normalizing URLs...', 'info');
     
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `youtube-playlist-${timestamp}.json`;
-
-    await chrome.downloads.download({
-      url: url,
-      filename: filename,
-      saveAs: true
-    });
-
-    setStatus(`Saved ${scanResponse.videos.length} videos!`, 'success');
+    const result = await sendPlaylistToAPI(scanResponse.videos);
+    
+    setStatus(`Processed ${result.total} videos: ${result.valid} valid, ${result.invalid} invalid`, 'success');
     
     setTimeout(() => {
       clearStatus();
-    }, 3000);
+    }, 5000);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';

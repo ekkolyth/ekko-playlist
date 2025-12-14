@@ -72,6 +72,10 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 			process.Post("/playlist", processHandler.Playlist)
 			process.Post("/video", processHandler.Video)
 		})
+
+		// Videos routes
+		videosHandler := handlers.NewVideosHandler(dbService)
+		api.Get("/videos", videosHandler.List)
 	})
 
 	return router

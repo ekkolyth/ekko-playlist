@@ -7,31 +7,28 @@ export default function Header() {
     const { isSignedIn, user } = useUser()
 
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-slate-800/50 bg-slate-950/50 backdrop-blur supports-[backdrop-filter]:bg-slate-950/50">
-            <div className="w-full flex h-16 items-center justify-between px-6">
+        <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95">
+            <div className="container mx-auto flex h-16 items-center justify-between px-4">
                 {/* Logo */}
                 <Link
                     to="/"
-                    className="flex items-center gap-2 font-semibold text-xl text-white hover:opacity-80 transition-opacity"
+                    className="flex items-center gap-2 font-semibold text-lg tracking-tight hover:opacity-80 transition-opacity"
                 >
-                    <span className='text-2xl'>Ekko Playlist</span>
+                    Ekko Playlist
                 </Link>
 
                 {/* Right side navigation */}
-                <nav className="flex items-center gap-4">
+                <nav className="flex items-center gap-2">
                     {isSignedIn ? (
                         <>
-                            <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-slate-800" asChild>
+                            <Button variant="ghost" size="sm" asChild>
                                 <Link to="/dashboard">
                                     <LayoutDashboard className="mr-2 h-4 w-4" />
                                     Dashboard
                                 </Link>
                             </Button>
                             <SignOutButton>
-                                <Button
-                                    variant="outline"
-                                    className="border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white"
-                                >
+                                <Button variant="outline" size="sm">
                                     <LogOut className="mr-2 h-4 w-4" />
                                     Sign Out
                                 </Button>
@@ -39,9 +36,7 @@ export default function Header() {
                         </>
                     ) : (
                         <SignInButton mode="modal">
-                            <Button
-                                className="bg-gradient-to-r from-blue-600 to-primary hover:from-blue-500 hover:to-primary/90 text-white"
-                            >
+                            <Button size="sm">
                                 <LogIn className="mr-2 h-4 w-4" />
                                 Sign In
                             </Button>

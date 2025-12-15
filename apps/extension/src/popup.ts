@@ -179,12 +179,13 @@ function clearStatus(): void {
   statusDiv.className = 'status';
 }
 
-// API configuration
-const API_BASE_URL = 'http://localhost:1337';
+// Default configuration
+const DEFAULT_API_BASE_URL = 'http://localhost:1337';
 const WEB_APP_URL = 'http://localhost:3000';
 
-// Authentication storage keys
+// Storage keys
 const STORAGE_KEY_TOKEN = 'auth_token';
+const STORAGE_KEY_SERVER_URL = 'server_url';
 
 interface AuthResponse {
   token: string;
@@ -217,6 +218,27 @@ async function clearStoredToken(): Promise<void> {
   });
 }
 
+async function getStoredServerUrl(): Promise<string | null> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEY_SERVER_URL], (result) => {
+      resolve(result[STORAGE_KEY_SERVER_URL] || null);
+    });
+  });
+}
+
+async function storeServerUrl(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [STORAGE_KEY_SERVER_URL]: url }, () => {
+      resolve();
+    });
+  });
+}
+
+async function getApiBaseUrl(): Promise<string> {
+  const storedUrl = await getStoredServerUrl();
+  return storedUrl || DEFAULT_API_BASE_URL;
+}
+
 async function checkAuthentication(): Promise<boolean> {
   const token = await getStoredToken();
   if (!token) {
@@ -225,7 +247,8 @@ async function checkAuthentication(): Promise<boolean> {
 
   // Verify token is still valid by calling /api/auth/me
   try {
-    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    const apiUrl = await getApiBaseUrl();
+    const response = await fetch(`${apiUrl}/api/auth/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -273,28 +296,93 @@ function showLoadingState(): void {
   if (loadingState) loadingState.style.display = 'block';
 }
 
-async function handleLoginClick(): Promise<void> {
-  // Open web app login page
-  chrome.tabs.create({ url: `${WEB_APP_URL}/login` });
+async function handleSaveConfig(): Promise<void> {
+  const serverUrlInput = document.getElementById('serverUrlInput') as HTMLInputElement;
+  const apiTokenInput = document.getElementById('apiTokenInput') as HTMLInputElement;
 
-  // Show message to user
-  setStatus(
-    'Please log in on the web app, then return here and click "Check Auth Status".',
-    'info'
-  );
+  if (!serverUrlInput || !apiTokenInput) {
+    setStatus('Error: Configuration inputs not found', 'error');
+    return;
+  }
+
+  const serverUrl = serverUrlInput.value.trim();
+  const token = apiTokenInput.value.trim();
+
+  if (!serverUrl) {
+    setStatus('Please enter a server URL', 'error');
+    return;
+  }
+
+  if (!token) {
+    setStatus('Please enter an API token', 'error');
+    return;
+  }
+
+  // Validate server URL format
+  try {
+    new URL(serverUrl);
+  } catch {
+    setStatus('Invalid server URL format', 'error');
+    return;
+  }
+
+  showLoadingState();
+  setStatus('Validating configuration...', 'info');
+
+  try {
+    // Test the token by calling /api/auth/me
+    const response = await fetch(`${serverUrl}/api/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      console.error('Token validation failed:', response.status, errorText);
+      setStatus(
+        `Invalid token or server URL (${response.status}). Please check your configuration.`,
+        'error'
+      );
+      showLoginPrompt();
+      return;
+    }
+
+    // Store configuration
+    await storeServerUrl(serverUrl);
+    await storeToken(token);
+
+    // Clear input fields
+    serverUrlInput.value = '';
+    apiTokenInput.value = '';
+
+    showMainContent();
+    await initializeUrlInput();
+    setStatus('Configuration saved successfully!', 'success');
+    setTimeout(() => clearStatus(), 3000);
+  } catch (error) {
+    console.error('Error saving configuration:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    setStatus(
+      `Error: ${errorMessage}. Check if the server is running and CORS is configured.`,
+      'error'
+    );
+    showLoginPrompt();
+  }
 }
 
 async function sendPlaylistToAPI(videos: VideoInfo[]): Promise<ProcessPlaylistResponse> {
-  // Get authentication token
+  // Get authentication token and server URL
   const token = await getStoredToken();
+  const apiUrl = await getApiBaseUrl();
 
-  // If no token, user needs to log in
+  // If no token, user needs to configure
   if (!token) {
-    throw new Error('Authentication required. Please log in.');
+    throw new Error('Authentication required. Please configure your API connection.');
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/process/playlist`, {
+    const response = await fetch(`${apiUrl}/api/process/playlist`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -320,9 +408,8 @@ async function sendPlaylistToAPI(videos: VideoInfo[]): Promise<ProcessPlaylistRe
     return result;
   } catch (error) {
     if (error instanceof TypeError && error.message.includes('fetch')) {
-      throw new Error(
-        'Failed to connect to API. Make sure the API server is running on ' + API_BASE_URL
-      );
+      const apiUrl = await getApiBaseUrl();
+      throw new Error('Failed to connect to API. Make sure the API server is running on ' + apiUrl);
     }
     throw error;
   }
@@ -565,85 +652,39 @@ if (saveUrlButton) {
   console.error('saveUrlButton not found!');
 }
 
-// Login button event listener
-const loginButton = document.getElementById('loginButton') as HTMLButtonElement;
-if (loginButton) {
-  loginButton.addEventListener('click', (e) => {
-    console.log('Login button clicked!', e);
-    handleLoginClick().catch((err) => {
-      console.error('Error in handleLoginClick:', err);
+// Save configuration button event listener
+const saveConfigButton = document.getElementById('saveConfigButton') as HTMLButtonElement;
+if (saveConfigButton) {
+  saveConfigButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Save config button clicked!', e);
+    handleSaveConfig().catch((err) => {
+      console.error('Error in handleSaveConfig:', err);
+      setStatus(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`, 'error');
     });
   });
 } else {
-  console.error('loginButton not found!');
-}
-
-// Check auth button event listener
-const checkAuthButton = document.getElementById('checkAuthButton') as HTMLButtonElement;
-if (checkAuthButton) {
-  checkAuthButton.addEventListener('click', async (e) => {
-    console.log('Check auth button clicked!', e);
-    showLoadingState();
-
-    // Try to get token from web app by opening it and checking localStorage
-    // Since we can't directly access web app's localStorage, we'll try to get it via a content script
-    // For now, we'll check if user is logged in by trying to get token from API
-    // The user needs to log in on web app first, then we can get the token
-
-    // Open web app in a tab and try to extract token
-    const tab = await chrome.tabs.create({ url: `${WEB_APP_URL}/dashboard` });
-
-    // Wait a bit for page to load, then try to execute script to get token
-    setTimeout(async () => {
-      try {
-        // Try to execute script in the web app page to get the token
-        const results = await chrome.scripting.executeScript({
-          target: { tabId: tab.id! },
-          func: () => {
-            return localStorage.getItem('auth_token');
-          },
-        });
-
-        if (results && results[0] && results[0].result) {
-          const token = results[0].result as string;
-          if (token) {
-            await storeToken(token);
-            chrome.tabs.remove(tab.id!);
-            showMainContent();
-            await initializeUrlInput();
-            setStatus('Successfully authenticated!', 'success');
-            setTimeout(() => clearStatus(), 3000);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Error getting token:', error);
-      }
-
-      // If we couldn't get the token, check if user is already authenticated
-      const authenticated = await checkAuthentication();
-      if (authenticated) {
-        chrome.tabs.remove(tab.id!);
-        showMainContent();
-        await initializeUrlInput();
-        setStatus('Successfully authenticated!', 'success');
-        setTimeout(() => clearStatus(), 3000);
-      } else {
-        showLoginPrompt();
-        setStatus(
-          'Please log in on the web app page that opened, then click "Check Auth Status" again.',
-          'error'
-        );
-      }
-    }, 2000);
-  });
-} else {
-  console.error('checkAuthButton not found!');
+  console.error('saveConfigButton not found!');
 }
 
 // Initialize authentication and UI when popup opens
 async function initializePopup(): Promise<void> {
   showLoadingState();
+
+  // Load stored configuration into input fields
+  const serverUrlInput = document.getElementById('serverUrlInput') as HTMLInputElement;
+
+  if (serverUrlInput) {
+    const storedUrl = await getStoredServerUrl();
+    if (storedUrl) {
+      serverUrlInput.value = storedUrl;
+    } else {
+      serverUrlInput.value = DEFAULT_API_BASE_URL;
+    }
+  }
+
+  // Don't pre-fill the token for security reasons
 
   // Check authentication
   const authenticated = await checkAuthentication();

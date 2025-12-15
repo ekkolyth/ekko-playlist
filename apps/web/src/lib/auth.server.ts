@@ -1,6 +1,7 @@
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { tanstackStartCookies } from 'better-auth/tanstack-start';
+import { oneTimeToken } from 'better-auth/plugins/one-time-token';
 import { db } from './db.server';
 
 // Load environment variables - Vite loads .env.local automatically for server-side code
@@ -49,6 +50,9 @@ try {
     secret: secret,
     baseURL: getEnvVar('BETTER_AUTH_URL', 'http://localhost:3000'),
     plugins: [
+      oneTimeToken({
+        expiresIn: 90 * 24 * 60, // 90 days in minutes
+      }),
       // tanstackStartCookies must be the last plugin in the array
       tanstackStartCookies(),
     ],

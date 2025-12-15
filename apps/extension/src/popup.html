@@ -23,21 +23,52 @@
         style="display: none"
       >
         <div class="login-content">
-          <p class="login-message">Please log in to use this extension.</p>
-          <button
-            id="loginButton"
-            class="dropdown-button"
+          <p class="login-message">Configure your API connection:</p>
+          <div
+            class="url-input-section"
+            style="margin-top: 12px"
           >
-            Log In
-          </button>
-          <button
-            id="checkAuthButton"
-            class="dropdown-button save-button"
+            <label
+              for="serverUrlInput"
+              class="input-label"
+              >Server URL:</label
+            >
+            <input
+              type="text"
+              id="serverUrlInput"
+              class="url-input"
+              placeholder="http://localhost:1337"
+            />
+          </div>
+          <div
+            class="url-input-section"
             style="margin-top: 8px"
           >
-            Check Auth Status
+            <label
+              for="apiTokenInput"
+              class="input-label"
+              >API Token:</label
+            >
+            <input
+              type="password"
+              id="apiTokenInput"
+              class="url-input"
+              placeholder="Enter your API token"
+            />
+          </div>
+          <button
+            id="saveConfigButton"
+            class="dropdown-button"
+            style="margin-top: 12px"
+          >
+            Save Configuration
           </button>
-          <p class="login-hint">Log in on the web app, then click "Check Auth Status"</p>
+          <p
+            class="login-hint"
+            style="margin-top: 8px; font-size: 11px"
+          >
+            Generate a token in the web app under "Extension Tokens"
+          </p>
         </div>
       </div>
 

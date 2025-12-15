@@ -2,6 +2,15 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { LogIn, LogOut, LayoutDashboard } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -15,7 +24,7 @@ export default function Header() {
   };
 
   return (
-    <header className='sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/95'>
+    <header className='sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/95'>
       <div className='container mx-auto flex h-16 items-center justify-between px-4'>
         {/* Logo */}
         <Link
@@ -39,22 +48,53 @@ export default function Header() {
                   Dashboard
                 </Link>
               </Button>
-              <span className='text-sm text-muted-foreground'>{user?.email}</span>
-              <Button
-                variant='outline'
-                size='sm'
-                onClick={handleLogout}
-              >
-                <LogOut className='mr-2 h-4 w-4' />
-                Sign Out
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='flex items-center gap-2'
+                  >
+                    <Avatar className='size-6'>
+                      <AvatarFallback className='bg-primary text-primary-foreground text-xs'>
+                        {user?.email
+                          ?.split('@')[0]
+                          .split(' ')
+                          .map((n: string) => n[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className='text-sm text-muted-foreground'>{user?.email}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align='end'
+                  className='w-56'
+                >
+                  <DropdownMenuLabel>
+                    <div className='flex flex-col space-y-1'>
+                      <p className='text-sm font-medium leading-none'>{user?.email}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    variant='destructive'
+                  >
+                    <LogOut className='mr-2 h-4 w-4' />
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
             <Button
               size='sm'
               asChild
             >
-              <Link to='/login'>
+              <Link to='/auth/signin'>
                 <LogIn className='mr-2 h-4 w-4' />
                 Sign In
               </Link>

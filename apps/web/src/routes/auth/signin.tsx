@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,11 +8,11 @@ import { signIn } from '@/lib/auth-client';
 import { authenticateWithApi } from '@/lib/api-client';
 import Header from '@/components/nav/header';
 
-export const Route = createFileRoute('/login')({
-  component: LoginPage,
+export const Route = createFileRoute('/auth/signin')({
+  component: SignInPage,
 });
 
-function LoginPage() {
+function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -44,7 +44,7 @@ function LoginPage() {
   };
 
   return (
-    <div className='min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950'>
+    <div className='min-h-screen bg-background'>
       <Header />
       <div className='flex items-center justify-center px-6 py-24'>
         <Card className='w-full max-w-md'>
@@ -93,12 +93,12 @@ function LoginPage() {
               </Button>
               <div className='text-center text-sm text-muted-foreground'>
                 Don't have an account?{' '}
-                <a
-                  href='/register'
+                <Link
+                  to='/auth/signup'
                   className='text-primary hover:underline'
                 >
                   Sign up
-                </a>
+                </Link>
               </div>
             </form>
           </CardContent>
@@ -107,3 +107,4 @@ function LoginPage() {
     </div>
   );
 }
+

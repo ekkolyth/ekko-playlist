@@ -1,0 +1,161 @@
+import { createFileRoute } from '@tanstack/react-router';
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { getApiToken } from '@/lib/api-client';
+import { Copy, Check, RefreshCw } from 'lucide-react';
+
+export const Route = createFileRoute('/_authenticated/extension-tokens')({
+  component: ExtensionTokensPage,
+});
+
+function ExtensionTokensPage() {
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  // Load existing token on mount
+  useEffect(() => {
+    const existingToken = getApiToken();
+    if (existingToken) {
+      setToken(existingToken);
+    }
+  }, []);
+
+  const generateToken = async () => {
+    setLoading(true);
+    setError('');
+    setCopied(false);
+
+    try {
+      // Check if we already have a Go API token stored
+      const existingToken = getApiToken();
+      if (existingToken) {
+        // Verify it's still valid
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
+        const response = await fetch(`${apiUrl}/api/auth/me`, {
+          headers: {
+            Authorization: `Bearer ${existingToken}`,
+          },
+        });
+
+        if (response.ok) {
+          setToken(existingToken);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // If no valid token, show error
+      setError(
+        'No valid API token found. Please sign out and sign back in to generate a new token.'
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to get token');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!token) return;
+
+    try {
+      await navigator.clipboard.writeText(token);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      setError('Failed to copy to clipboard');
+    }
+  };
+
+  return (
+    <div className='container mx-auto px-4 py-8 max-w-2xl'>
+      <Card>
+        <CardHeader>
+          <CardTitle>Extension Tokens</CardTitle>
+          <CardDescription>
+            Your Go API token for use with the browser extension. This token is created when you sign in.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          {error && (
+            <div className='p-3 text-sm text-destructive bg-destructive/10 rounded-md'>
+              {error}
+            </div>
+          )}
+
+          <div className='space-y-4'>
+            <div>
+              <Label htmlFor='server-url'>Server URL</Label>
+              <Input
+                id='server-url'
+                type='text'
+                defaultValue={import.meta.env.VITE_API_URL || 'http://localhost:1337'}
+                readOnly
+                className='bg-muted'
+              />
+              <p className='text-sm text-muted-foreground mt-1'>
+                Use this URL when configuring the extension
+              </p>
+            </div>
+
+            <div>
+              <Button
+                onClick={generateToken}
+                disabled={loading}
+                className='w-full'
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className='mr-2 h-4 w-4' />
+                    Refresh Token
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {token && (
+              <div className='space-y-2'>
+                <Label>Your API Token</Label>
+                <div className='flex gap-2'>
+                  <Input
+                    type='text'
+                    value={token}
+                    readOnly
+                    className='font-mono text-sm bg-muted'
+                  />
+                  <Button
+                    variant='outline'
+                    size='icon'
+                    onClick={copyToClipboard}
+                    title='Copy to clipboard'
+                  >
+                    {copied ? (
+                      <Check className='h-4 w-4 text-green-600' />
+                    ) : (
+                      <Copy className='h-4 w-4' />
+                    )}
+                  </Button>
+                </div>
+                <p className='text-sm text-muted-foreground'>
+                  Copy this token and paste it into the extension configuration. Keep it secure and
+                  don't share it with anyone.
+                </p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+

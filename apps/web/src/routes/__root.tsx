@@ -2,9 +2,6 @@ import { HeadContent, Scripts, createRootRoute, Link } from '@tanstack/react-rou
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Providers } from '../providers'
-import { SidebarProvider } from '@/components/ui/sidebar'
-import { Navbar } from '@/components/nav/navbar'
-import { SidebarInset } from '@/components/ui/sidebar'
 import { Button } from '@/components/ui/button'
 import { FileX, Home } from 'lucide-react'
 
@@ -46,12 +43,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body className='dark bg-background text-foreground'>
         <Providers>
-          <SidebarProvider>
-            <Navbar />
-            <SidebarInset>
-              {children}
-            </SidebarInset>
-          </SidebarProvider>
+          {children}
         </Providers>
         <TanStackDevtools
           config={{

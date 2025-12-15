@@ -48,6 +48,28 @@ func (q *Queries) CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Vid
 	return &i, err
 }
 
+const GetVideoByID = `-- name: GetVideoByID :one
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE id = $1
+`
+
+func (q *Queries) GetVideoByID(ctx context.Context, id int64) (*Video, error) {
+	row := q.db.QueryRow(ctx, GetVideoByID, id)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.VideoID,
+		&i.NormalizedUrl,
+		&i.OriginalUrl,
+		&i.Title,
+		&i.Channel,
+		&i.UserID,
+		&i.CreatedAt,
+	)
+	return &i, err
+}
+
 const GetVideoByURL = `-- name: GetVideoByURL :one
 SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 FROM videos
@@ -79,6 +101,48 @@ ORDER BY created_at DESC
 
 func (q *Queries) ListVideos(ctx context.Context, userID string) ([]*Video, error) {
 	rows, err := q.db.Query(ctx, ListVideos, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListVideosFiltered = `-- name: ListVideosFiltered :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+ORDER BY created_at DESC
+`
+
+type ListVideosFilteredParams struct {
+	UserID  string   `json:"user_id"`
+	Column2 []string `json:"column_2"`
+}
+
+func (q *Queries) ListVideosFiltered(ctx context.Context, arg *ListVideosFilteredParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosFiltered, arg.UserID, arg.Column2)
 	if err != nil {
 		return nil, err
 	}

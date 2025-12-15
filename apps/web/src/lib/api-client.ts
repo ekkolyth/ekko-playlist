@@ -126,3 +126,83 @@ export async function apiRequest<T>(
     throw err;
   }
 }
+
+// Playlist types
+export interface Playlist {
+  id: number;
+  userId: string;
+  name: string;
+  videoCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaylistDetail extends Omit<Playlist, 'videoCount'> {
+  videos: Video[];
+}
+
+export interface Video {
+  id: number;
+  videoId: string;
+  normalizedUrl: string;
+  originalUrl: string;
+  title: string;
+  channel: string;
+  userId: string;
+  createdAt: string;
+}
+
+export interface ListPlaylistsResponse {
+  playlists: Playlist[];
+}
+
+// Playlist API functions
+export async function fetchPlaylists(): Promise<ListPlaylistsResponse> {
+  return apiRequest<ListPlaylistsResponse>('/api/playlists');
+}
+
+export async function createPlaylist(name: string): Promise<Playlist> {
+  return apiRequest<Playlist>('/api/playlists', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function getPlaylist(id: number): Promise<PlaylistDetail> {
+  return apiRequest<PlaylistDetail>(`/api/playlists/${id}`);
+}
+
+export async function updatePlaylist(id: number, name: string): Promise<Playlist> {
+  return apiRequest<Playlist>(`/api/playlists/${id}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function deletePlaylist(id: number): Promise<void> {
+  await apiRequest(`/api/playlists/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+export async function addVideoToPlaylist(playlistId: number, videoId: number): Promise<void> {
+  await apiRequest(`/api/playlists/${playlistId}/videos`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ videoId }),
+  });
+}
+
+export async function removeVideoFromPlaylist(playlistId: number, videoId: number): Promise<void> {
+  await apiRequest(`/api/playlists/${playlistId}/videos/${videoId}`, {
+    method: 'DELETE',
+  });
+}

@@ -18,8 +18,8 @@ interface Token {
   name: string;
   token_prefix: string;
   created_at: string;
-  expires_at?: string;
-  last_used_at?: string;
+  expires_at?: string | null;
+  last_used_at?: string | null;
 }
 
 interface TokensResponse {
@@ -43,9 +43,38 @@ function ExtensionTokensPage() {
   const loadTokens = async () => {
     try {
       const data = await apiRequest<TokensResponse>('/api/tokens');
-      setTokens(data.tokens);
+      console.log('Loaded tokens response:', data);
+      
+      // Handle response - check for both 'tokens' and 'Tokens' (Go might capitalize)
+      let tokensList: Token[] = [];
+      if (data) {
+        if (Array.isArray(data)) {
+          // If response is directly an array
+          tokensList = data as any;
+        } else if (data.tokens && Array.isArray(data.tokens)) {
+          // If response has a tokens property (lowercase)
+          tokensList = data.tokens;
+        } else if ((data as any).Tokens && Array.isArray((data as any).Tokens)) {
+          // Handle capitalized Tokens (Go JSON might capitalize)
+          tokensList = (data as any).Tokens.map((t: any) => ({
+            id: t.ID || t.id,
+            name: t.Name || t.name,
+            token_prefix: t.TokenPrefix || t.token_prefix,
+            created_at: t.CreatedAt || t.created_at,
+            expires_at: t.ExpiresAt || t.expires_at,
+            last_used_at: t.LastUsedAt || t.last_used_at,
+          }));
+        }
+      }
+      
+      console.log('Parsed tokens list:', tokensList);
+      setTokens(tokensList);
     } catch (err) {
       console.error('Error loading tokens:', err);
+      // Show error if it's not the initial load (when user might not have tokens)
+      if (tokens.length > 0) {
+        setError(`Failed to load tokens: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      }
       // Don't show error on initial load if user has no tokens
     }
   };
@@ -87,7 +116,7 @@ function ExtensionTokensPage() {
         setNewToken(token);
         setTokenName('');
         
-        // Reload tokens list
+        // Reload tokens list immediately
         await loadTokens();
       } catch (saveErr) {
         // If saving fails, still show the token so user can copy it
@@ -255,7 +284,17 @@ function ExtensionTokensPage() {
 
           {/* Existing tokens list */}
           <div className='space-y-4'>
-            <h3 className='font-semibold'>Your Tokens</h3>
+            <div className='flex items-center justify-between'>
+              <h3 className='font-semibold'>Your Tokens</h3>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={loadTokens}
+                title='Refresh tokens list'
+              >
+                <RefreshCw className='h-4 w-4' />
+              </Button>
+            </div>
             {tokens.length === 0 ? (
               <p className='text-sm text-muted-foreground'>No tokens yet. Generate one above to get started.</p>
             ) : (

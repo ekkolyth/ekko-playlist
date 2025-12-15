@@ -15,9 +15,11 @@ import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
 import { Route as ApiVerifyTokenRouteImport } from './routes/api/verify-token'
 import { Route as ApiExtensionTokenRouteImport } from './routes/api/extension-token'
+import { Route as AuthenticatedPlaylistsRouteImport } from './routes/_authenticated/playlists'
 import { Route as AuthenticatedExtensionTokensRouteImport } from './routes/_authenticated/extension-tokens'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedPlaylistsIdRouteImport } from './routes/_authenticated/playlists.$id'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -48,6 +50,11 @@ const ApiExtensionTokenRoute = ApiExtensionTokenRouteImport.update({
   path: '/api/extension-token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPlaylistsRoute = AuthenticatedPlaylistsRouteImport.update({
+  id: '/playlists',
+  path: '/playlists',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedExtensionTokensRoute =
   AuthenticatedExtensionTokensRouteImport.update({
     id: '/extension-tokens',
@@ -64,25 +71,35 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPlaylistsIdRoute =
+  AuthenticatedPlaylistsIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedPlaylistsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/extension-tokens': typeof AuthenticatedExtensionTokensRoute
+  '/playlists': typeof AuthenticatedPlaylistsRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/playlists/$id': typeof AuthenticatedPlaylistsIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/extension-tokens': typeof AuthenticatedExtensionTokensRoute
+  '/playlists': typeof AuthenticatedPlaylistsRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/playlists/$id': typeof AuthenticatedPlaylistsIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
@@ -91,10 +108,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/extension-tokens': typeof AuthenticatedExtensionTokensRoute
+  '/_authenticated/playlists': typeof AuthenticatedPlaylistsRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
+  '/_authenticated/playlists/$id': typeof AuthenticatedPlaylistsIdRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
@@ -103,20 +122,24 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/extension-tokens'
+    | '/playlists'
     | '/api/extension-token'
     | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
+    | '/playlists/$id'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/extension-tokens'
+    | '/playlists'
     | '/api/extension-token'
     | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
+    | '/playlists/$id'
     | '/api/auth/$'
   id:
     | '__root__'
@@ -124,10 +147,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/dashboard'
     | '/_authenticated/extension-tokens'
+    | '/_authenticated/playlists'
     | '/api/extension-token'
     | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
+    | '/_authenticated/playlists/$id'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
@@ -185,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExtensionTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/playlists': {
+      id: '/_authenticated/playlists'
+      path: '/playlists'
+      fullPath: '/playlists'
+      preLoaderRoute: typeof AuthenticatedPlaylistsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/extension-tokens': {
       id: '/_authenticated/extension-tokens'
       path: '/extension-tokens'
@@ -206,17 +238,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/playlists/$id': {
+      id: '/_authenticated/playlists/$id'
+      path: '/$id'
+      fullPath: '/playlists/$id'
+      preLoaderRoute: typeof AuthenticatedPlaylistsIdRouteImport
+      parentRoute: typeof AuthenticatedPlaylistsRoute
+    }
   }
 }
+
+interface AuthenticatedPlaylistsRouteChildren {
+  AuthenticatedPlaylistsIdRoute: typeof AuthenticatedPlaylistsIdRoute
+}
+
+const AuthenticatedPlaylistsRouteChildren: AuthenticatedPlaylistsRouteChildren =
+  {
+    AuthenticatedPlaylistsIdRoute: AuthenticatedPlaylistsIdRoute,
+  }
+
+const AuthenticatedPlaylistsRouteWithChildren =
+  AuthenticatedPlaylistsRoute._addFileChildren(
+    AuthenticatedPlaylistsRouteChildren,
+  )
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExtensionTokensRoute: typeof AuthenticatedExtensionTokensRoute
+  AuthenticatedPlaylistsRoute: typeof AuthenticatedPlaylistsRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExtensionTokensRoute: AuthenticatedExtensionTokensRoute,
+  AuthenticatedPlaylistsRoute: AuthenticatedPlaylistsRouteWithChildren,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

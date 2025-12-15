@@ -2,7 +2,7 @@ import { Link, useRouterState } from '@tanstack/react-router';
 import { useAuth } from '@/contexts/auth-context';
 import { useState, useEffect, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, LogOut, MoreVertical, Play, Key } from 'lucide-react';
+import { LayoutDashboard, LogOut, MoreVertical, Play, Key, ListMusic } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -39,6 +39,7 @@ export const sidebarSections: SidebarSection[] = [
     label: 'MAIN',
     items: [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { label: 'Playlists', href: '/playlists', icon: ListMusic },
       { label: 'Extension Tokens', href: '/extension-tokens', icon: Key },
     ],
   },

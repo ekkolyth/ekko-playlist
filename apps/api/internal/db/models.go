@@ -47,6 +47,21 @@ type Jwk struct {
 	ExpiresAt  pgtype.Timestamp `json:"expires_at"`
 }
 
+type Playlist struct {
+	ID        int64              `json:"id"`
+	UserID    string             `json:"user_id"`
+	Name      string             `json:"name"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type PlaylistVideo struct {
+	PlaylistID int64              `json:"playlist_id"`
+	VideoID    int64              `json:"video_id"`
+	Position   int32              `json:"position"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+}
+
 type Session struct {
 	ID        string             `json:"id"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`

@@ -11,27 +11,38 @@ import (
 )
 
 type Querier interface {
+	AddVideoToPlaylist(ctx context.Context, arg *AddVideoToPlaylistParams) (*PlaylistVideo, error)
 	CleanExpiredSessions(ctx context.Context) error
 	CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error)
+	CreatePlaylist(ctx context.Context, arg *CreatePlaylistParams) (*Playlist, error)
 	CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error)
 	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
 	DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams) error
+	DeletePlaylist(ctx context.Context, arg *DeletePlaylistParams) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteUserSessions(ctx context.Context, userID string) error
 	GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error)
 	GetConfig(ctx context.Context, key string) (*Config, error)
+	GetPlaylistByID(ctx context.Context, id int64) (*Playlist, error)
+	GetPlaylistVideoCount(ctx context.Context, playlistID int64) (int64, error)
+	GetPlaylistVideos(ctx context.Context, playlistID int64) ([]*GetPlaylistVideosRow, error)
 	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
 	GetUserByVerificationToken(ctx context.Context, value string) (*User, error)
 	GetVerificationByIdentifier(ctx context.Context, identifier string) (*Verification, error)
 	GetVerificationByValue(ctx context.Context, value string) (*Verification, error)
+	GetVideoByID(ctx context.Context, id int64) (*Video, error)
 	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
 	ListAPITokensByUser(ctx context.Context, userID string) ([]*ListAPITokensByUserRow, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
+	ListPlaylistsByUser(ctx context.Context, userID string) ([]*Playlist, error)
 	ListRecentVerifications(ctx context.Context) ([]*Verification, error)
 	ListVideos(ctx context.Context, userID string) ([]*Video, error)
+	ListVideosFiltered(ctx context.Context, arg *ListVideosFilteredParams) ([]*Video, error)
+	RemoveVideoFromPlaylist(ctx context.Context, arg *RemoveVideoFromPlaylistParams) error
 	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
+	UpdatePlaylist(ctx context.Context, arg *UpdatePlaylistParams) (*Playlist, error)
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 

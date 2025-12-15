@@ -102,6 +102,25 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 			videos.Use(authMiddleware)
 			videos.Get("/", videosHandler.List)
 		})
+
+		// Playlists routes - require authentication
+		playlistsHandler := handlers.NewPlaylistsHandler(dbService)
+		api.Route("/playlists", func(playlists chi.Router) {
+			playlists.Use(authMiddleware)
+			playlists.Post("/", playlistsHandler.Create)
+			playlists.Get("/", playlistsHandler.List)
+			playlists.Get("/{id}", playlistsHandler.Get)
+			playlists.Put("/{id}", playlistsHandler.Update)
+			playlists.Delete("/{id}", playlistsHandler.Delete)
+		})
+
+		// Playlist videos routes - require authentication
+		playlistVideosHandler := handlers.NewPlaylistVideosHandler(dbService)
+		api.Route("/playlists/{id}/videos", func(playlistVideos chi.Router) {
+			playlistVideos.Use(authMiddleware)
+			playlistVideos.Post("/", playlistVideosHandler.AddVideo)
+			playlistVideos.Delete("/{videoId}", playlistVideosHandler.RemoveVideo)
+		})
 	})
 
 	return router

@@ -3,6 +3,7 @@ import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
 import { Providers } from '../providers'
 import { Button } from '@/components/ui/button'
+import { Toaster } from '@/components/ui/sonner'
 import { FileX, Home } from 'lucide-react'
 
 import appCss from '../styles.css?url'
@@ -45,6 +46,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Providers>
           {children}
         </Providers>
+        <Toaster />
         <TanStackDevtools
           config={{
             position: 'bottom-right',

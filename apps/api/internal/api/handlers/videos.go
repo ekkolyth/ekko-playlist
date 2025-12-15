@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
@@ -38,6 +39,7 @@ type ListVideosResponse struct {
 
 // List handles GET /api/videos
 // Returns a list of videos for the authenticated user
+// Supports optional "channels" query parameter for filtering (comma-separated or array format)
 func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -49,7 +51,56 @@ func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videos, err := h.dbService.Queries.ListVideos(ctx, userID)
+	// Parse channels filter from query parameters
+	var channels []string
+	channelsParam := r.URL.Query().Get("channels")
+	if channelsParam != "" {
+		// Support comma-separated format: ?channels=Channel1,Channel2,Channel3
+		channels = strings.Split(channelsParam, ",")
+		// Trim whitespace from each channel name
+		for i := range channels {
+			channels[i] = strings.TrimSpace(channels[i])
+		}
+		// Remove empty strings
+		filtered := channels[:0]
+		for _, ch := range channels {
+			if ch != "" {
+				filtered = append(filtered, ch)
+			}
+		}
+		channels = filtered
+	} else {
+		// Support array format: ?channels[]=Channel1&channels[]=Channel2
+		if channelsArray := r.URL.Query()["channels[]"]; len(channelsArray) > 0 {
+			channels = channelsArray
+			// Trim whitespace from each channel name
+			for i := range channels {
+				channels[i] = strings.TrimSpace(channels[i])
+			}
+			// Remove empty strings
+			filtered := channels[:0]
+			for _, ch := range channels {
+				if ch != "" {
+					filtered = append(filtered, ch)
+				}
+			}
+			channels = filtered
+		}
+	}
+
+	var videos []*db.Video
+	var err error
+
+	// Use filtered query if channels are provided, otherwise use regular query
+	if len(channels) > 0 {
+		videos, err = h.dbService.Queries.ListVideosFiltered(ctx, &db.ListVideosFilteredParams{
+			UserID:  userID,
+			Column2: channels,
+		})
+	} else {
+		videos, err = h.dbService.Queries.ListVideos(ctx, userID)
+	}
+
 	if err != nil {
 		logging.Info("Error listing videos: %s", err.Error())
 		httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch videos")

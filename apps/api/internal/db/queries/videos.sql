@@ -9,9 +9,21 @@ SELECT id, video_id, normalized_url, original_url, title, channel, user_id, crea
 FROM videos
 WHERE normalized_url = $1;
 
+-- name: GetVideoByID :one
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE id = $1;
+
 -- name: ListVideos :many
 SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 FROM videos
 WHERE user_id = $1
+ORDER BY created_at DESC;
+
+-- name: ListVideosFiltered :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
 ORDER BY created_at DESC;
 

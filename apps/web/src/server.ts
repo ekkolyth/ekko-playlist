@@ -1,15 +1,9 @@
 // src/server.ts
-import {
-  createStartHandler,
-  defaultStreamHandler,
-  defineHandlerCallback,
-} from '@tanstack/react-start/server';
+import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server';
 
-const handler = defineHandlerCallback(async (ctx) => {
-  const res = await defaultStreamHandler(ctx);
-  return res;
-});
+// TanStack Start will handle /api/auth routes via the file-based routing
+// No need to manually handle auth routes here
+const handler = defaultStreamHandler;
 
 const fetch = createStartHandler(handler);
 export default { fetch };
-

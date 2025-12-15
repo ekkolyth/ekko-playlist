@@ -102,7 +102,12 @@ db/reset: check-goose check-db-url
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
 		echo "Resetting database..."; \
-		cd apps/api && goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" reset; \
+		echo "Dropping all tables..."; \
+		cd apps/api && psql "$(DB_URL)" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO public;" || true; \
+		echo "Resetting goose migration tracking..."; \
+		cd apps/api && psql "$(DB_URL)" -c "DROP TABLE IF EXISTS goose_db_version;" || true; \
+		echo "Running migrations..."; \
+		cd apps/api && goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" up; \
 		echo "✅ Database reset successfully"; \
 	else \
 		echo "Cancelled."; \

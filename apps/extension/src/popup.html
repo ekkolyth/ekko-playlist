@@ -1,26 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Playlist Scanner</title>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <h1>Playlist Scanner</h1>
-    <div class="dropdown">
-      <button id="scanButton" class="dropdown-button">Scan Playlist</button>
-      <div class="divider"></div>
-      <div class="url-input-section">
-        <label for="urlInput" class="input-label">Current Page URL:</label>
-        <input type="text" id="urlInput" class="url-input" placeholder="https://www.youtube.com/watch?v=..." readonly>
-        <button id="saveUrlButton" class="dropdown-button save-button">Save Current URL</button>
-      </div>
-      <div id="status" class="status"></div>
-    </div>
-  </div>
-  <script src="popup.js"></script>
-</body>
-</html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>YouTube Playlist Scanner</title>
+    <link
+      rel="stylesheet"
+      href="popup.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Playlist Scanner</h1>
 
+      <!-- Login prompt (shown when not authenticated) -->
+      <div
+        id="loginPrompt"
+        class="login-prompt"
+        style="display: none"
+      >
+        <div class="login-content">
+          <p class="login-message">Please log in to use this extension.</p>
+          <button
+            id="loginButton"
+            class="dropdown-button"
+          >
+            Log In
+          </button>
+          <button
+            id="checkAuthButton"
+            class="dropdown-button save-button"
+            style="margin-top: 8px"
+          >
+            Check Auth Status
+          </button>
+          <p class="login-hint">Log in on the web app, then click "Check Auth Status"</p>
+        </div>
+      </div>
+
+      <!-- Main content (shown when authenticated) -->
+      <div
+        id="mainContent"
+        class="dropdown"
+      >
+        <button
+          id="scanButton"
+          class="dropdown-button"
+        >
+          Scan Playlist
+        </button>
+        <div class="divider"></div>
+        <div class="url-input-section">
+          <label
+            for="urlInput"
+            class="input-label"
+            >Current Page URL:</label
+          >
+          <input
+            type="text"
+            id="urlInput"
+            class="url-input"
+            placeholder="https://www.youtube.com/watch?v=..."
+            readonly
+          />
+          <button
+            id="saveUrlButton"
+            class="dropdown-button save-button"
+          >
+            Save Current URL
+          </button>
+        </div>
+        <div
+          id="status"
+          class="status"
+        ></div>
+      </div>
+
+      <!-- Loading state -->
+      <div
+        id="loadingState"
+        class="loading-state"
+        style="display: none"
+      >
+        <p>Checking authentication...</p>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

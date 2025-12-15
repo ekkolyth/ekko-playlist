@@ -1,6 +1,6 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ClerkProvider } from "@clerk/tanstack-react-start";
-import { ReactNode, useState } from "react";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode, useState } from 'react';
+import { AuthProvider } from '@/contexts/auth-context';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -21,11 +21,8 @@ export function Providers({ children }: ProvidersProps) {
   );
 
   return (
-    <ClerkProvider>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </ClerkProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </AuthProvider>
   );
 }
-

@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 
+	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/handlers"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
@@ -58,24 +59,40 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 			"RateLimit-Limit",
 			"RateLimit-Remaining",
 			"RateLimit-Reset"},
-		AllowCredentials: false,
+		AllowCredentials: true,
 		MaxAge:           1800, // 1 Hour
 	}))
 
-	// Healthcheck
+	// Healthcheck (public, no auth required)
 	router.Get("/api/healthz", handlers.Health)
 
+	// Auth routes (public)
+	authHandler := handlers.NewAuthHandler(dbService)
+	router.Route("/api/auth", func(auth chi.Router) {
+		auth.Post("/register", authHandler.Register)
+		auth.Post("/login", authHandler.Login)
+		auth.Post("/logout", authHandler.Logout)
+		auth.Get("/me", authHandler.Me)
+	})
+
+	// Create auth middleware
+	authMiddleware := auth.AuthMiddleware(dbService)
+
 	router.Route("/api", func(api chi.Router) {
-		// Process routes (playlist and video)
+		// Process routes (playlist and video) - require authentication
 		processHandler := handlers.NewProcessHandler(luaService, dbService)
 		api.Route("/process", func(process chi.Router) {
+			process.Use(authMiddleware)
 			process.Post("/playlist", processHandler.Playlist)
 			process.Post("/video", processHandler.Video)
 		})
 
-		// Videos routes
+		// Videos routes - require authentication
 		videosHandler := handlers.NewVideosHandler(dbService)
-		api.Get("/videos", videosHandler.List)
+		api.Route("/videos", func(videos chi.Router) {
+			videos.Use(authMiddleware)
+			videos.Get("/", videosHandler.List)
+		})
 	})
 
 	return router

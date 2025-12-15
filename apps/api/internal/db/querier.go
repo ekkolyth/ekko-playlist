@@ -9,8 +9,16 @@ import (
 )
 
 type Querier interface {
+	CleanExpiredSessions(ctx context.Context) error
+	CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error)
+	CreateUser(ctx context.Context, arg *CreateUserParams) (*User, error)
 	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
+	DeleteSession(ctx context.Context, token string) error
+	DeleteUserSessions(ctx context.Context, userID int64) error
 	GetConfig(ctx context.Context, key string) (*Config, error)
+	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
+	GetUserByEmail(ctx context.Context, email string) (*User, error)
+	GetUserByID(ctx context.Context, id int64) (*User, error)
 	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
 	ListVideos(ctx context.Context) ([]*Video, error)

@@ -1,470 +1,661 @@
 // Inline all types and functions to avoid ES module issues in Chrome extension popup
 
 // Types
+interface AuthTokenResponse {
+  token: string;
+  userId?: string;
+  sessionId?: string;
+  error?: string;
+}
 interface VideoInfo {
-    channel: string;
-    url: string;
-    title: string;
+  channel: string;
+  url: string;
+  title: string;
 }
 
 interface ScanMessage {
-    type: "SCAN_PLAYLIST";
+  type: 'SCAN_PLAYLIST';
 }
 
 interface ScanResponse {
-    type: "SCAN_RESULT";
-    videos: VideoInfo[];
-    error?: string;
+  type: 'SCAN_RESULT';
+  videos: VideoInfo[];
+  error?: string;
 }
 
 interface GetCurrentVideoInfoMessage {
-    type: "GET_CURRENT_VIDEO_INFO";
+  type: 'GET_CURRENT_VIDEO_INFO';
 }
 
 interface CurrentVideoInfoResponse {
-    type: "CURRENT_VIDEO_INFO";
-    title: string;
-    channel: string;
-    error?: string;
+  type: 'CURRENT_VIDEO_INFO';
+  title: string;
+  channel: string;
+  error?: string;
 }
 
 interface ProcessPlaylistResponse {
-    processed: Array<{
-        channel: string;
-        originalUrl: string;
-        normalizedUrl: string;
-        title: string;
-        isValid: boolean;
-        error?: string;
-    }>;
-    total: number;
-    valid: number;
-    invalid: number;
+  processed: Array<{
+    channel: string;
+    originalUrl: string;
+    normalizedUrl: string;
+    title: string;
+    isValid: boolean;
+    error?: string;
+  }>;
+  total: number;
+  valid: number;
+  invalid: number;
 }
 
 interface ParsedYouTubeUrl {
-    isValid: boolean;
-    videoId: string | null;
-    normalizedUrl: string | null;
-    error?: string;
+  isValid: boolean;
+  videoId: string | null;
+  normalizedUrl: string | null;
+  error?: string;
 }
 
 function parseYouTubeUrl(url: string): ParsedYouTubeUrl {
-    if (!url || typeof url !== "string") {
-        return {
-            isValid: false,
-            videoId: null,
-            normalizedUrl: null,
-            error: "Invalid URL: URL must be a non-empty string",
-        };
-    }
-
-    const trimmedUrl = url.trim();
-    const youtubeDomainPattern =
-        /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
-    if (!youtubeDomainPattern.test(trimmedUrl)) {
-        return {
-            isValid: false,
-            videoId: null,
-            normalizedUrl: null,
-            error: "Invalid URL: Not a YouTube URL",
-        };
-    }
-
-    // Check for playlist URLs
-    const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
-    const playlistMatch = trimmedUrl.match(playlistPattern);
-    if (playlistMatch) {
-        // This is a playlist URL, which is valid for scanning
-        return {
-            isValid: true,
-            videoId: null,
-            normalizedUrl: trimmedUrl,
-        };
-    }
-
-    let videoId: string | null = null;
-    const watchPattern = /[?&]v[i]?=([a-zA-Z0-9_-]{11})/;
-    const watchMatch = trimmedUrl.match(watchPattern);
-    if (watchMatch) {
-        videoId = watchMatch[1];
-    }
-
-    if (!videoId) {
-        const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]{11})/;
-        const shortMatch = trimmedUrl.match(shortPattern);
-        if (shortMatch) {
-            videoId = shortMatch[1];
-        }
-    }
-
-    if (!videoId) {
-        const embedPattern = /\/(?:v|embed)\/([a-zA-Z0-9_-]{11})/;
-        const embedMatch = trimmedUrl.match(embedPattern);
-        if (embedMatch) {
-            videoId = embedMatch[1];
-        }
-    }
-
-    if (!videoId) {
-        const directPattern = /youtube\.com\/([a-zA-Z0-9_-]{11})(?:\?|$|&)/;
-        const directMatch = trimmedUrl.match(directPattern);
-        if (directMatch) {
-            videoId = directMatch[1];
-        }
-    }
-
-    if (!videoId) {
-        return {
-            isValid: false,
-            videoId: null,
-            normalizedUrl: null,
-            error: "Invalid URL: Could not extract video ID from YouTube URL",
-        };
-    }
-
-    if (videoId.length !== 11) {
-        return {
-            isValid: false,
-            videoId: null,
-            normalizedUrl: null,
-            error: "Invalid URL: Video ID must be 11 characters",
-        };
-    }
-
-    const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  if (!url || typeof url !== 'string') {
     return {
-        isValid: true,
-        videoId: videoId,
-        normalizedUrl: normalizedUrl,
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: URL must be a non-empty string',
     };
+  }
+
+  const trimmedUrl = url.trim();
+  const youtubeDomainPattern = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
+  if (!youtubeDomainPattern.test(trimmedUrl)) {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: Not a YouTube URL',
+    };
+  }
+
+  // Check for playlist URLs
+  const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
+  const playlistMatch = trimmedUrl.match(playlistPattern);
+  if (playlistMatch) {
+    // This is a playlist URL, which is valid for scanning
+    return {
+      isValid: true,
+      videoId: null,
+      normalizedUrl: trimmedUrl,
+    };
+  }
+
+  let videoId: string | null = null;
+  const watchPattern = /[?&]v[i]?=([a-zA-Z0-9_-]{11})/;
+  const watchMatch = trimmedUrl.match(watchPattern);
+  if (watchMatch) {
+    videoId = watchMatch[1];
+  }
+
+  if (!videoId) {
+    const shortPattern = /youtu\.be\/([a-zA-Z0-9_-]{11})/;
+    const shortMatch = trimmedUrl.match(shortPattern);
+    if (shortMatch) {
+      videoId = shortMatch[1];
+    }
+  }
+
+  if (!videoId) {
+    const embedPattern = /\/(?:v|embed)\/([a-zA-Z0-9_-]{11})/;
+    const embedMatch = trimmedUrl.match(embedPattern);
+    if (embedMatch) {
+      videoId = embedMatch[1];
+    }
+  }
+
+  if (!videoId) {
+    const directPattern = /youtube\.com\/([a-zA-Z0-9_-]{11})(?:\?|$|&)/;
+    const directMatch = trimmedUrl.match(directPattern);
+    if (directMatch) {
+      videoId = directMatch[1];
+    }
+  }
+
+  if (!videoId) {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: Could not extract video ID from YouTube URL',
+    };
+  }
+
+  if (videoId.length !== 11) {
+    return {
+      isValid: false,
+      videoId: null,
+      normalizedUrl: null,
+      error: 'Invalid URL: Video ID must be 11 characters',
+    };
+  }
+
+  const normalizedUrl = `https://www.youtube.com/watch?v=${videoId}`;
+  return {
+    isValid: true,
+    videoId: videoId,
+    normalizedUrl: normalizedUrl,
+  };
 }
 
 function isValidYouTubeUrl(url: string): boolean {
-    const trimmedUrl = url.trim();
-    const youtubeDomainPattern =
-        /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
+  const trimmedUrl = url.trim();
+  const youtubeDomainPattern = /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.be)/i;
 
-    // First check if it's a YouTube domain
-    if (!youtubeDomainPattern.test(trimmedUrl)) {
-        return false;
-    }
+  // First check if it's a YouTube domain
+  if (!youtubeDomainPattern.test(trimmedUrl)) {
+    return false;
+  }
 
-    // Check for playlist URLs
-    const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
-    if (playlistPattern.test(trimmedUrl)) {
-        return true;
-    }
+  // Check for playlist URLs
+  const playlistPattern = /[?&]list=([a-zA-Z0-9_-]+)/;
+  if (playlistPattern.test(trimmedUrl)) {
+    return true;
+  }
 
-    // Otherwise, check if it's a valid video URL
-    return parseYouTubeUrl(url).isValid;
+  // Otherwise, check if it's a valid video URL
+  return parseYouTubeUrl(url).isValid;
 }
 
-const scanButton = document.getElementById("scanButton") as HTMLButtonElement;
-const saveUrlButton = document.getElementById(
-    "saveUrlButton",
-) as HTMLButtonElement;
-const urlInput = document.getElementById("urlInput") as HTMLInputElement;
-const statusDiv = document.getElementById("status") as HTMLDivElement;
+const scanButton = document.getElementById('scanButton') as HTMLButtonElement;
+const saveUrlButton = document.getElementById('saveUrlButton') as HTMLButtonElement;
+const urlInput = document.getElementById('urlInput') as HTMLInputElement;
+const statusDiv = document.getElementById('status') as HTMLDivElement;
 
-function setStatus(
-    message: string,
-    type: "success" | "error" | "info" = "info",
-): void {
-    statusDiv.textContent = message;
-    statusDiv.className = `status ${type}`;
+function setStatus(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+  statusDiv.textContent = message;
+  statusDiv.className = `status ${type}`;
 }
 
 function clearStatus(): void {
-    statusDiv.textContent = "";
-    statusDiv.className = "status";
+  statusDiv.textContent = '';
+  statusDiv.className = 'status';
 }
 
 // API configuration
-const API_BASE_URL = "http://localhost:1337";
+const API_BASE_URL = 'http://localhost:1337';
+const WEB_APP_URL = 'http://localhost:3000';
 
-async function sendPlaylistToAPI(
-    videos: VideoInfo[],
-): Promise<ProcessPlaylistResponse> {
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/process/playlist`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ videos }),
-        });
+// Authentication storage keys
+const STORAGE_KEY_TOKEN = 'auth_token';
 
-        if (!response.ok) {
-            const errorData = await response
-                .json()
-                .catch(() => ({ message: "Unknown error" }));
-            throw new Error(
-                errorData.message || `HTTP error! status: ${response.status}`,
-            );
-        }
+interface AuthResponse {
+  token: string;
+  user_id: number;
+  email: string;
+}
 
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        if (error instanceof TypeError && error.message.includes("fetch")) {
-            throw new Error(
-                "Failed to connect to API. Make sure the API server is running on " +
-                    API_BASE_URL,
-            );
-        }
-        throw error;
+// Authentication functions
+async function getStoredToken(): Promise<string | null> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get([STORAGE_KEY_TOKEN], (result) => {
+      resolve(result[STORAGE_KEY_TOKEN] || null);
+    });
+  });
+}
+
+async function storeToken(token: string): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.set({ [STORAGE_KEY_TOKEN]: token }, () => {
+      resolve();
+    });
+  });
+}
+
+async function clearStoredToken(): Promise<void> {
+  return new Promise((resolve) => {
+    chrome.storage.local.remove([STORAGE_KEY_TOKEN], () => {
+      resolve();
+    });
+  });
+}
+
+async function checkAuthentication(): Promise<boolean> {
+  const token = await getStoredToken();
+  if (!token) {
+    return false;
+  }
+
+  // Verify token is still valid by calling /api/auth/me
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/auth/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      await clearStoredToken();
+      return false;
     }
+
+    return true;
+  } catch (error) {
+    console.error('Error checking authentication:', error);
+    return false;
+  }
+}
+
+function showLoginPrompt(): void {
+  const loginPrompt = document.getElementById('loginPrompt');
+  const mainContent = document.getElementById('mainContent');
+  const loadingState = document.getElementById('loadingState');
+
+  if (loginPrompt) loginPrompt.style.display = 'block';
+  if (mainContent) mainContent.style.display = 'none';
+  if (loadingState) loadingState.style.display = 'none';
+}
+
+function showMainContent(): void {
+  const loginPrompt = document.getElementById('loginPrompt');
+  const mainContent = document.getElementById('mainContent');
+  const loadingState = document.getElementById('loadingState');
+
+  if (loginPrompt) loginPrompt.style.display = 'none';
+  if (mainContent) mainContent.style.display = 'block';
+  if (loadingState) loadingState.style.display = 'none';
+}
+
+function showLoadingState(): void {
+  const loginPrompt = document.getElementById('loginPrompt');
+  const mainContent = document.getElementById('mainContent');
+  const loadingState = document.getElementById('loadingState');
+
+  if (loginPrompt) loginPrompt.style.display = 'none';
+  if (mainContent) mainContent.style.display = 'none';
+  if (loadingState) loadingState.style.display = 'block';
+}
+
+async function handleLoginClick(): Promise<void> {
+  // Open web app login page
+  chrome.tabs.create({ url: `${WEB_APP_URL}/login` });
+
+  // Show message to user
+  setStatus(
+    'Please log in on the web app, then return here and click "Check Auth Status".',
+    'info'
+  );
+}
+
+async function sendPlaylistToAPI(videos: VideoInfo[]): Promise<ProcessPlaylistResponse> {
+  // Get authentication token
+  const token = await getStoredToken();
+
+  // If no token, user needs to log in
+  if (!token) {
+    throw new Error('Authentication required. Please log in.');
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/process/playlist`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ videos }),
+    });
+
+    if (!response.ok) {
+      // Handle 401 Unauthorized - token might be expired
+      if (response.status === 401) {
+        // Clear stored token and prompt for re-authentication
+        await clearStoredToken();
+        showLoginPrompt();
+        throw new Error('Session expired. Please log in again.');
+      }
+
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new Error(
+        'Failed to connect to API. Make sure the API server is running on ' + API_BASE_URL
+      );
+    }
+    throw error;
+  }
 }
 
 async function scanPlaylist(): Promise<void> {
-    console.log("scanPlaylist called");
-    if (!scanButton || !statusDiv) {
-        console.error("Missing elements:", { scanButton, statusDiv });
-        return;
+  console.log('scanPlaylist called');
+  if (!scanButton || !statusDiv) {
+    console.error('Missing elements:', { scanButton, statusDiv });
+    return;
+  }
+
+  console.log('Starting scan...');
+  scanButton.disabled = true;
+  setStatus('Scanning playlist...', 'info');
+
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab.id) {
+      throw new Error('No active tab found');
     }
 
-    console.log("Starting scan...");
-    scanButton.disabled = true;
-    setStatus("Scanning playlist...", "info");
+    if (!tab.url) {
+      throw new Error('No URL found for current tab');
+    }
 
+    if (!isValidYouTubeUrl(tab.url)) {
+      throw new Error('Current page is not a valid YouTube URL');
+    }
+
+    let response: ScanResponse | undefined;
     try {
-        const [tab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true,
-        });
-
-        if (!tab.id) {
-            throw new Error("No active tab found");
-        }
-
-        if (!tab.url) {
-            throw new Error("No URL found for current tab");
-        }
-
-        if (!isValidYouTubeUrl(tab.url)) {
-            throw new Error("Current page is not a valid YouTube URL");
-        }
-
-        let response: ScanResponse | undefined;
-        try {
-            response = await chrome.tabs.sendMessage(tab.id, {
-                type: "SCAN_PLAYLIST",
-            } as ScanMessage);
-        } catch (error) {
-            // Content script might not be injected, try to inject it
-            if (
-                error instanceof Error &&
-                error.message.includes("Could not establish connection")
-            ) {
-                // Try to inject the content script
-                try {
-                    await chrome.scripting.executeScript({
-                        target: { tabId: tab.id },
-                        files: ["content.js"],
-                    });
-                    // Wait a bit for the script to initialize
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                    // Try again
-                    response = await chrome.tabs.sendMessage(tab.id, {
-                        type: "SCAN_PLAYLIST",
-                    } as ScanMessage);
-                } catch (injectError) {
-                    throw new Error(
-                        "Failed to inject content script. Please refresh the page and try again.",
-                    );
-                }
-            } else {
-                throw error;
-            }
-        }
-
-        if (!response) {
-            throw new Error(
-                "No response from content script. Please refresh the page and try again.",
-            );
-        }
-
-        const scanResponse = response as ScanResponse;
-
-        if (scanResponse.error) {
-            throw new Error(scanResponse.error);
-        }
-
-        if (!scanResponse.videos || scanResponse.videos.length === 0) {
-            setStatus("No videos found on this page", "error");
-            scanButton.disabled = false;
-            return;
-        }
-
-        // Send to API instead of downloading
-        setStatus("Sending to API and normalizing URLs...", "info");
-
-        const result = await sendPlaylistToAPI(scanResponse.videos);
-
-        setStatus(
-            `Processed ${result.total} videos: ${result.valid} valid, ${result.invalid} invalid`,
-            "success",
-        );
-
-        setTimeout(() => {
-            clearStatus();
-        }, 5000);
+      response = await chrome.tabs.sendMessage(tab.id, {
+        type: 'SCAN_PLAYLIST',
+      } as ScanMessage);
     } catch (error) {
-        const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
-        setStatus(`Error: ${errorMessage}`, "error");
-    } finally {
-        scanButton.disabled = false;
+      // Content script might not be injected, try to inject it
+      if (error instanceof Error && error.message.includes('Could not establish connection')) {
+        // Try to inject the content script
+        try {
+          await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            files: ['content.js'],
+          });
+          // Wait a bit for the script to initialize
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          // Try again
+          response = await chrome.tabs.sendMessage(tab.id, {
+            type: 'SCAN_PLAYLIST',
+          } as ScanMessage);
+        } catch (injectError) {
+          throw new Error(
+            'Failed to inject content script. Please refresh the page and try again.'
+          );
+        }
+      } else {
+        throw error;
+      }
     }
+
+    if (!response) {
+      throw new Error('No response from content script. Please refresh the page and try again.');
+    }
+
+    const scanResponse = response as ScanResponse;
+
+    if (scanResponse.error) {
+      throw new Error(scanResponse.error);
+    }
+
+    if (!scanResponse.videos || scanResponse.videos.length === 0) {
+      setStatus('No videos found on this page', 'error');
+      scanButton.disabled = false;
+      return;
+    }
+
+    // Send to API instead of downloading
+    setStatus('Sending to API and normalizing URLs...', 'info');
+
+    const result = await sendPlaylistToAPI(scanResponse.videos);
+
+    setStatus(
+      `Processed ${result.total} videos: ${result.valid} valid, ${result.invalid} invalid`,
+      'success'
+    );
+
+    setTimeout(() => {
+      clearStatus();
+    }, 5000);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    setStatus(`Error: ${errorMessage}`, 'error');
+  } finally {
+    scanButton.disabled = false;
+  }
 }
 
 async function saveCurrentUrl(): Promise<void> {
-    if (!saveUrlButton || !urlInput || !statusDiv) {
-        return;
+  if (!saveUrlButton || !urlInput || !statusDiv) {
+    return;
+  }
+
+  saveUrlButton.disabled = true;
+  setStatus('Validating URL...', 'info');
+
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+
+    if (!tab.id || !tab.url) {
+      throw new Error('No active tab found');
     }
 
-    saveUrlButton.disabled = true;
-    setStatus("Validating URL...", "info");
+    // Validate YouTube URL
+    const parsedUrl = parseYouTubeUrl(tab.url);
+
+    if (!parsedUrl.isValid || !parsedUrl.normalizedUrl) {
+      throw new Error(parsedUrl.error || 'Invalid YouTube URL');
+    }
+
+    // Update input with current URL
+    urlInput.value = parsedUrl.normalizedUrl;
+
+    // Create a video info object for the current page
+    // We'll need to get the title and channel from the page if possible
+    let videoInfo: VideoInfo;
 
     try {
-        const [tab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true,
-        });
+      // Try to get video info from the page
+      const response = (await chrome.tabs.sendMessage(tab.id, {
+        type: 'GET_CURRENT_VIDEO_INFO',
+      } as GetCurrentVideoInfoMessage)) as CurrentVideoInfoResponse | undefined;
 
-        if (!tab.id || !tab.url) {
-            throw new Error("No active tab found");
-        }
-
-        // Validate YouTube URL
-        const parsedUrl = parseYouTubeUrl(tab.url);
-
-        if (!parsedUrl.isValid || !parsedUrl.normalizedUrl) {
-            throw new Error(parsedUrl.error || "Invalid YouTube URL");
-        }
-
-        // Update input with current URL
-        urlInput.value = parsedUrl.normalizedUrl;
-
-        // Create a video info object for the current page
-        // We'll need to get the title and channel from the page if possible
-        let videoInfo: VideoInfo;
-
-        try {
-            // Try to get video info from the page
-            const response = (await chrome.tabs.sendMessage(tab.id, {
-                type: "GET_CURRENT_VIDEO_INFO",
-            } as GetCurrentVideoInfoMessage)) as
-                | CurrentVideoInfoResponse
-                | undefined;
-
-            if (
-                response &&
-                response.type === "CURRENT_VIDEO_INFO" &&
-                response.title &&
-                response.channel
-            ) {
-                videoInfo = {
-                    channel: response.channel,
-                    url: parsedUrl.normalizedUrl,
-                    title: response.title,
-                };
-            } else {
-                // Fallback: use page title or default values
-                const pageTitle =
-                    tab.title?.replace(" - YouTube", "").trim() ||
-                    "Unknown Title";
-                videoInfo = {
-                    channel: "Unknown Channel",
-                    url: parsedUrl.normalizedUrl,
-                    title: pageTitle,
-                };
-            }
-        } catch {
-            // If content script fails, use fallback
-            const pageTitle =
-                tab.title?.replace(" - YouTube", "").trim() || "Unknown Title";
-            videoInfo = {
-                channel: "Unknown Channel",
-                url: parsedUrl.normalizedUrl,
-                title: pageTitle,
-            };
-        }
-
-        // Save to JSON file
-        const jsonData = JSON.stringify([videoInfo], null, 2);
-        const blob = new Blob([jsonData], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const filename = `youtube-video-${timestamp}.json`;
-
-        await chrome.downloads.download({
-            url: url,
-            filename: filename,
-            saveAs: true,
-        });
-
-        setStatus("URL saved successfully!", "success");
-
-        setTimeout(() => {
-            clearStatus();
-        }, 3000);
-    } catch (error) {
-        const errorMessage =
-            error instanceof Error ? error.message : "Unknown error occurred";
-        setStatus(`Error: ${errorMessage}`, "error");
-    } finally {
-        saveUrlButton.disabled = false;
+      if (
+        response &&
+        response.type === 'CURRENT_VIDEO_INFO' &&
+        response.title &&
+        response.channel
+      ) {
+        videoInfo = {
+          channel: response.channel,
+          url: parsedUrl.normalizedUrl,
+          title: response.title,
+        };
+      } else {
+        // Fallback: use page title or default values
+        const pageTitle = tab.title?.replace(' - YouTube', '').trim() || 'Unknown Title';
+        videoInfo = {
+          channel: 'Unknown Channel',
+          url: parsedUrl.normalizedUrl,
+          title: pageTitle,
+        };
+      }
+    } catch {
+      // If content script fails, use fallback
+      const pageTitle = tab.title?.replace(' - YouTube', '').trim() || 'Unknown Title';
+      videoInfo = {
+        channel: 'Unknown Channel',
+        url: parsedUrl.normalizedUrl,
+        title: pageTitle,
+      };
     }
+
+    // Save to JSON file
+    const jsonData = JSON.stringify([videoInfo], null, 2);
+    const blob = new Blob([jsonData], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `youtube-video-${timestamp}.json`;
+
+    await chrome.downloads.download({
+      url: url,
+      filename: filename,
+      saveAs: true,
+    });
+
+    setStatus('URL saved successfully!', 'success');
+
+    setTimeout(() => {
+      clearStatus();
+    }, 3000);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    setStatus(`Error: ${errorMessage}`, 'error');
+  } finally {
+    saveUrlButton.disabled = false;
+  }
 }
 
 // Initialize URL input with current page URL
 async function initializeUrlInput(): Promise<void> {
-    if (!urlInput) {
-        return;
-    }
+  if (!urlInput) {
+    return;
+  }
 
-    try {
-        const [tab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true,
-        });
-        if (tab.url) {
-            urlInput.value = tab.url;
-        }
-    } catch {
-        // Ignore errors during initialization
+  try {
+    const [tab] = await chrome.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tab.url) {
+      urlInput.value = tab.url;
     }
+  } catch {
+    // Ignore errors during initialization
+  }
 }
 
 // Add debug logging
-console.log("Popup script loaded");
-console.log("scanButton:", scanButton);
-console.log("saveUrlButton:", saveUrlButton);
+console.log('Popup script loaded');
+console.log('scanButton:', scanButton);
+console.log('saveUrlButton:', saveUrlButton);
 
 if (scanButton) {
-    scanButton.addEventListener("click", (e) => {
-        console.log("Scan button clicked!", e);
-        scanPlaylist().catch((err) => {
-            console.error("Error in scanPlaylist:", err);
-        });
+  scanButton.addEventListener('click', (e) => {
+    console.log('Scan button clicked!', e);
+    scanPlaylist().catch((err) => {
+      console.error('Error in scanPlaylist:', err);
     });
+  });
 } else {
-    console.error("scanButton not found!");
+  console.error('scanButton not found!');
 }
 
 if (saveUrlButton) {
-    saveUrlButton.addEventListener("click", (e) => {
-        console.log("Save URL button clicked!", e);
-        saveCurrentUrl().catch((err) => {
-            console.error("Error in saveCurrentUrl:", err);
-        });
+  saveUrlButton.addEventListener('click', (e) => {
+    console.log('Save URL button clicked!', e);
+    saveCurrentUrl().catch((err) => {
+      console.error('Error in saveCurrentUrl:', err);
     });
+  });
 } else {
-    console.error("saveUrlButton not found!");
+  console.error('saveUrlButton not found!');
 }
 
-// Initialize URL input when popup opens
-initializeUrlInput();
+// Login button event listener
+const loginButton = document.getElementById('loginButton') as HTMLButtonElement;
+if (loginButton) {
+  loginButton.addEventListener('click', (e) => {
+    console.log('Login button clicked!', e);
+    handleLoginClick().catch((err) => {
+      console.error('Error in handleLoginClick:', err);
+    });
+  });
+} else {
+  console.error('loginButton not found!');
+}
+
+// Check auth button event listener
+const checkAuthButton = document.getElementById('checkAuthButton') as HTMLButtonElement;
+if (checkAuthButton) {
+  checkAuthButton.addEventListener('click', async (e) => {
+    console.log('Check auth button clicked!', e);
+    showLoadingState();
+
+    // Try to get token from web app by opening it and checking localStorage
+    // Since we can't directly access web app's localStorage, we'll try to get it via a content script
+    // For now, we'll check if user is logged in by trying to get token from API
+    // The user needs to log in on web app first, then we can get the token
+
+    // Open web app in a tab and try to extract token
+    const tab = await chrome.tabs.create({ url: `${WEB_APP_URL}/dashboard` });
+
+    // Wait a bit for page to load, then try to execute script to get token
+    setTimeout(async () => {
+      try {
+        // Try to execute script in the web app page to get the token
+        const results = await chrome.scripting.executeScript({
+          target: { tabId: tab.id! },
+          func: () => {
+            return localStorage.getItem('auth_token');
+          },
+        });
+
+        if (results && results[0] && results[0].result) {
+          const token = results[0].result as string;
+          if (token) {
+            await storeToken(token);
+            chrome.tabs.remove(tab.id!);
+            showMainContent();
+            await initializeUrlInput();
+            setStatus('Successfully authenticated!', 'success');
+            setTimeout(() => clearStatus(), 3000);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error getting token:', error);
+      }
+
+      // If we couldn't get the token, check if user is already authenticated
+      const authenticated = await checkAuthentication();
+      if (authenticated) {
+        chrome.tabs.remove(tab.id!);
+        showMainContent();
+        await initializeUrlInput();
+        setStatus('Successfully authenticated!', 'success');
+        setTimeout(() => clearStatus(), 3000);
+      } else {
+        showLoginPrompt();
+        setStatus(
+          'Please log in on the web app page that opened, then click "Check Auth Status" again.',
+          'error'
+        );
+      }
+    }, 2000);
+  });
+} else {
+  console.error('checkAuthButton not found!');
+}
+
+// Initialize authentication and UI when popup opens
+async function initializePopup(): Promise<void> {
+  showLoadingState();
+
+  // Check authentication
+  const authenticated = await checkAuthentication();
+
+  if (authenticated) {
+    showMainContent();
+    // Initialize URL input
+    await initializeUrlInput();
+  } else {
+    showLoginPrompt();
+  }
+}
+
+// Initialize popup on load
+initializePopup();

@@ -1,10 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getApiToken, clearApiToken } from '@/lib/api-client';
+import { authClient } from '@/lib/auth-client';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 
 export const Route = createFileRoute('/_authenticated/extension-tokens')({
@@ -17,15 +17,6 @@ function ExtensionTokensPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Clear token when component unmounts (user leaves page)
-  useEffect(() => {
-    return () => {
-      // Clear token from localStorage when leaving the page
-      clearApiToken();
-      setToken(null);
-    };
-  }, []);
-
   const generateToken = async () => {
     setLoading(true);
     setError('');
@@ -33,35 +24,18 @@ function ExtensionTokensPage() {
     setCopied(false);
 
     try {
-      // Get existing token from localStorage
-      const existingToken = getApiToken();
+      // Generate a fresh one-time token using Better Auth's one-time token plugin
+      // This creates a new token specifically for API access, separate from the session
+      const result = await authClient.oneTimeToken.generate();
       
-      if (existingToken) {
-        // Verify it's still valid
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
-        const response = await fetch(`${apiUrl}/api/auth/me`, {
-          headers: {
-            Authorization: `Bearer ${existingToken}`,
-          },
-        });
-
-        if (response.ok) {
-          // Token is valid, show it
-          setToken(existingToken);
-          setLoading(false);
-          return;
-        } else {
-          // Token is invalid, clear it
-          clearApiToken();
-        }
+      if (result.data?.token) {
+        setToken(result.data.token);
+      } else {
+        throw new Error(result.error?.message || 'Failed to generate token');
       }
-
-      // No valid token - user needs to sign out and sign back in to get a new one
-      setError(
-        'No valid API token found. Please sign out and sign back in to generate a new token. The token is created automatically when you sign in.'
-      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to get token');
+      console.error('Error generating one-time token:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate token');
     } finally {
       setLoading(false);
     }
@@ -85,7 +59,7 @@ function ExtensionTokensPage() {
         <CardHeader>
           <CardTitle>Extension Tokens</CardTitle>
           <CardDescription>
-            Your Go API token for use with the browser extension. This token is created when you sign in and will be cleared when you leave this page.
+            Generate a one-time token for use with the browser extension. This token is separate from your session and expires after 90 days.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-6'>
@@ -119,12 +93,12 @@ function ExtensionTokensPage() {
                 {loading ? (
                   <>
                     <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-                    Checking...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <RefreshCw className='mr-2 h-4 w-4' />
-                    Refresh Token
+                    Generate Token
                   </>
                 )}
               </Button>

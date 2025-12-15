@@ -25,18 +25,33 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 			}
 
 			ctx := r.Context()
+			
+			// First try to validate as session token
 			session, err := dbService.Queries.GetSessionByToken(ctx, token)
-			if err != nil {
-				logging.Info("Auth: Failed to get session by token: %s", err.Error())
-				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			if err == nil && session != nil {
+				logging.Info("Auth: Session validated - User ID: %s, Email: %s", session.UserID, session.UserEmail)
+				// Add user info to request context
+				ctx = context.WithValue(ctx, userIDKey, session.UserID)
+				ctx = context.WithValue(ctx, userEmailKey, session.UserEmail)
+				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}
 
-			logging.Info("Auth: Session validated - User ID: %s, Email: %s", session.UserID, session.UserEmail)
+			// If not a session token, try to validate as one-time token
+			user, err := dbService.Queries.GetUserByVerificationToken(ctx, token)
+			if err == nil && user != nil {
+				logging.Info("Auth: One-time token validated - User ID: %s, Email: %s", user.ID, user.Email)
+				// Add user info to request context
+				ctx = context.WithValue(ctx, userIDKey, user.ID)
+				ctx = context.WithValue(ctx, userEmailKey, user.Email)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
 
-			// Add user info to request context
-			ctx = context.WithValue(ctx, userIDKey, session.UserID)
-			ctx = context.WithValue(ctx, userEmailKey, session.UserEmail)
+			// Token not found in either session or verification table
+			logging.Info("Auth: Failed to validate token - not found in session or verification table")
+			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+			return
 
 			// Continue with the request
 			next.ServeHTTP(w, r.WithContext(ctx))

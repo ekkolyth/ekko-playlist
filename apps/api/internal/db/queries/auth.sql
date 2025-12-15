@@ -35,3 +35,32 @@ where user_id = $1;
 delete from "session"
 where expires_at < now();
 
+-- name: GetVerificationByValue :one
+select id, identifier, value, expires_at, created_at, updated_at
+from "verification"
+where value = $1
+  and expires_at > now()
+limit 1;
+
+-- name: GetVerificationByIdentifier :one
+select id, identifier, value, expires_at, created_at, updated_at
+from "verification"
+where identifier = $1
+  and expires_at > now()
+limit 1;
+
+-- name: ListRecentVerifications :many
+select id, identifier, value, expires_at, created_at, updated_at
+from "verification"
+where expires_at > now()
+order by created_at desc
+limit 10;
+
+-- name: GetUserByVerificationToken :one
+select u.id, u.name, u.email, u.email_verified, u.image, u.created_at, u.updated_at
+from "verification" v
+join "user" u on v.identifier = u.id::text or v.identifier = u.email
+where v.value = $1
+  and v.expires_at > now()
+limit 1;
+

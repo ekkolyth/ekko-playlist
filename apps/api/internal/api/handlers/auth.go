@@ -1,7 +1,12 @@
 package handlers
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
@@ -68,22 +73,96 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	token := extractTokenFromRequest(r)
 	if token == "" {
+		logging.Info("Me: No token provided")
 		httpx.RespondError(w, http.StatusUnauthorized, "no token provided")
 		return
 	}
 
 	ctx := r.Context()
+	logging.Info("Me: Validating token (first 10 chars: %s...)", token[:min(10, len(token))])
+	
+	// First try to validate as session token
 	session, err := h.dbService.Queries.GetSessionByToken(ctx, token)
+	if err == nil && session != nil {
+		logging.Info("Me: Session token validated - User ID: %s, Email: %s", session.UserID, session.UserEmail)
+		httpx.RespondJSON(w, http.StatusOK, AuthResponse{
+			Token:  session.Token,
+			UserID: session.UserID,
+			Email:  session.UserEmail,
+		})
+		return
+	}
+	logging.Info("Me: Not a session token (error: %v)", err)
+
+	// If not a session token, try to validate as one-time token
+	// Better Auth's one-time tokens need to be verified through Better Auth's API
+	// Call the web app's verify-token endpoint to get user info
+	webAppURL := os.Getenv("WEB_APP_URL")
+	if webAppURL == "" {
+		webAppURL = "http://localhost:3000"
+	}
+
+	verifyURL := webAppURL + "/api/verify-token"
+	logging.Info("Me: Verifying one-time token via Better Auth API: %s", verifyURL)
+
+	reqBody := map[string]string{"token": token}
+	jsonBody, err := json.Marshal(reqBody)
 	if err != nil {
+		logging.Info("Me: Failed to marshal request body: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to verify token")
+		return
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", verifyURL, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		logging.Info("Me: Failed to create request: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to verify token")
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		logging.Info("Me: Failed to call verify endpoint: %v", err)
+		httpx.RespondError(w, http.StatusUnauthorized, "failed to verify token")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		logging.Info("Me: Verify endpoint returned error: %d - %s", resp.StatusCode, string(body))
 		httpx.RespondError(w, http.StatusUnauthorized, "invalid or expired token")
 		return
 	}
 
+	var verifyResult struct {
+		UserID string `json:"user_id"`
+		Email  string `json:"email"`
+		Name   string `json:"name"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&verifyResult); err != nil {
+		logging.Info("Me: Failed to decode verify response: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to parse verify response")
+		return
+	}
+
+	logging.Info("Me: One-time token validated - User ID: %s, Email: %s", verifyResult.UserID, verifyResult.Email)
 	httpx.RespondJSON(w, http.StatusOK, AuthResponse{
-		Token:  session.Token,
-		UserID: session.UserID,
-		Email:  session.UserEmail,
+		Token:  token, // Return the one-time token itself
+		UserID: verifyResult.UserID,
+		Email:  verifyResult.Email,
 	})
+	return
+}
+
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 

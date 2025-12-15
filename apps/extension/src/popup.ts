@@ -330,6 +330,9 @@ async function handleSaveConfig(): Promise<void> {
   setStatus('Validating configuration...', 'info');
 
   try {
+    console.log('Testing token with URL:', `${serverUrl}/api/auth/me`);
+    console.log('Token (first 10 chars):', token.substring(0, 10) + '...');
+
     // Test the token by calling /api/auth/me
     const response = await fetch(`${serverUrl}/api/auth/me`, {
       headers: {
@@ -337,25 +340,43 @@ async function handleSaveConfig(): Promise<void> {
       },
     });
 
+    console.log('Response status:', response.status, response.statusText);
+    const headers: Record<string, string> = {};
+    response.headers.forEach((value, key) => {
+      headers[key] = value;
+    });
+    console.log('Response headers:', headers);
+
     if (!response.ok) {
       const errorText = await response.text().catch(() => '');
       console.error('Token validation failed:', response.status, errorText);
       setStatus(
-        `Invalid token or server URL (${response.status}). Please check your configuration.`,
+        `Invalid token or server URL (${response.status}): ${errorText || response.statusText}`,
         'error'
       );
       showLoginPrompt();
       return;
     }
 
+    // Read the response body to ensure it's consumed
+    const data = await response.json().catch((err) => {
+      console.error('Failed to parse JSON response:', err);
+      return null;
+    });
+    console.log('Token validation successful:', data);
+
     // Store configuration
+    console.log('Storing server URL:', serverUrl);
     await storeServerUrl(serverUrl);
+    console.log('Storing token...');
     await storeToken(token);
+    console.log('Configuration stored successfully');
 
     // Clear input fields
     serverUrlInput.value = '';
     apiTokenInput.value = '';
 
+    // Show main content and initialize
     showMainContent();
     await initializeUrlInput();
     setStatus('Configuration saved successfully!', 'success');
@@ -363,6 +384,11 @@ async function handleSaveConfig(): Promise<void> {
   } catch (error) {
     console.error('Error saving configuration:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Error details:', {
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      name: error instanceof Error ? error.name : undefined,
+    });
     setStatus(
       `Error: ${errorMessage}. Check if the server is running and CORS is configured.`,
       'error'

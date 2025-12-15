@@ -13,6 +13,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthSignupRouteImport } from './routes/auth/signup'
 import { Route as AuthSigninRouteImport } from './routes/auth/signin'
+import { Route as ApiVerifyTokenRouteImport } from './routes/api/verify-token'
 import { Route as ApiExtensionTokenRouteImport } from './routes/api/extension-token'
 import { Route as AuthenticatedExtensionTokensRouteImport } from './routes/_authenticated/extension-tokens'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -35,6 +36,11 @@ const AuthSignupRoute = AuthSignupRouteImport.update({
 const AuthSigninRoute = AuthSigninRouteImport.update({
   id: '/auth/signin',
   path: '/auth/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVerifyTokenRoute = ApiVerifyTokenRouteImport.update({
+  id: '/api/verify-token',
+  path: '/api/verify-token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiExtensionTokenRoute = ApiExtensionTokenRouteImport.update({
@@ -64,6 +70,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/extension-tokens': typeof AuthenticatedExtensionTokensRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
+  '/api/verify-token': typeof ApiVerifyTokenRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/extension-tokens': typeof AuthenticatedExtensionTokensRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
+  '/api/verify-token': typeof ApiVerifyTokenRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/extension-tokens': typeof AuthenticatedExtensionTokensRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
+  '/api/verify-token': typeof ApiVerifyTokenRoute
   '/auth/signin': typeof AuthSigninRoute
   '/auth/signup': typeof AuthSignupRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/extension-tokens'
     | '/api/extension-token'
+    | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
     | '/api/auth/$'
@@ -104,6 +114,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/extension-tokens'
     | '/api/extension-token'
+    | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
     | '/api/auth/$'
@@ -114,6 +125,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/extension-tokens'
     | '/api/extension-token'
+    | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
     | '/api/auth/$'
@@ -123,6 +135,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   ApiExtensionTokenRoute: typeof ApiExtensionTokenRoute
+  ApiVerifyTokenRoute: typeof ApiVerifyTokenRoute
   AuthSigninRoute: typeof AuthSigninRoute
   AuthSignupRoute: typeof AuthSignupRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -156,6 +169,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/signin'
       fullPath: '/auth/signin'
       preLoaderRoute: typeof AuthSigninRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/verify-token': {
+      id: '/api/verify-token'
+      path: '/api/verify-token'
+      fullPath: '/api/verify-token'
+      preLoaderRoute: typeof ApiVerifyTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/extension-token': {
@@ -207,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   ApiExtensionTokenRoute: ApiExtensionTokenRoute,
+  ApiVerifyTokenRoute: ApiVerifyTokenRoute,
   AuthSigninRoute: AuthSigninRoute,
   AuthSignupRoute: AuthSignupRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

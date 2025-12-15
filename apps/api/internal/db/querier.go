@@ -18,8 +18,11 @@ type Querier interface {
 	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
+	GetUserByVerificationToken(ctx context.Context, value string) (*User, error)
+	GetVerificationByValue(ctx context.Context, value string) (*Verification, error)
 	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
+	ListRecentVerifications(ctx context.Context) ([]*Verification, error)
 	ListVideos(ctx context.Context, userID string) ([]*Video, error)
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }

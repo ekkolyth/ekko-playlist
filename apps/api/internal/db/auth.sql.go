@@ -160,3 +160,84 @@ func (q *Queries) GetUserByID(ctx context.Context, id string) (*User, error) {
 	)
 	return &i, err
 }
+
+const GetUserByVerificationToken = `-- name: GetUserByVerificationToken :one
+select u.id, u.name, u.email, u.email_verified, u.image, u.created_at, u.updated_at
+from "verification" v
+join "user" u on v.identifier = u.id::text or v.identifier = u.email
+where v.value = $1
+  and v.expires_at > now()
+limit 1
+`
+
+func (q *Queries) GetUserByVerificationToken(ctx context.Context, value string) (*User, error) {
+	row := q.db.QueryRow(ctx, GetUserByVerificationToken, value)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.EmailVerified,
+		&i.Image,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
+const GetVerificationByValue = `-- name: GetVerificationByValue :one
+select id, identifier, value, expires_at, created_at, updated_at
+from "verification"
+where value = $1
+  and expires_at > now()
+limit 1
+`
+
+func (q *Queries) GetVerificationByValue(ctx context.Context, value string) (*Verification, error) {
+	row := q.db.QueryRow(ctx, GetVerificationByValue, value)
+	var i Verification
+	err := row.Scan(
+		&i.ID,
+		&i.Identifier,
+		&i.Value,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
+const ListRecentVerifications = `-- name: ListRecentVerifications :many
+select id, identifier, value, expires_at, created_at, updated_at
+from "verification"
+where expires_at > now()
+order by created_at desc
+limit 10
+`
+
+func (q *Queries) ListRecentVerifications(ctx context.Context) ([]*Verification, error) {
+	rows, err := q.db.Query(ctx, ListRecentVerifications)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Verification{}
+	for rows.Next() {
+		var i Verification
+		if err := rows.Scan(
+			&i.ID,
+			&i.Identifier,
+			&i.Value,
+			&i.ExpiresAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

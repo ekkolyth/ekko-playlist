@@ -6,24 +6,32 @@ package db
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	CleanExpiredSessions(ctx context.Context) error
+	CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error)
 	CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error)
 	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
+	DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteUserSessions(ctx context.Context, userID string) error
+	GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error)
 	GetConfig(ctx context.Context, key string) (*Config, error)
 	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
 	GetUserByVerificationToken(ctx context.Context, value string) (*User, error)
+	GetVerificationByIdentifier(ctx context.Context, identifier string) (*Verification, error)
 	GetVerificationByValue(ctx context.Context, value string) (*Verification, error)
 	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
+	ListAPITokensByUser(ctx context.Context, userID string) ([]*ListAPITokensByUserRow, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
 	ListRecentVerifications(ctx context.Context) ([]*Verification, error)
 	ListVideos(ctx context.Context, userID string) ([]*Video, error)
+	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 

@@ -21,6 +21,42 @@ func (q *Queries) CleanExpiredSessions(ctx context.Context) error {
 	return err
 }
 
+const CreateAPIToken = `-- name: CreateAPIToken :one
+insert into "api_tokens" (user_id, name, token_hash, token_prefix, expires_at)
+values ($1, $2, $3, $4, $5)
+returning id, user_id, name, token_hash, token_prefix, created_at, expires_at, last_used_at
+`
+
+type CreateAPITokenParams struct {
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	TokenHash   string             `json:"token_hash"`
+	TokenPrefix string             `json:"token_prefix"`
+	ExpiresAt   pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error) {
+	row := q.db.QueryRow(ctx, CreateAPIToken,
+		arg.UserID,
+		arg.Name,
+		arg.TokenHash,
+		arg.TokenPrefix,
+		arg.ExpiresAt,
+	)
+	var i ApiToken
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.TokenHash,
+		&i.TokenPrefix,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.LastUsedAt,
+	)
+	return &i, err
+}
+
 const CreateSession = `-- name: CreateSession :one
 insert into "session" (expires_at, token, user_id, ip_address, user_agent)
 values ($1, $2, $3, $4, $5)
@@ -57,6 +93,21 @@ func (q *Queries) CreateSession(ctx context.Context, arg *CreateSessionParams) (
 	return &i, err
 }
 
+const DeleteAPIToken = `-- name: DeleteAPIToken :exec
+delete from "api_tokens"
+where id = $1 and user_id = $2
+`
+
+type DeleteAPITokenParams struct {
+	ID     pgtype.UUID `json:"id"`
+	UserID string      `json:"user_id"`
+}
+
+func (q *Queries) DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams) error {
+	_, err := q.db.Exec(ctx, DeleteAPIToken, arg.ID, arg.UserID)
+	return err
+}
+
 const DeleteSession = `-- name: DeleteSession :exec
 delete from "session"
 where token = $1
@@ -75,6 +126,44 @@ where user_id = $1
 func (q *Queries) DeleteUserSessions(ctx context.Context, userID string) error {
 	_, err := q.db.Exec(ctx, DeleteUserSessions, userID)
 	return err
+}
+
+const GetAPITokenByHash = `-- name: GetAPITokenByHash :one
+select t.id, t.user_id, t.name, t.token_hash, t.token_prefix, t.created_at, t.expires_at, t.last_used_at, u.email as user_email
+from "api_tokens" t
+join "user" u on t.user_id = u.id
+where t.token_hash = $1
+  and (t.expires_at is null or t.expires_at > now())
+limit 1
+`
+
+type GetAPITokenByHashRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	TokenHash   string             `json:"token_hash"`
+	TokenPrefix string             `json:"token_prefix"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt   pgtype.Timestamptz `json:"expires_at"`
+	LastUsedAt  pgtype.Timestamptz `json:"last_used_at"`
+	UserEmail   string             `json:"user_email"`
+}
+
+func (q *Queries) GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error) {
+	row := q.db.QueryRow(ctx, GetAPITokenByHash, tokenHash)
+	var i GetAPITokenByHashRow
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.TokenHash,
+		&i.TokenPrefix,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.LastUsedAt,
+		&i.UserEmail,
+	)
+	return &i, err
 }
 
 const GetSessionByToken = `-- name: GetSessionByToken :one
@@ -185,6 +274,28 @@ func (q *Queries) GetUserByVerificationToken(ctx context.Context, value string) 
 	return &i, err
 }
 
+const GetVerificationByIdentifier = `-- name: GetVerificationByIdentifier :one
+select id, identifier, value, expires_at, created_at, updated_at
+from "verification"
+where identifier = $1
+  and expires_at > now()
+limit 1
+`
+
+func (q *Queries) GetVerificationByIdentifier(ctx context.Context, identifier string) (*Verification, error) {
+	row := q.db.QueryRow(ctx, GetVerificationByIdentifier, identifier)
+	var i Verification
+	err := row.Scan(
+		&i.ID,
+		&i.Identifier,
+		&i.Value,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
 const GetVerificationByValue = `-- name: GetVerificationByValue :one
 select id, identifier, value, expires_at, created_at, updated_at
 from "verification"
@@ -205,6 +316,52 @@ func (q *Queries) GetVerificationByValue(ctx context.Context, value string) (*Ve
 		&i.UpdatedAt,
 	)
 	return &i, err
+}
+
+const ListAPITokensByUser = `-- name: ListAPITokensByUser :many
+select id, user_id, name, token_prefix, created_at, expires_at, last_used_at
+from "api_tokens"
+where user_id = $1
+  and (expires_at is null or expires_at > now())
+order by created_at desc
+`
+
+type ListAPITokensByUserRow struct {
+	ID          pgtype.UUID        `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	TokenPrefix string             `json:"token_prefix"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt   pgtype.Timestamptz `json:"expires_at"`
+	LastUsedAt  pgtype.Timestamptz `json:"last_used_at"`
+}
+
+func (q *Queries) ListAPITokensByUser(ctx context.Context, userID string) ([]*ListAPITokensByUserRow, error) {
+	rows, err := q.db.Query(ctx, ListAPITokensByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*ListAPITokensByUserRow{}
+	for rows.Next() {
+		var i ListAPITokensByUserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.TokenPrefix,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.LastUsedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const ListRecentVerifications = `-- name: ListRecentVerifications :many
@@ -240,4 +397,15 @@ func (q *Queries) ListRecentVerifications(ctx context.Context) ([]*Verification,
 		return nil, err
 	}
 	return items, nil
+}
+
+const UpdateAPITokenLastUsed = `-- name: UpdateAPITokenLastUsed :exec
+update "api_tokens"
+set last_used_at = now()
+where id = $1
+`
+
+func (q *Queries) UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, UpdateAPITokenLastUsed, id)
+	return err
 }

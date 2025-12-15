@@ -64,18 +64,65 @@ export async function apiRequest<T>(
     credentials: 'include',
   });
 
+  // Read response body once (can only be read once)
+  const contentType = response.headers.get('content-type') || '';
+  const text = await response.text().catch(() => '');
+  
   if (!response.ok) {
     if (response.status === 401) {
       // Clear invalid token
       clearBearerToken();
-      throw new Error('Session expired. Please log in again.');
+      throw new Error('Your session has expired. Please refresh the page and log in again.');
     }
-    const errorText = await response.text().catch(() => 'Unknown error');
-    throw new Error(
-      `API request failed: ${response.status} ${response.statusText}. ${errorText}`
-    );
+    
+    // Try to parse error message from response
+    let errorMessage = `Request failed (${response.status} ${response.statusText})`;
+    
+    if (text) {
+      try {
+        if (contentType.includes('application/json')) {
+          const errorData = JSON.parse(text);
+          if (errorData && typeof errorData === 'object') {
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          }
+        } else {
+          // Use the text as error message if it's not JSON
+          errorMessage = text.length > 200 ? text.substring(0, 200) + '...' : text;
+        }
+      } catch (parseErr) {
+        // If we can't parse, use the raw text or status
+        errorMessage = text || errorMessage;
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
 
-  return response.json();
-}
+  // For DELETE requests or 204 No Content, return empty object
+  if (options.method === 'DELETE' || response.status === 204) {
+    return {} as T;
+  }
 
+  // Handle empty responses
+  if (!text || text.trim() === '') {
+    if (contentType.includes('application/json')) {
+      throw new Error('Server returned an empty response. Please try again.');
+    }
+    return {} as T;
+  }
+
+  // Try to parse JSON
+  try {
+    return JSON.parse(text) as T;
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      // Provide a more helpful error message
+      const preview = text.length > 100 ? text.substring(0, 100) + '...' : text;
+      throw new Error(
+        `Server returned invalid data. Expected JSON but received: "${preview}". ` +
+        `This usually means the server encountered an error. Please try again.`
+      );
+    }
+    throw err;
+  }
+}

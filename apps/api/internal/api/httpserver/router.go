@@ -78,6 +78,15 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	// Create auth middleware
 	authMiddleware := auth.AuthMiddleware(dbService)
 
+	// Token management routes - require authentication
+	tokensHandler := handlers.NewTokensHandler(dbService)
+	router.Route("/api/tokens", func(tokens chi.Router) {
+		tokens.Use(authMiddleware)
+		tokens.Post("/", tokensHandler.CreateToken)
+		tokens.Get("/", tokensHandler.ListTokens)
+		tokens.Delete("/{id}", tokensHandler.DeleteToken)
+	})
+
 	router.Route("/api", func(api chi.Router) {
 		// Process routes (playlist and video) - require authentication
 		processHandler := handlers.NewProcessHandler(luaService, dbService)

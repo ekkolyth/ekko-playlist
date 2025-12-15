@@ -22,10 +22,29 @@ type Account struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+type ApiToken struct {
+	ID          pgtype.UUID        `json:"id"`
+	UserID      string             `json:"user_id"`
+	Name        string             `json:"name"`
+	TokenHash   string             `json:"token_hash"`
+	TokenPrefix string             `json:"token_prefix"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ExpiresAt   pgtype.Timestamptz `json:"expires_at"`
+	LastUsedAt  pgtype.Timestamptz `json:"last_used_at"`
+}
+
 type Config struct {
 	Key       string             `json:"key"`
 	Value     string             `json:"value"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type Jwk struct {
+	ID         pgtype.UUID      `json:"id"`
+	PublicKey  string           `json:"public_key"`
+	PrivateKey string           `json:"private_key"`
+	CreatedAt  pgtype.Timestamp `json:"created_at"`
+	ExpiresAt  pgtype.Timestamp `json:"expires_at"`
 }
 
 type Session struct {

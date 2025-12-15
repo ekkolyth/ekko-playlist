@@ -2,6 +2,8 @@ package auth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
@@ -37,7 +39,22 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 				return
 			}
 
-			// If not a session token, try to validate as JWT token
+			// If not a session token, try to validate as stored API token
+			hash := sha256.Sum256([]byte(token))
+			tokenHash := hex.EncodeToString(hash[:])
+			apiToken, err := dbService.Queries.GetAPITokenByHash(ctx, tokenHash)
+			if err == nil && apiToken != nil {
+				// Update last used timestamp
+				dbService.Queries.UpdateAPITokenLastUsed(ctx, apiToken.ID)
+				logging.Info("Auth: API token validated - User ID: %s, Email: %s", apiToken.UserID, apiToken.UserEmail)
+				// Add user info to request context
+				ctx = context.WithValue(ctx, userIDKey, apiToken.UserID)
+				ctx = context.WithValue(ctx, userEmailKey, apiToken.UserEmail)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
+			// If not a stored API token, try to validate as JWT token
 			if IsJWT(token) {
 				claims, err := VerifyJWT(ctx, token)
 				if err == nil && claims != nil {

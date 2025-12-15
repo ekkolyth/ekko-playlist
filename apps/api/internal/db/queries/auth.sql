@@ -64,3 +64,32 @@ where v.value = $1
   and v.expires_at > now()
 limit 1;
 
+-- name: CreateAPIToken :one
+insert into "api_tokens" (user_id, name, token_hash, token_prefix, expires_at)
+values ($1, $2, $3, $4, $5)
+returning id, user_id, name, token_hash, token_prefix, created_at, expires_at, last_used_at;
+
+-- name: GetAPITokenByHash :one
+select t.id, t.user_id, t.name, t.token_hash, t.token_prefix, t.created_at, t.expires_at, t.last_used_at, u.email as user_email
+from "api_tokens" t
+join "user" u on t.user_id = u.id
+where t.token_hash = $1
+  and (t.expires_at is null or t.expires_at > now())
+limit 1;
+
+-- name: ListAPITokensByUser :many
+select id, user_id, name, token_prefix, created_at, expires_at, last_used_at
+from "api_tokens"
+where user_id = $1
+  and (expires_at is null or expires_at > now())
+order by created_at desc;
+
+-- name: DeleteAPIToken :exec
+delete from "api_tokens"
+where id = $1 and user_id = $2;
+
+-- name: UpdateAPITokenLastUsed :exec
+update "api_tokens"
+set last_used_at = now()
+where id = $1;
+

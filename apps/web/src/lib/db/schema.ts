@@ -50,6 +50,14 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+export const jwks = pgTable('jwks', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  publicKey: text('public_key').notNull(),
+  privateKey: text('private_key').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  expiresAt: timestamp('expires_at'),
+});
+
 // Relations
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),

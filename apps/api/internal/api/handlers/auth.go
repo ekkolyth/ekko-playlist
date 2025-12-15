@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
@@ -94,9 +95,35 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	}
 	logging.Info("Me: Not a session token (error: %v)", err)
 
-	// If not a session token, try to validate as one-time token
-	// Better Auth's one-time tokens need to be verified through Better Auth's API
-	// Call the web app's verify-token endpoint to get user info
+	// If not a session token, try to validate as JWT token
+	if auth.IsJWT(token) {
+		claims, err := auth.VerifyJWT(ctx, token)
+		if err == nil && claims != nil {
+			// Extract user info from JWT claims
+			userID, ok := claims["sub"].(string)
+			if !ok {
+				if id, ok := claims["id"].(string); ok {
+					userID = id
+				} else {
+					logging.Info("Me: JWT validated but no user ID in claims")
+					httpx.RespondError(w, http.StatusUnauthorized, "invalid token: missing user ID")
+					return
+				}
+			}
+
+			email, _ := claims["email"].(string)
+			logging.Info("Me: JWT validated - User ID: %s, Email: %s", userID, email)
+			httpx.RespondJSON(w, http.StatusOK, AuthResponse{
+				Token:  token, // Return the JWT token itself
+				UserID: userID,
+				Email:  email,
+			})
+			return
+		}
+		logging.Info("Me: JWT verification failed: %v", err)
+	}
+
+	// If not a JWT, try to validate as one-time token (fallback)
 	webAppURL := os.Getenv("WEB_APP_URL")
 	if webAppURL == "" {
 		webAppURL = "http://localhost:3000"
@@ -125,7 +152,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 	resp, err := client.Do(req)
 	if err != nil {
 		logging.Info("Me: Failed to call verify endpoint: %v", err)
-		httpx.RespondError(w, http.StatusUnauthorized, "failed to verify token")
+		httpx.RespondError(w, http.StatusUnauthorized, "invalid or expired token")
 		return
 	}
 	defer resp.Body.Close()

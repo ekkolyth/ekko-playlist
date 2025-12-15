@@ -24,9 +24,9 @@ function ExtensionTokensPage() {
     setCopied(false);
 
     try {
-      // Generate a fresh one-time token using Better Auth's one-time token plugin
-      // This creates a new token specifically for API access, separate from the session
-      const result = await authClient.oneTimeToken.generate();
+      // Generate a JWT token using Better Auth's JWT plugin
+      // This creates a reusable token for API access that expires after 90 days
+      const result = await authClient.token();
       
       if (result.data?.token) {
         setToken(result.data.token);
@@ -34,7 +34,7 @@ function ExtensionTokensPage() {
         throw new Error(result.error?.message || 'Failed to generate token');
       }
     } catch (err) {
-      console.error('Error generating one-time token:', err);
+      console.error('Error generating JWT token:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate token');
     } finally {
       setLoading(false);
@@ -59,7 +59,7 @@ function ExtensionTokensPage() {
         <CardHeader>
           <CardTitle>Extension Tokens</CardTitle>
           <CardDescription>
-            Generate a one-time token for use with the browser extension. This token is separate from your session and expires after 90 days.
+            Generate a JWT token for use with the browser extension. This token is reusable until it expires after 90 days.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-6'>

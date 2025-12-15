@@ -37,7 +37,36 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 				return
 			}
 
-			// If not a session token, try to validate as one-time token
+			// If not a session token, try to validate as JWT token
+			if IsJWT(token) {
+				claims, err := VerifyJWT(ctx, token)
+				if err == nil && claims != nil {
+					// Extract user info from JWT claims
+					// Better Auth JWT includes user info in the payload
+					userID, ok := claims["sub"].(string)
+					if !ok {
+						// Try "id" field as fallback
+						if id, ok := claims["id"].(string); ok {
+							userID = id
+						} else {
+							logging.Info("Auth: JWT validated but no user ID in claims")
+							http.Error(w, "Invalid token: missing user ID", http.StatusUnauthorized)
+							return
+						}
+					}
+
+					email, _ := claims["email"].(string)
+					logging.Info("Auth: JWT validated - User ID: %s, Email: %s", userID, email)
+					// Add user info to request context
+					ctx = context.WithValue(ctx, userIDKey, userID)
+					ctx = context.WithValue(ctx, userEmailKey, email)
+					next.ServeHTTP(w, r.WithContext(ctx))
+					return
+				}
+				logging.Info("Auth: JWT verification failed: %v", err)
+			}
+
+			// If not a JWT, try to validate as one-time token
 			user, err := dbService.Queries.GetUserByVerificationToken(ctx, token)
 			if err == nil && user != nil {
 				logging.Info("Auth: One-time token validated - User ID: %s, Email: %s", user.ID, user.Email)
@@ -48,13 +77,10 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Token not found in either session or verification table
-			logging.Info("Auth: Failed to validate token - not found in session or verification table")
+			// Token not found in session, JWT, or verification table
+			logging.Info("Auth: Failed to validate token - not found in session, JWT, or verification table")
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 			return
-
-			// Continue with the request
-			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }

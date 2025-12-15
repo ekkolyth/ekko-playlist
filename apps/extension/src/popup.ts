@@ -668,6 +668,34 @@ if (saveConfigButton) {
   console.error('saveConfigButton not found!');
 }
 
+// Logout button event listener
+const logoutButton = document.getElementById('logoutButton') as HTMLButtonElement;
+if (logoutButton) {
+  logoutButton.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Logout button clicked!', e);
+
+    // Clear stored token and server URL
+    await clearStoredToken();
+    await storeServerUrl(''); // Clear server URL too
+
+    // Show login prompt
+    showLoginPrompt();
+
+    // Clear input fields
+    const serverUrlInput = document.getElementById('serverUrlInput') as HTMLInputElement;
+    const apiTokenInput = document.getElementById('apiTokenInput') as HTMLInputElement;
+    if (serverUrlInput) serverUrlInput.value = DEFAULT_API_BASE_URL;
+    if (apiTokenInput) apiTokenInput.value = '';
+
+    setStatus('Logged out successfully', 'success');
+    setTimeout(() => clearStatus(), 2000);
+  });
+} else {
+  console.error('logoutButton not found!');
+}
+
 // Initialize authentication and UI when popup opens
 async function initializePopup(): Promise<void> {
   showLoadingState();

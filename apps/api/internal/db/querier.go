@@ -21,7 +21,7 @@ type Querier interface {
 	GetUserByID(ctx context.Context, id int64) (*User, error)
 	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
-	ListVideos(ctx context.Context) ([]*Video, error)
+	ListVideos(ctx context.Context, userID int64) ([]*Video, error)
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 

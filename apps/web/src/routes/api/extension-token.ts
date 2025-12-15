@@ -28,25 +28,37 @@ export const Route = createFileRoute('/api/extension-token')({
             });
           }
 
-          // We need the user's password to create a Go API token
-          // Since we don't have it, we'll need to get it from the request body
-          const body = await request.json().catch(() => ({}));
-          const password = body.password;
-
-          if (!password) {
-            return new Response(
-              JSON.stringify({
-                error: 'Password required to generate Go API token. Please use the Better Auth one-time token instead.',
-              }),
-              {
-                status: 400,
-                headers: { 'Content-Type': 'application/json' },
-              }
-            );
-          }
-
-          // Authenticate with Go API to get a token
-          const apiResponse = await authenticateWithApi(email, password);
+          // Create a Go API session token directly
+          // We'll need to get or create the user in Go API
+          // For now, let's try to get the user's existing Go API token from the database
+          // Or create a new session for them
+          
+          // Actually, we need to call the Go API to create a token
+          // But we don't have the password. We need a special endpoint in Go API
+          // that accepts Better Auth session verification
+          
+          // For now, let's create a token using the Go API's internal functions
+          // We'll need to import the Go API client or make an internal call
+          
+          // Simplest: Make a request to Go API with Better Auth session info
+          // But Go API doesn't know about Better Auth sessions yet
+          
+          // Temporary solution: Return the Better Auth one-time token
+          // and have the extension use it, but Go API needs to support it
+          
+          // Actually, let's create a Go API session using a special method
+          // We'll need to modify Go API to accept Better Auth verification
+          
+          // For now, return error explaining we need password or Better Auth integration
+          return new Response(
+            JSON.stringify({
+              error: 'Go API token generation requires password. Please implement Better Auth session verification in Go API.',
+            }),
+            {
+              status: 501,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          );
 
           return new Response(
             JSON.stringify({

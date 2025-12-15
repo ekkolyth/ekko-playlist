@@ -10,10 +10,10 @@ import (
 )
 
 const CreateVideo = `-- name: CreateVideo :one
-INSERT INTO videos (video_id, normalized_url, original_url, title, channel)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO videos (video_id, normalized_url, original_url, title, channel, user_id)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (normalized_url) DO NOTHING
-RETURNING id, video_id, normalized_url, original_url, title, channel, created_at
+RETURNING id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 `
 
 type CreateVideoParams struct {
@@ -22,6 +22,7 @@ type CreateVideoParams struct {
 	OriginalUrl   string `json:"original_url"`
 	Title         string `json:"title"`
 	Channel       string `json:"channel"`
+	UserID        int64  `json:"user_id"`
 }
 
 func (q *Queries) CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error) {
@@ -31,6 +32,7 @@ func (q *Queries) CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Vid
 		arg.OriginalUrl,
 		arg.Title,
 		arg.Channel,
+		arg.UserID,
 	)
 	var i Video
 	err := row.Scan(
@@ -40,13 +42,14 @@ func (q *Queries) CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Vid
 		&i.OriginalUrl,
 		&i.Title,
 		&i.Channel,
+		&i.UserID,
 		&i.CreatedAt,
 	)
 	return &i, err
 }
 
 const GetVideoByURL = `-- name: GetVideoByURL :one
-SELECT id, video_id, normalized_url, original_url, title, channel, created_at
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 FROM videos
 WHERE normalized_url = $1
 `
@@ -61,19 +64,21 @@ func (q *Queries) GetVideoByURL(ctx context.Context, normalizedUrl string) (*Vid
 		&i.OriginalUrl,
 		&i.Title,
 		&i.Channel,
+		&i.UserID,
 		&i.CreatedAt,
 	)
 	return &i, err
 }
 
 const ListVideos = `-- name: ListVideos :many
-SELECT id, video_id, normalized_url, original_url, title, channel, created_at
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 FROM videos
+WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListVideos(ctx context.Context) ([]*Video, error) {
-	rows, err := q.db.Query(ctx, ListVideos)
+func (q *Queries) ListVideos(ctx context.Context, userID int64) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideos, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,6 +93,7 @@ func (q *Queries) ListVideos(ctx context.Context) ([]*Video, error) {
 			&i.OriginalUrl,
 			&i.Title,
 			&i.Channel,
+			&i.UserID,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err

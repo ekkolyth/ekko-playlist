@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
+	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
 )
 
 type contextKey string
@@ -18,6 +19,7 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := extractTokenFromRequest(r)
 			if token == "" {
+				logging.Info("Auth: No token found in request")
 				http.Error(w, "Authorization required", http.StatusUnauthorized)
 				return
 			}
@@ -25,9 +27,12 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 			ctx := r.Context()
 			session, err := dbService.Queries.GetSessionByToken(ctx, token)
 			if err != nil {
+				logging.Info("Auth: Failed to get session by token: %s", err.Error())
 				http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 				return
 			}
+
+			logging.Info("Auth: Session validated - User ID: %d, Email: %s", session.UserID, session.UserEmail)
 
 			// Add user info to request context
 			ctx = context.WithValue(ctx, userIDKey, session.UserID)

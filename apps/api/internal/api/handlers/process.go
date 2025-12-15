@@ -3,12 +3,14 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
+	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
@@ -71,6 +73,13 @@ func extractVideoID(normalizedURL string) string {
 func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 	logging.Info("Received POST /api/process/playlist request")
 	
+	// Check if user ID is available in request context (before creating new context)
+	if userID, ok := auth.GetUserID(r.Context()); ok {
+		logging.Info("Auth: User ID found in request context: %d", userID)
+	} else {
+		logging.Info("Auth: WARNING - No user ID found in request context!")
+	}
+	
 	var req ProcessPlaylistRequest
 
 	// Decode JSON request body (allow up to 10MB for large playlists)
@@ -89,7 +98,8 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create context with timeout (allow more time for processing multiple URLs)
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Use request context to preserve auth middleware's user ID
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 	defer cancel()
 
 	processed := make([]ProcessedVideoInfo, 0, len(req.Videos))
@@ -183,13 +193,23 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 						continue
 					}
 
-					logging.Info("DB: Creating video %d/%d: %s (ID: %s, URL: %s)", i+1, len(validVideos), video.Title, videoID, video.NormalizedURL)
+					// Get user ID from context (set by auth middleware)
+					userID, ok := auth.GetUserID(ctx)
+					if !ok {
+						logging.Info("DB: ERROR - No user ID in context, cannot save video: %s", video.Title)
+						logging.Info("DB: Context details - checking if auth middleware ran")
+						// This is a critical error - abort transaction
+						return fmt.Errorf("user ID not found in context - auth middleware may not have run")
+					}
+
+					logging.Info("DB: Attempting to create video %d/%d: %s (ID: %s, URL: %s, User: %d)", i+1, len(validVideos), video.Title, videoID, video.NormalizedURL, userID)
 					result, err := q.CreateVideo(ctx, &db.CreateVideoParams{
 						VideoID:       videoID,
 						NormalizedUrl: video.NormalizedURL,
 						OriginalUrl:   video.OriginalURL,
 						Title:         video.Title,
 						Channel:       video.Channel,
+						UserID:        userID,
 					})
 
 					if err != nil {
@@ -198,12 +218,20 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 							logging.Info("DB: Video already exists (duplicate, skipped): '%s' (normalized URL: %s)", video.Title, video.NormalizedURL)
 							continue
 						}
-						// Log actual errors but continue processing other videos
-						logging.Info("DB: Error saving video '%s': %s (error type: %T)", video.Title, err.Error(), err)
-					} else {
-						logging.Info("DB: Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", video.Title, result.ID, result.NormalizedUrl)
-						savedCount++
+						// Log actual errors - these are real database errors
+						logging.Info("DB: ERROR saving video '%s': %s (error type: %T)", video.Title, err.Error(), err)
+						// Continue processing other videos, but log the error
+						// Don't abort transaction on individual video errors
+						continue
 					}
+					
+					if result == nil {
+						logging.Info("DB: WARNING - CreateVideo returned nil result for '%s' (this should not happen)", video.Title)
+						continue
+					}
+					
+					logging.Info("DB: ✅ Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", video.Title, result.ID, result.NormalizedUrl)
+					savedCount++
 				}
 				logging.Info("DB: Processed %d videos, successfully saved %d new videos, skipped %d duplicates", len(validVideos), savedCount, len(validVideos)-savedCount)
 				return nil
@@ -276,7 +304,8 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// Use request context to preserve auth middleware's user ID
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
 	// Normalize URL using Lua script
@@ -351,24 +380,31 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 	if isValid && normalizedURL != "" {
 		videoID := extractVideoID(normalizedURL)
 		if videoID != "" {
-			logging.Info("DB: Creating video: %s (ID: %s, URL: %s)", req.Video.Title, videoID, normalizedURL)
-			result, err := h.dbService.Queries.CreateVideo(ctx, &db.CreateVideoParams{
-				VideoID:       videoID,
-				NormalizedUrl: normalizedURL,
-				OriginalUrl:   req.Video.URL,
-				Title:         req.Video.Title,
-				Channel:       req.Video.Channel,
-			})
-
-			if err != nil {
-				// ON CONFLICT DO NOTHING returns no rows, which is expected for duplicates
-				if errors.Is(err, pgx.ErrNoRows) {
-					logging.Info("DB: Video already exists in database (duplicate, skipped): '%s' (normalized URL: %s)", req.Video.Title, normalizedURL)
-				} else {
-					logging.Info("DB: Error saving video to database: %s - %s (error type: %T)", req.Video.Title, err.Error(), err)
-				}
+			// Get user ID from context (set by auth middleware)
+			userID, ok := auth.GetUserID(ctx)
+			if !ok {
+				logging.Info("DB: Warning: No user ID in context, skipping video: %s", req.Video.Title)
 			} else {
-				logging.Info("DB: Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", req.Video.Title, result.ID, result.NormalizedUrl)
+				logging.Info("DB: Creating video: %s (ID: %s, URL: %s, User: %d)", req.Video.Title, videoID, normalizedURL, userID)
+				result, err := h.dbService.Queries.CreateVideo(ctx, &db.CreateVideoParams{
+					VideoID:       videoID,
+					NormalizedUrl: normalizedURL,
+					OriginalUrl:   req.Video.URL,
+					Title:         req.Video.Title,
+					Channel:       req.Video.Channel,
+					UserID:        userID,
+				})
+
+				if err != nil {
+					// ON CONFLICT DO NOTHING returns no rows, which is expected for duplicates
+					if errors.Is(err, pgx.ErrNoRows) {
+						logging.Info("DB: Video already exists in database (duplicate, skipped): '%s' (normalized URL: %s)", req.Video.Title, normalizedURL)
+					} else {
+						logging.Info("DB: Error saving video to database: %s - %s (error type: %T)", req.Video.Title, err.Error(), err)
+					}
+				} else {
+					logging.Info("DB: Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", req.Video.Title, result.ID, result.NormalizedUrl)
+				}
 			}
 		} else {
 			logging.Info("Warning: Could not extract video ID from URL: %s", normalizedURL)

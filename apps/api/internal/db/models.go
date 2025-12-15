@@ -8,6 +8,20 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type Account struct {
+	ID           string             `json:"id"`
+	AccountID    string             `json:"account_id"`
+	ProviderID   string             `json:"provider_id"`
+	UserID       string             `json:"user_id"`
+	AccessToken  *string            `json:"access_token"`
+	RefreshToken *string            `json:"refresh_token"`
+	IDToken      *string            `json:"id_token"`
+	ExpiresAt    pgtype.Timestamptz `json:"expires_at"`
+	Password     *string            `json:"password"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Config struct {
 	Key       string             `json:"key"`
 	Value     string             `json:"value"`
@@ -30,6 +44,15 @@ type User struct {
 	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Verification struct {
+	ID         string             `json:"id"`
+	Identifier string             `json:"identifier"`
+	Value      string             `json:"value"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Video struct {
 	ID            int64              `json:"id"`
 	VideoID       string             `json:"video_id"`
@@ -37,5 +60,6 @@ type Video struct {
 	OriginalUrl   string             `json:"original_url"`
 	Title         string             `json:"title"`
 	Channel       string             `json:"channel"`
+	UserID        int64              `json:"user_id"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }

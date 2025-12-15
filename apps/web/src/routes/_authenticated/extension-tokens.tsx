@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { getApiToken } from '@/lib/api-client';
+import { getApiToken, clearApiToken } from '@/lib/api-client';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 
 export const Route = createFileRoute('/_authenticated/extension-tokens')({
@@ -17,22 +17,25 @@ function ExtensionTokensPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Load existing token on mount
+  // Clear token when component unmounts (user leaves page)
   useEffect(() => {
-    const existingToken = getApiToken();
-    if (existingToken) {
-      setToken(existingToken);
-    }
+    return () => {
+      // Clear token from localStorage when leaving the page
+      clearApiToken();
+      setToken(null);
+    };
   }, []);
 
   const generateToken = async () => {
     setLoading(true);
     setError('');
+    setToken(null);
     setCopied(false);
 
     try {
-      // Check if we already have a Go API token stored
+      // Get existing token from localStorage
       const existingToken = getApiToken();
+      
       if (existingToken) {
         // Verify it's still valid
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:1337';
@@ -43,15 +46,19 @@ function ExtensionTokensPage() {
         });
 
         if (response.ok) {
+          // Token is valid, show it
           setToken(existingToken);
           setLoading(false);
           return;
+        } else {
+          // Token is invalid, clear it
+          clearApiToken();
         }
       }
 
-      // If no valid token, show error
+      // No valid token - user needs to sign out and sign back in to get a new one
       setError(
-        'No valid API token found. Please sign out and sign back in to generate a new token.'
+        'No valid API token found. Please sign out and sign back in to generate a new token. The token is created automatically when you sign in.'
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to get token');
@@ -78,7 +85,7 @@ function ExtensionTokensPage() {
         <CardHeader>
           <CardTitle>Extension Tokens</CardTitle>
           <CardDescription>
-            Your Go API token for use with the browser extension. This token is created when you sign in.
+            Your Go API token for use with the browser extension. This token is created when you sign in and will be cleared when you leave this page.
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-6'>

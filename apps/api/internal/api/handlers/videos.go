@@ -28,7 +28,7 @@ type VideoResponse struct {
 	OriginalURL   string `json:"originalUrl"`
 	Title         string `json:"title"`
 	Channel       string `json:"channel"`
-	UserID        int64  `json:"userId"`
+	UserID        string `json:"userId"`
 	CreatedAt     string `json:"createdAt"`
 }
 

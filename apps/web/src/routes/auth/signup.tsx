@@ -44,20 +44,7 @@ function SignUpPage() {
         name: email.split('@')[0], // Use email prefix as name
       });
 
-      // Also register with Go API to get API token
-      // If registration fails (e.g., user already exists), try to authenticate instead
-      try {
-        await registerWithApi(email, password);
-      } catch (apiErr) {
-        // If registration fails (e.g., 409 Conflict), try to authenticate instead
-        // This handles the case where user exists in Go API but not in Better Auth
-        try {
-          await authenticateWithApi(email, password);
-        } catch (authErr) {
-          // If both fail, log but continue - user can still use the app
-          console.warn('Failed to register/authenticate with API:', authErr);
-        }
-      }
+      // Bearer token is automatically stored by authClient's fetchOptions.onSuccess
 
       navigate({ to: '/dashboard' });
     } catch (err) {

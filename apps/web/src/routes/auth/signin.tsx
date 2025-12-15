@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { signIn } from '@/lib/auth-client';
-import { authenticateWithApi } from '@/lib/api-client';
 import Header from '@/components/nav/header';
 
 export const Route = createFileRoute('/auth/signin')({
@@ -25,18 +24,27 @@ function SignInPage() {
     setLoading(true);
 
     try {
-      // Authenticate with Better Auth
-      await signIn.email({
+      // Authenticate with Better Auth (uses cookie-based sessions for web)
+      const signInResult = await signIn.email({
         email,
         password,
       });
 
-      // Also authenticate with Go API to get API token
-      // This will register the user in Go API if they don't exist yet
-      await authenticateWithApi(email, password);
+      if (!signInResult.data) {
+        throw new Error(signInResult.error?.message || 'Sign in failed');
+      }
+
+      // Bearer token for API calls - try to get from session if not in headers
+      const { getSessionToken } = await import('@/lib/auth-client');
+      const sessionToken = await getSessionToken();
+      if (sessionToken && typeof window !== 'undefined') {
+        localStorage.setItem('better_auth_bearer_token', sessionToken);
+        console.log('Bearer token stored from session');
+      }
 
       navigate({ to: '/dashboard' });
     } catch (err) {
+      console.error('Sign in error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);

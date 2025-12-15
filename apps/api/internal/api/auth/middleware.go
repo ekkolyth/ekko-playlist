@@ -32,7 +32,7 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 				return
 			}
 
-			logging.Info("Auth: Session validated - User ID: %d, Email: %s", session.UserID, session.UserEmail)
+			logging.Info("Auth: Session validated - User ID: %s, Email: %s", session.UserID, session.UserEmail)
 
 			// Add user info to request context
 			ctx = context.WithValue(ctx, userIDKey, session.UserID)
@@ -45,8 +45,8 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 }
 
 // GetUserID extracts the user ID from the request context
-func GetUserID(ctx context.Context) (int64, bool) {
-	userID, ok := ctx.Value(userIDKey).(int64)
+func GetUserID(ctx context.Context) (string, bool) {
+	userID, ok := ctx.Value(userIDKey).(string)
 	return userID, ok
 }
 

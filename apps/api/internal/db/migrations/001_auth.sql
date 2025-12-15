@@ -2,9 +2,9 @@
 -- Better Auth tables
 -- Note: user table must be created first as it's referenced by foreign keys
 
--- User table
+-- User table (using UUIDs)
 create table "user" (
-    id text primary key not null,
+    id uuid primary key default gen_random_uuid(),
     name text,
     email text not null,
     email_verified boolean default false not null,
@@ -16,12 +16,12 @@ create table "user" (
 
 -- Session table
 create table "session" (
-    id text primary key not null,
+    id uuid primary key default gen_random_uuid(),
     expires_at timestamptz not null,
     token text not null,
     ip_address text,
     user_agent text,
-    user_id text not null,
+    user_id uuid not null,
     created_at timestamptz default now() not null,
     updated_at timestamptz default now() not null,
     constraint session_token_unique unique(token),
@@ -30,10 +30,10 @@ create table "session" (
 
 -- Account table
 create table "account" (
-    id text primary key not null,
+    id uuid primary key default gen_random_uuid(),
     account_id text not null,
     provider_id text not null,
-    user_id text not null,
+    user_id uuid not null,
     access_token text,
     refresh_token text,
     id_token text,
@@ -46,7 +46,7 @@ create table "account" (
 
 -- Verification table
 create table "verification" (
-    id text primary key not null,
+    id uuid primary key default gen_random_uuid(),
     identifier text not null,
     value text not null,
     expires_at timestamptz not null,

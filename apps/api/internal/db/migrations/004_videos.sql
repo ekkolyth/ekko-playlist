@@ -6,7 +6,7 @@ create table videos (
     original_url text not null,
     title text not null,
     channel text not null,
-    user_id bigint not null references users(id) on delete cascade,
+    user_id uuid not null references "user"(id) on delete cascade,
     created_at timestamptz not null default now()
 );
 

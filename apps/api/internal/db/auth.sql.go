@@ -12,7 +12,7 @@ import (
 )
 
 const CleanExpiredSessions = `-- name: CleanExpiredSessions :exec
-delete from sessions
+delete from "session"
 where expires_at < now()
 `
 
@@ -22,48 +22,35 @@ func (q *Queries) CleanExpiredSessions(ctx context.Context) error {
 }
 
 const CreateSession = `-- name: CreateSession :one
-insert into sessions (user_id, token, expires_at)
-values ($1, $2, $3)
-returning id, user_id, token, expires_at, created_at
+insert into "session" (expires_at, token, user_id, ip_address, user_agent)
+values ($1, $2, $3, $4, $5)
+returning id, expires_at, token, ip_address, user_agent, user_id, created_at, updated_at
 `
 
 type CreateSessionParams struct {
-	UserID    int64              `json:"user_id"`
-	Token     string             `json:"token"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	Token     string             `json:"token"`
+	UserID    string             `json:"user_id"`
+	IpAddress *string            `json:"ip_address"`
+	UserAgent *string            `json:"user_agent"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error) {
-	row := q.db.QueryRow(ctx, CreateSession, arg.UserID, arg.Token, arg.ExpiresAt)
+	row := q.db.QueryRow(ctx, CreateSession,
+		arg.ExpiresAt,
+		arg.Token,
+		arg.UserID,
+		arg.IpAddress,
+		arg.UserAgent,
+	)
 	var i Session
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
-		&i.Token,
 		&i.ExpiresAt,
-		&i.CreatedAt,
-	)
-	return &i, err
-}
-
-const CreateUser = `-- name: CreateUser :one
-insert into users (email, password_hash)
-values ($1, $2)
-returning id, email, password_hash, created_at, updated_at
-`
-
-type CreateUserParams struct {
-	Email        string `json:"email"`
-	PasswordHash string `json:"password_hash"`
-}
-
-func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User, error) {
-	row := q.db.QueryRow(ctx, CreateUser, arg.Email, arg.PasswordHash)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.PasswordHash,
+		&i.Token,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.UserID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -71,7 +58,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg *CreateUserParams) (*User,
 }
 
 const DeleteSession = `-- name: DeleteSession :exec
-delete from sessions
+delete from "session"
 where token = $1
 `
 
@@ -81,31 +68,34 @@ func (q *Queries) DeleteSession(ctx context.Context, token string) error {
 }
 
 const DeleteUserSessions = `-- name: DeleteUserSessions :exec
-delete from sessions
+delete from "session"
 where user_id = $1
 `
 
-func (q *Queries) DeleteUserSessions(ctx context.Context, userID int64) error {
+func (q *Queries) DeleteUserSessions(ctx context.Context, userID string) error {
 	_, err := q.db.Exec(ctx, DeleteUserSessions, userID)
 	return err
 }
 
 const GetSessionByToken = `-- name: GetSessionByToken :one
-select s.id, s.user_id, s.token, s.expires_at, s.created_at, u.id as user_id, u.email as user_email
-from sessions s
-join users u on s.user_id = u.id
+select s.id, s.expires_at, s.token, s.ip_address, s.user_agent, s.user_id, s.created_at, s.updated_at, u.id as user_id, u.email as user_email
+from "session" s
+join "user" u on s.user_id = u.id
 where s.token = $1
   and s.expires_at > now()
 limit 1
 `
 
 type GetSessionByTokenRow struct {
-	ID        int64              `json:"id"`
-	UserID    int64              `json:"user_id"`
-	Token     string             `json:"token"`
+	ID        string             `json:"id"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	Token     string             `json:"token"`
+	IpAddress *string            `json:"ip_address"`
+	UserAgent *string            `json:"user_agent"`
+	UserID    string             `json:"user_id"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UserID_2  int64              `json:"user_id_2"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	UserID_2  string             `json:"user_id_2"`
 	UserEmail string             `json:"user_email"`
 }
 
@@ -114,10 +104,13 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (*GetSess
 	var i GetSessionByTokenRow
 	err := row.Scan(
 		&i.ID,
-		&i.UserID,
-		&i.Token,
 		&i.ExpiresAt,
+		&i.Token,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.UserID,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 		&i.UserID_2,
 		&i.UserEmail,
 	)
@@ -125,7 +118,8 @@ func (q *Queries) GetSessionByToken(ctx context.Context, token string) (*GetSess
 }
 
 const GetUserByEmail = `-- name: GetUserByEmail :one
-select id, email, password_hash, created_at, updated_at from users
+select id, name, email, email_verified, image, created_at, updated_at
+from "user"
 where email = $1
 limit 1
 `
@@ -135,8 +129,10 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, erro
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.EmailVerified,
+		&i.Image,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -144,18 +140,21 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (*User, erro
 }
 
 const GetUserByID = `-- name: GetUserByID :one
-select id, email, password_hash, created_at, updated_at from users
+select id, name, email, email_verified, image, created_at, updated_at
+from "user"
 where id = $1
 limit 1
 `
 
-func (q *Queries) GetUserByID(ctx context.Context, id int64) (*User, error) {
+func (q *Queries) GetUserByID(ctx context.Context, id string) (*User, error) {
 	row := q.db.QueryRow(ctx, GetUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
+		&i.Name,
 		&i.Email,
-		&i.PasswordHash,
+		&i.EmailVerified,
+		&i.Image,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

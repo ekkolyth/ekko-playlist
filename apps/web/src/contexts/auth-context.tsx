@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useSession, signOut as authSignOut } from '@/lib/auth-client';
-import { clearApiToken } from '@/lib/api-client';
+import { clearBearerToken } from '@/lib/api-client';
 
 // Re-export Better Auth's useSession as useAuth for compatibility
 export function useAuth() {
@@ -12,7 +12,7 @@ export function useAuth() {
     loading,
     isAuthenticated: !!session.data?.user,
     logout: async () => {
-      clearApiToken();
+      clearBearerToken();
       await authSignOut();
     },
   };

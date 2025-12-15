@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:1337';
-const API_TOKEN_KEY = 'ekko_api_token';
+const BEARER_TOKEN_KEY = 'better_auth_bearer_token';
 
 export interface ApiAuthResponse {
   token: string;
@@ -8,108 +8,21 @@ export interface ApiAuthResponse {
 }
 
 /**
- * Authenticate with the Go API using email and password
- * If authentication fails, tries to register the user first, then authenticates again
+ * Get Bearer token from Better Auth (stored after sign in)
+ * This token is used for API requests to the Go API
+ * The web app itself uses cookie-based sessions
  */
-export async function authenticateWithApi(
-  email: string,
-  password: string
-): Promise<ApiAuthResponse> {
-  // First, try to authenticate
-  let response = await fetch(`${API_URL}/api/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ email, password }),
-  });
-
-  // If authentication fails with 401, the user might not exist in Go API
-  // Try to register them first, then authenticate again
-  if (response.status === 401) {
-    // Try to register (this might fail with 409 if user already exists, which is fine)
-    const registerResponse = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-
-    // If registration succeeds or user already exists (409), try to authenticate again
-    if (registerResponse.ok || registerResponse.status === 409) {
-      // Retry authentication
-      response = await fetch(`${API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-    }
-  }
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown error');
-    throw new Error(`API authentication failed: ${response.status} ${errorText}`);
-  }
-
-  const data: ApiAuthResponse = await response.json();
-  // Store token in localStorage
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(API_TOKEN_KEY, data.token);
-  }
-  return data;
+export function getBearerToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(BEARER_TOKEN_KEY);
 }
 
 /**
- * Register with the Go API using email and password
+ * Clear the stored Bearer token
  */
-export async function registerWithApi(
-  email: string,
-  password: string
-): Promise<ApiAuthResponse> {
-  const response = await fetch(`${API_URL}/api/auth/register`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-    body: JSON.stringify({ email, password }),
-  });
-
-  if (!response.ok) {
-    const errorText = await response.text().catch(() => 'Unknown error');
-    throw new Error(`API registration failed: ${response.status} ${errorText}`);
-  }
-
-  const data: ApiAuthResponse = await response.json();
-  // Store token in localStorage
+export function clearBearerToken(): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(API_TOKEN_KEY, data.token);
-  }
-  return data;
-}
-
-/**
- * Get the stored API token
- */
-export function getApiToken(): string | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  return localStorage.getItem(API_TOKEN_KEY);
-}
-
-/**
- * Clear the stored API token
- */
-export function clearApiToken(): void {
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem(API_TOKEN_KEY);
+    localStorage.removeItem(BEARER_TOKEN_KEY);
   }
 }
 
@@ -120,12 +33,29 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getApiToken();
+  let token = getBearerToken();
+  
+  // If no token stored, try to get it from the current session
+  if (!token) {
+    try {
+      const { getSessionToken } = await import('@/lib/auth-client');
+      token = await getSessionToken();
+      if (token && typeof window !== 'undefined') {
+        localStorage.setItem(BEARER_TOKEN_KEY, token);
+      }
+    } catch (err) {
+      console.error('Error getting session token:', err);
+    }
+  }
+
   const headers = new Headers(options.headers);
 
-  // Add Authorization header if token exists
+  // Add Authorization header with Better Auth Bearer token
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
+    console.log('Sending API request with Bearer token');
+  } else {
+    console.warn('No Bearer token available for API request');
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -137,7 +67,7 @@ export async function apiRequest<T>(
   if (!response.ok) {
     if (response.status === 401) {
       // Clear invalid token
-      clearApiToken();
+      clearBearerToken();
       throw new Error('Session expired. Please log in again.');
     }
     const errorText = await response.text().catch(() => 'Unknown error');

@@ -202,7 +202,7 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 						return fmt.Errorf("user ID not found in context - auth middleware may not have run")
 					}
 
-					logging.Info("DB: Attempting to create video %d/%d: %s (ID: %s, URL: %s, User: %d)", i+1, len(validVideos), video.Title, videoID, video.NormalizedURL, userID)
+					logging.Info("DB: Attempting to create video %d/%d: %s (ID: %s, URL: %s, User: %s)", i+1, len(validVideos), video.Title, videoID, video.NormalizedURL, userID)
 					result, err := q.CreateVideo(ctx, &db.CreateVideoParams{
 						VideoID:       videoID,
 						NormalizedUrl: video.NormalizedURL,

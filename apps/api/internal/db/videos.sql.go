@@ -22,7 +22,7 @@ type CreateVideoParams struct {
 	OriginalUrl   string `json:"original_url"`
 	Title         string `json:"title"`
 	Channel       string `json:"channel"`
-	UserID        int64  `json:"user_id"`
+	UserID        string `json:"user_id"`
 }
 
 func (q *Queries) CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error) {
@@ -77,7 +77,7 @@ WHERE user_id = $1
 ORDER BY created_at DESC
 `
 
-func (q *Queries) ListVideos(ctx context.Context, userID int64) ([]*Video, error) {
+func (q *Queries) ListVideos(ctx context.Context, userID string) ([]*Video, error) {
 	rows, err := q.db.Query(ctx, ListVideos, userID)
 	if err != nil {
 		return nil, err

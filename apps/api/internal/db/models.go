@@ -29,19 +29,24 @@ type Config struct {
 }
 
 type Session struct {
-	ID        int64              `json:"id"`
-	UserID    int64              `json:"user_id"`
-	Token     string             `json:"token"`
+	ID        string             `json:"id"`
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	Token     string             `json:"token"`
+	IpAddress *string            `json:"ip_address"`
+	UserAgent *string            `json:"user_agent"`
+	UserID    string             `json:"user_id"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type User struct {
-	ID           int64              `json:"id"`
-	Email        string             `json:"email"`
-	PasswordHash string             `json:"password_hash"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	ID            string             `json:"id"`
+	Name          *string            `json:"name"`
+	Email         string             `json:"email"`
+	EmailVerified bool               `json:"email_verified"`
+	Image         *string            `json:"image"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Verification struct {
@@ -60,6 +65,6 @@ type Video struct {
 	OriginalUrl   string             `json:"original_url"`
 	Title         string             `json:"title"`
 	Channel       string             `json:"channel"`
-	UserID        int64              `json:"user_id"`
+	UserID        string             `json:"user_id"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }

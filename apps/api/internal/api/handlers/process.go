@@ -13,8 +13,8 @@ import (
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
-	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
+	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 )
 
 type ProcessHandler struct {
@@ -72,14 +72,14 @@ func extractVideoID(normalizedURL string) string {
 // Receives a playlist of videos and normalizes all YouTube URLs using Lua
 func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 	logging.Info("Received POST /api/process/playlist request")
-	
+
 	// Check if user ID is available in request context (before creating new context)
 	if userID, ok := auth.GetUserID(r.Context()); ok {
 		logging.Info("Auth: User ID found in request context: %d", userID)
 	} else {
 		logging.Info("Auth: WARNING - No user ID found in request context!")
 	}
-	
+
 	var req ProcessPlaylistRequest
 
 	// Decode JSON request body (allow up to 10MB for large playlists)
@@ -224,12 +224,12 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 						// Don't abort transaction on individual video errors
 						continue
 					}
-					
+
 					if result == nil {
 						logging.Info("DB: WARNING - CreateVideo returned nil result for '%s' (this should not happen)", video.Title)
 						continue
 					}
-					
+
 					logging.Info("DB: ✅ Successfully saved video '%s' (DB ID: %d, normalized URL: %s)", video.Title, result.ID, result.NormalizedUrl)
 					savedCount++
 				}
@@ -255,8 +255,8 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 
 	// Log summary
 	if len(validURLs) > 0 {
-		logging.Info("[SUCCESS]")
-		logging.Info("%d urls extracted successfully", len(validURLs))
+		logging.Api("[SUCCESS]")
+		logging.Api("%d urls extracted successfully", len(validURLs))
 		for _, url := range validURLs {
 			logging.Info("%s", url)
 		}
@@ -271,7 +271,7 @@ func (h *ProcessHandler) Playlist(w http.ResponseWriter, r *http.Request) {
 			logging.Info("%s", url)
 		}
 	}
-	
+
 	logging.Info("Sending response: %d total, %d valid, %d invalid", response.Total, response.Valid, response.Invalid)
 	httpx.RespondJSON(w, http.StatusOK, response)
 	logging.Info("Response sent successfully")
@@ -415,4 +415,3 @@ func (h *ProcessHandler) Video(w http.ResponseWriter, r *http.Request) {
 		Processed: processedVideo,
 	})
 }
-

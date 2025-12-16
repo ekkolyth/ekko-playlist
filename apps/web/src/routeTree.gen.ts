@@ -26,6 +26,7 @@ import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_au
 import { Route as AuthenticatedAppDashboardRouteRouteImport } from './routes/_authenticated/app/dashboard/route'
 import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as AuthenticatedAppPlaylistsIndexRouteRouteImport } from './routes/_authenticated/app/playlists/index/route'
+import { Route as AuthenticatedAppPlaylistsNameIndexRouteImport } from './routes/_authenticated/app/playlists/$name/index'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
@@ -120,6 +121,12 @@ const AuthenticatedAppPlaylistsIndexRouteRoute =
     path: '/',
     getParentRoute: () => AuthenticatedAppPlaylistsRouteRoute,
   } as any)
+const AuthenticatedAppPlaylistsNameIndexRoute =
+  AuthenticatedAppPlaylistsNameIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppPlaylistsNameRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRouteRoute
@@ -137,7 +144,8 @@ export interface FileRoutesByFullPath {
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRouteRoute
-  '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRoute
+  '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRouteRoute
@@ -154,7 +162,7 @@ export interface FileRoutesByTo {
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRouteRoute
-  '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRoute
+  '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -174,7 +182,8 @@ export interface FileRoutesById {
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRouteRoute
-  '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRoute
+  '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/_authenticated/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -195,6 +204,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/app/playlists/'
     | '/app/playlists/$name'
+    | '/app/playlists/$name/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/_authenticated/app/playlists/'
     | '/_authenticated/app/playlists/$name'
+    | '/_authenticated/app/playlists/$name/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -364,12 +375,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPlaylistsIndexRouteRouteImport
       parentRoute: typeof AuthenticatedAppPlaylistsRouteRoute
     }
+    '/_authenticated/app/playlists/$name/': {
+      id: '/_authenticated/app/playlists/$name/'
+      path: '/'
+      fullPath: '/app/playlists/$name/'
+      preLoaderRoute: typeof AuthenticatedAppPlaylistsNameIndexRouteImport
+      parentRoute: typeof AuthenticatedAppPlaylistsNameRouteRoute
+    }
   }
 }
 
+interface AuthenticatedAppPlaylistsNameRouteRouteChildren {
+  AuthenticatedAppPlaylistsNameIndexRoute: typeof AuthenticatedAppPlaylistsNameIndexRoute
+}
+
+const AuthenticatedAppPlaylistsNameRouteRouteChildren: AuthenticatedAppPlaylistsNameRouteRouteChildren =
+  {
+    AuthenticatedAppPlaylistsNameIndexRoute:
+      AuthenticatedAppPlaylistsNameIndexRoute,
+  }
+
+const AuthenticatedAppPlaylistsNameRouteRouteWithChildren =
+  AuthenticatedAppPlaylistsNameRouteRoute._addFileChildren(
+    AuthenticatedAppPlaylistsNameRouteRouteChildren,
+  )
+
 interface AuthenticatedAppPlaylistsRouteRouteChildren {
   AuthenticatedAppPlaylistsIndexRouteRoute: typeof AuthenticatedAppPlaylistsIndexRouteRoute
-  AuthenticatedAppPlaylistsNameRouteRoute: typeof AuthenticatedAppPlaylistsNameRouteRoute
+  AuthenticatedAppPlaylistsNameRouteRoute: typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
 }
 
 const AuthenticatedAppPlaylistsRouteRouteChildren: AuthenticatedAppPlaylistsRouteRouteChildren =
@@ -377,7 +410,7 @@ const AuthenticatedAppPlaylistsRouteRouteChildren: AuthenticatedAppPlaylistsRout
     AuthenticatedAppPlaylistsIndexRouteRoute:
       AuthenticatedAppPlaylistsIndexRouteRoute,
     AuthenticatedAppPlaylistsNameRouteRoute:
-      AuthenticatedAppPlaylistsNameRouteRoute,
+      AuthenticatedAppPlaylistsNameRouteRouteWithChildren,
   }
 
 const AuthenticatedAppPlaylistsRouteRouteWithChildren =

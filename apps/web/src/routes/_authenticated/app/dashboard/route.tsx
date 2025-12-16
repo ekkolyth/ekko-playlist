@@ -1,20 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, type VideosResponse } from "@/lib/api-client";
 import { ChannelFilter } from "../-components/channel-filter";
 import { VideoCollection } from "../-components/video-collection";
-import { X, MoreHorizontal, ListMusic, Trash2 } from "lucide-react";
 
 async function fetchVideos(
   selectedChannels?: string[],

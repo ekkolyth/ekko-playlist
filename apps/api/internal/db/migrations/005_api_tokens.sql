@@ -21,3 +21,4 @@ DROP TABLE IF EXISTS "api_tokens";
 -- +goose StatementEnd
 
 
+

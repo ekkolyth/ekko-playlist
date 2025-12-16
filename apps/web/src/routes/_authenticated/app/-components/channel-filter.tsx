@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import { Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
+} from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface ChannelFilterProps {
   channels: string[];
@@ -83,11 +83,12 @@ export function ChannelFilter({
             </div>
             {selectedChannels.length > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
-                {selectedChannels.length} channel{selectedChannels.length !== 1 ? 's' : ''} selected
+                {selectedChannels.length} channel
+                {selectedChannels.length !== 1 ? "s" : ""} selected
               </p>
             )}
           </div>
-          <ScrollArea className="max-h-[300px]">
+          <ScrollArea className="max-h-75">
             <div className="p-2">
               {sortedChannels.length === 0 ? (
                 <div className="py-6 text-center text-sm text-muted-foreground">
@@ -124,5 +125,3 @@ export function ChannelFilter({
     </Popover>
   );
 }
-
-

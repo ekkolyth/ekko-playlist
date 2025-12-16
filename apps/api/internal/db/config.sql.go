@@ -69,3 +69,4 @@ func (q *Queries) UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*C
 	return &i, err
 }
 
+

@@ -51,7 +51,7 @@ export function VideoCard({
   return (
     <Card
       key={video.id}
-      className={`group cursor-pointer border-border hover:border-primary/50 transition-colors overflow-hidden relative ${
+      className={`py-0 gap-2 group cursor-pointer border-border hover:border-primary/50 transition-colors overflow-hidden relative ${
         isSelected ? "ring-2 ring-primary ring-offset-0" : ""
       }`}
       onClick={() => onVideoClick(video)}

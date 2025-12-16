@@ -11,3 +11,4 @@ fs.writeFileSync(contentPath, content);
 console.log('Fixed content.js - removed CommonJS exports');
 
 
+

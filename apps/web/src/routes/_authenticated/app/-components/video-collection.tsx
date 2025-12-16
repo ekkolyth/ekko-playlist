@@ -50,6 +50,7 @@ interface VideoCollectionProps {
   onChannelsChange?: (channels: string[]) => void;
   onVideoClick?: (video: Video) => void;
   onSelectModeActionsChange?: (actions: React.ReactNode | null) => void;
+  onRemoveVideo?: (videoId: number, title: string) => void;
 }
 
 export function VideoCollection({
@@ -58,12 +59,9 @@ export function VideoCollection({
   error = null,
   emptyTitle = "No videos yet",
   emptyDescription = "Your playlist is empty. Start adding YouTube videos to build your collection!",
-  showChannelFilter = false,
-  availableChannels = [],
-  selectedChannels = [],
-  onChannelsChange,
   onVideoClick,
   onSelectModeActionsChange,
+  onRemoveVideo,
 }: VideoCollectionProps) {
   const {
     playlists,
@@ -154,20 +152,49 @@ export function VideoCollection({
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Bulk Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={openBulkAddDialog}
-              disabled={isBulkAdding}
-            >
-              <ListMusic className="mr-2 h-4 w-4" />
-              Add to Playlist
+            <DropdownMenuItem asChild>
+              <Button
+                variant="ghost"
+                onClick={openBulkAddDialog}
+                disabled={isBulkAdding}
+                className="w-full justify-start font-normal"
+              >
+                <ListMusic className="mr-2 h-4 w-4" />
+                Add to Playlist
+              </Button>
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => deleteVideos()}
-              disabled={isDeleting}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Videos
+            <DropdownMenuItem asChild>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  if (onRemoveVideo) {
+                    // Remove from playlist mode
+                    const videoIds = Array.from(selectedVideoIds);
+                    if (videoIds.length === 0) return;
+                    if (
+                      confirm(
+                        `Remove ${videoIds.length} video(s) from this playlist?`,
+                      )
+                    ) {
+                      videoIds.forEach((id) => {
+                        const video = videos.find((v) => v.id === id);
+                        if (video) {
+                          onRemoveVideo(id, video.title);
+                        }
+                      });
+                      deselectAll();
+                    }
+                  } else {
+                    // Global delete mode
+                    deleteVideos();
+                  }
+                }}
+                disabled={isDeleting}
+                className="w-full justify-start font-normal text-destructive hover:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {onRemoveVideo ? "Remove from Playlist" : "Delete Videos"}
+              </Button>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

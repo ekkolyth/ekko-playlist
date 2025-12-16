@@ -7,8 +7,6 @@ import (
 	"github.com/ekkolyth/ekko-playlist/api/internal/config"
 )
 
-// Simple logging utility with color support for terminal output, used across the API.
-
 func Error(message string) {
 	log.Println(config.CLI_RED + "[FATAL]" + config.CLI_RESET + message)
 }
@@ -26,8 +24,12 @@ func Warning(message string) {
 	log.Println(config.CLI_YELLOW + "[WARN]:" + config.CLI_RESET + message)
 }
 
-func Api(message string) {
-	log.Println(config.CLI_BRIGHT_CYAN + "[API]:" + config.CLI_RESET + message)
+func Api(message string, args ...any) {
+	output := fmt.Sprintf(message, args...)
+	log.Println(config.CLI_BRIGHT_CYAN + "[API]:" + config.CLI_RESET + output)
 }
 
-
+func DB(message string, args ...any) {
+	output := fmt.Sprintf(message, args...)
+	log.Println(config.CLI_BRIGHT_GREEN + "[DB]:" + config.CLI_RESET + output)
+}

@@ -1,9 +1,0 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
-
-export const Route = createFileRoute("/_authenticated/app/playlists/$name")({
-  component: PlaylistNameLayout,
-});
-
-function PlaylistNameLayout() {
-  return <Outlet />;
-}

@@ -39,7 +39,7 @@ export default function Header() {
           {isAuthenticated ? (
             <>
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/dashboard">
+                <Link to="/app/dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" />
                   Dashboard
                 </Link>

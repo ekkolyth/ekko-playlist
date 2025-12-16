@@ -42,7 +42,7 @@ async function fetchAllVideos(): Promise<VideosResponse> {
   }
 }
 
-export const Route = createFileRoute("/_authenticated/app/dashboard")({
+export const Route = createFileRoute("/_authenticated/app/dashboard/")({
   component: DashboardPage,
 });
 

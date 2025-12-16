@@ -4,18 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { signUp } from '@/lib/auth-client';
-import { registerWithApi, authenticateWithApi } from '@/lib/api-client';
+import { signIn } from '@/lib/auth-client';
 import Header from '@/components/nav/header';
 
-export const Route = createFileRoute('/auth/signup')({
-  component: SignUpPage,
+export const Route = createFileRoute('/auth/signin/')({
+  component: SignInPage,
 });
 
-function SignUpPage() {
+function SignInPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -23,32 +21,31 @@ function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
-      return;
-    }
-
     setLoading(true);
 
     try {
-      // Register with Better Auth
-      await signUp.email({
+      // Authenticate with Better Auth (uses cookie-based sessions for web)
+      const signInResult = await signIn.email({
         email,
         password,
-        name: email.split('@')[0], // Use email prefix as name
       });
 
-      // Bearer token is automatically stored by authClient's fetchOptions.onSuccess
+      if (!signInResult.data) {
+        throw new Error(signInResult.error?.message || 'Sign in failed');
+      }
+
+      // Bearer token for API calls - try to get from session if not in headers
+      const { getSessionToken } = await import('@/lib/auth-client');
+      const sessionToken = await getSessionToken();
+      if (sessionToken && typeof window !== 'undefined') {
+        localStorage.setItem('better_auth_bearer_token', sessionToken);
+        console.log('Bearer token stored from session');
+      }
 
       navigate({ to: '/dashboard' });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      console.error('Sign in error:', err);
+      setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setLoading(false);
     }
@@ -60,8 +57,8 @@ function SignUpPage() {
       <div className='flex items-center justify-center px-6 py-24'>
         <Card className='w-full max-w-md'>
           <CardHeader>
-            <CardTitle>Sign Up</CardTitle>
-            <CardDescription>Create an account to get started</CardDescription>
+            <CardTitle>Sign In</CardTitle>
+            <CardDescription>Enter your email and password to sign in</CardDescription>
           </CardHeader>
           <CardContent>
             <form
@@ -93,19 +90,6 @@ function SignUpPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={loading}
-                  minLength={8}
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='confirmPassword'>Confirm Password</Label>
-                <Input
-                  id='confirmPassword'
-                  type='password'
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  disabled={loading}
-                  minLength={8}
                 />
               </div>
               <Button
@@ -113,15 +97,15 @@ function SignUpPage() {
                 className='w-full'
                 disabled={loading}
               >
-                {loading ? 'Creating account...' : 'Sign Up'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </Button>
               <div className='text-center text-sm text-muted-foreground'>
-                Already have an account?{' '}
+                Don't have an account?{' '}
                 <Link
-                  to='/auth/signin'
+                  to='/auth/signup'
                   className='text-primary hover:underline'
                 >
-                  Sign in
+                  Sign up
                 </Link>
               </div>
             </form>

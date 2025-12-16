@@ -1,6 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,91 +25,32 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
-import { useAuth } from "@/hooks/use-auth";
-import {
-  fetchPlaylists,
-  createPlaylist,
-  deletePlaylist,
-  getPlaylist,
-  type Playlist,
-} from "@/lib/api-client";
+import { getPlaylist, type Playlist } from "@/lib/api-client";
 import { Plus, Music, Trash2, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import {
+  usePlaylists,
+  createSlug,
+  getYouTubeThumbnail,
+} from "@/hooks/use-playlist";
 
-// Helper function to get YouTube thumbnail URL
-function getYouTubeThumbnail(videoId: string): string {
-  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-}
-
-// Helper function to create a URL-safe slug from playlist name
-// Use simple URL encoding to preserve the exact name
-function createSlug(name: string): string {
-  return encodeURIComponent(name);
-}
-
-// Helper function to decode slug back to name
-function decodeSlug(slug: string): string {
-  return decodeURIComponent(slug);
-}
-
-export const Route = createFileRoute("/_authenticated/playlists/")({
+export const Route = createFileRoute("/_authenticated/app/playlists/")({
   component: PlaylistsPage,
 });
 
 function PlaylistsPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState("");
-
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["playlists"],
-    queryFn: fetchPlaylists,
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (name: string) => createPlaylist(name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      setIsCreateDialogOpen(false);
-      setNewPlaylistName("");
-      toast.success("Playlist created successfully");
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || "Failed to create playlist");
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (name: string) => deletePlaylist(name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["playlists"] });
-      toast.success("Playlist deleted successfully");
-    },
-    onError: (err: Error) => {
-      toast.error(err.message || "Failed to delete playlist");
-    },
-  });
-
-  const handleCreate = () => {
-    if (!newPlaylistName.trim()) {
-      toast.error("Please enter a playlist name");
-      return;
-    }
-    createMutation.mutate(newPlaylistName.trim());
-  };
-
-  const handleDelete = (name: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${name}"? This will remove all videos from the playlist.`,
-      )
-    ) {
-      return;
-    }
-    deleteMutation.mutate(name);
-  };
+  const {
+    playlists,
+    isLoading,
+    error,
+    isCreateDialogOpen,
+    newPlaylistName,
+    setNewPlaylistName,
+    openCreateDialog,
+    closeCreateDialog,
+    createPlaylist,
+    deletePlaylist,
+    isCreating,
+  } = usePlaylists();
 
   return (
     <div className="flex-1 p-6">
@@ -124,7 +64,7 @@ function PlaylistsPage() {
               Organize your videos into playlists
             </p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
             Create Playlist
           </Button>
@@ -147,7 +87,7 @@ function PlaylistsPage() {
           </div>
         )}
 
-        {data && data.playlists.length === 0 && (
+        {playlists.length === 0 && !isLoading && !error && (
           <Empty className="py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -161,20 +101,20 @@ function PlaylistsPage() {
           </Empty>
         )}
 
-        {data && data.playlists.length > 0 && (
+        {playlists.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {data.playlists.map((playlist) => (
+            {playlists.map((playlist) => (
               <PlaylistCard
                 key={playlist.name}
                 playlist={playlist}
-                onDelete={handleDelete}
+                onDelete={deletePlaylist}
                 playlistName={playlist.name}
               />
             ))}
           </div>
         )}
 
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <Dialog open={isCreateDialogOpen} onOpenChange={closeCreateDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Playlist</DialogTitle>
@@ -192,27 +132,18 @@ function PlaylistsPage() {
                   onChange={(e) => setNewPlaylistName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handleCreate();
+                      createPlaylist();
                     }
                   }}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateDialogOpen(false);
-                  setNewPlaylistName("");
-                }}
-              >
+              <Button variant="outline" onClick={closeCreateDialog}>
                 Cancel
               </Button>
-              <Button
-                onClick={handleCreate}
-                disabled={createMutation.isPending}
-              >
-                {createMutation.isPending ? (
+              <Button onClick={createPlaylist} disabled={isCreating}>
+                {isCreating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating...
@@ -296,7 +227,7 @@ function PlaylistCard({ playlist, onDelete, playlistName }: PlaylistCardProps) {
       <CardContent>
         <Button variant="outline" className="w-full" asChild>
           <Link
-            to="/playlists/$name"
+            to="/app/playlists/$name"
             params={{ name: createSlug(playlistName) }}
           >
             View Playlist

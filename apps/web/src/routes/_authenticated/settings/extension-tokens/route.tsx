@@ -9,7 +9,7 @@ import { apiRequest } from '@/lib/api-client';
 import { Copy, Check, RefreshCw, Trash2, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 
-export const Route = createFileRoute('/_authenticated/extension-tokens')({
+export const Route = createFileRoute('/_authenticated/settings/extension-tokens')({
   component: ExtensionTokensPage,
 });
 

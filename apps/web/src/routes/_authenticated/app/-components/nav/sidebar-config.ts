@@ -1,5 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import { LayoutDashboard, Key, ListMusic } from "lucide-react";
+import { LayoutDashboard, ListMusic } from "lucide-react";
 
 type SidebarItem = { label: string; href: string; icon: LucideIcon };
 
@@ -12,9 +12,8 @@ export const sidebarSections: SidebarSection[] = [
   {
     label: "MAIN",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Playlists", href: "/playlists/all", icon: ListMusic },
-      { label: "Extension Tokens", href: "/extension-tokens", icon: Key },
+      { label: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+      { label: "Playlists", href: "/app/playlists", icon: ListMusic },
     ],
   },
 ];

@@ -16,3 +16,4 @@ SELECT key, value, updated_at
 FROM config
 ORDER BY key;
 
+

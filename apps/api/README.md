@@ -56,3 +56,4 @@ The `config` table stores key-value configuration pairs:
 - `value` (text, not null)
 - `updated_at` (timestamptz, default now())
 
+

@@ -48,6 +48,36 @@ func (q *Queries) CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Vid
 	return &i, err
 }
 
+const DeleteVideo = `-- name: DeleteVideo :exec
+DELETE FROM videos
+WHERE id = $1 AND user_id = $2
+`
+
+type DeleteVideoParams struct {
+	ID     int64  `json:"id"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) DeleteVideo(ctx context.Context, arg *DeleteVideoParams) error {
+	_, err := q.db.Exec(ctx, DeleteVideo, arg.ID, arg.UserID)
+	return err
+}
+
+const DeleteVideos = `-- name: DeleteVideos :exec
+DELETE FROM videos
+WHERE id = ANY($1::bigint[]) AND user_id = $2
+`
+
+type DeleteVideosParams struct {
+	Column1 []int64 `json:"column_1"`
+	UserID  string  `json:"user_id"`
+}
+
+func (q *Queries) DeleteVideos(ctx context.Context, arg *DeleteVideosParams) error {
+	_, err := q.db.Exec(ctx, DeleteVideos, arg.Column1, arg.UserID)
+	return err
+}
+
 const GetVideoByID = `-- name: GetVideoByID :one
 SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 FROM videos

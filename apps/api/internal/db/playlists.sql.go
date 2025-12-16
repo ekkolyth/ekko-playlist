@@ -36,6 +36,31 @@ func (q *Queries) AddVideoToPlaylist(ctx context.Context, arg *AddVideoToPlaylis
 	return &i, err
 }
 
+const AddVideoToPlaylistByName = `-- name: AddVideoToPlaylistByName :exec
+insert into playlist_videos (playlist_id, video_id, position)
+select p.id, $2, $3
+from playlists p
+where p.user_id = $1 and p.name = $4
+on conflict (playlist_id, video_id) do nothing
+`
+
+type AddVideoToPlaylistByNameParams struct {
+	UserID   string `json:"user_id"`
+	VideoID  int64  `json:"video_id"`
+	Position int32  `json:"position"`
+	Name     string `json:"name"`
+}
+
+func (q *Queries) AddVideoToPlaylistByName(ctx context.Context, arg *AddVideoToPlaylistByNameParams) error {
+	_, err := q.db.Exec(ctx, AddVideoToPlaylistByName,
+		arg.UserID,
+		arg.VideoID,
+		arg.Position,
+		arg.Name,
+	)
+	return err
+}
+
 const CreatePlaylist = `-- name: CreatePlaylist :one
 insert into playlists (user_id, name)
 values ($1, $2)
@@ -62,27 +87,32 @@ func (q *Queries) CreatePlaylist(ctx context.Context, arg *CreatePlaylistParams)
 
 const DeletePlaylist = `-- name: DeletePlaylist :exec
 delete from playlists
-where id = $1 and user_id = $2
+where user_id = $1 and name = $2
 `
 
 type DeletePlaylistParams struct {
-	ID     int64  `json:"id"`
 	UserID string `json:"user_id"`
+	Name   string `json:"name"`
 }
 
 func (q *Queries) DeletePlaylist(ctx context.Context, arg *DeletePlaylistParams) error {
-	_, err := q.db.Exec(ctx, DeletePlaylist, arg.ID, arg.UserID)
+	_, err := q.db.Exec(ctx, DeletePlaylist, arg.UserID, arg.Name)
 	return err
 }
 
-const GetPlaylistByID = `-- name: GetPlaylistByID :one
+const GetPlaylistByName = `-- name: GetPlaylistByName :one
 select id, user_id, name, created_at, updated_at
 from playlists
-where id = $1
+where user_id = $1 and name = $2
 `
 
-func (q *Queries) GetPlaylistByID(ctx context.Context, id int64) (*Playlist, error) {
-	row := q.db.QueryRow(ctx, GetPlaylistByID, id)
+type GetPlaylistByNameParams struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+}
+
+func (q *Queries) GetPlaylistByName(ctx context.Context, arg *GetPlaylistByNameParams) (*Playlist, error) {
+	row := q.db.QueryRow(ctx, GetPlaylistByName, arg.UserID, arg.Name)
 	var i Playlist
 	err := row.Scan(
 		&i.ID,
@@ -94,14 +124,37 @@ func (q *Queries) GetPlaylistByID(ctx context.Context, id int64) (*Playlist, err
 	return &i, err
 }
 
-const GetPlaylistVideoCount = `-- name: GetPlaylistVideoCount :one
-select count(*) as count
-from playlist_videos
-where playlist_id = $1
+const GetPlaylistIDByName = `-- name: GetPlaylistIDByName :one
+select id from playlists
+where user_id = $1 and name = $2
 `
 
-func (q *Queries) GetPlaylistVideoCount(ctx context.Context, playlistID int64) (int64, error) {
-	row := q.db.QueryRow(ctx, GetPlaylistVideoCount, playlistID)
+type GetPlaylistIDByNameParams struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+}
+
+func (q *Queries) GetPlaylistIDByName(ctx context.Context, arg *GetPlaylistIDByNameParams) (int64, error) {
+	row := q.db.QueryRow(ctx, GetPlaylistIDByName, arg.UserID, arg.Name)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const GetPlaylistVideoCount = `-- name: GetPlaylistVideoCount :one
+select count(*) as count
+from playlist_videos pv
+join playlists p on pv.playlist_id = p.id
+where p.user_id = $1 and p.name = $2
+`
+
+type GetPlaylistVideoCountParams struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+}
+
+func (q *Queries) GetPlaylistVideoCount(ctx context.Context, arg *GetPlaylistVideoCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, GetPlaylistVideoCount, arg.UserID, arg.Name)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -111,9 +164,15 @@ const GetPlaylistVideos = `-- name: GetPlaylistVideos :many
 select v.id, v.video_id, v.normalized_url, v.original_url, v.title, v.channel, v.user_id, v.created_at, pv.position, pv.created_at as added_at
 from playlist_videos pv
 join videos v on pv.video_id = v.id
-where pv.playlist_id = $1
+join playlists p on pv.playlist_id = p.id
+where p.user_id = $1 and p.name = $2
 order by pv.position, pv.created_at
 `
+
+type GetPlaylistVideosParams struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+}
 
 type GetPlaylistVideosRow struct {
 	ID            int64              `json:"id"`
@@ -128,8 +187,8 @@ type GetPlaylistVideosRow struct {
 	AddedAt       pgtype.Timestamptz `json:"added_at"`
 }
 
-func (q *Queries) GetPlaylistVideos(ctx context.Context, playlistID int64) ([]*GetPlaylistVideosRow, error) {
-	rows, err := q.db.Query(ctx, GetPlaylistVideos, playlistID)
+func (q *Queries) GetPlaylistVideos(ctx context.Context, arg *GetPlaylistVideosParams) ([]*GetPlaylistVideosRow, error) {
+	rows, err := q.db.Query(ctx, GetPlaylistVideos, arg.UserID, arg.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -193,35 +252,40 @@ func (q *Queries) ListPlaylistsByUser(ctx context.Context, userID string) ([]*Pl
 }
 
 const RemoveVideoFromPlaylist = `-- name: RemoveVideoFromPlaylist :exec
-delete from playlist_videos
-where playlist_id = $1 and video_id = $2
+delete from playlist_videos pv
+using playlists p
+where pv.playlist_id = p.id
+  and p.user_id = $1
+  and p.name = $2
+  and pv.video_id = $3
 `
 
 type RemoveVideoFromPlaylistParams struct {
-	PlaylistID int64 `json:"playlist_id"`
-	VideoID    int64 `json:"video_id"`
+	UserID  string `json:"user_id"`
+	Name    string `json:"name"`
+	VideoID int64  `json:"video_id"`
 }
 
 func (q *Queries) RemoveVideoFromPlaylist(ctx context.Context, arg *RemoveVideoFromPlaylistParams) error {
-	_, err := q.db.Exec(ctx, RemoveVideoFromPlaylist, arg.PlaylistID, arg.VideoID)
+	_, err := q.db.Exec(ctx, RemoveVideoFromPlaylist, arg.UserID, arg.Name, arg.VideoID)
 	return err
 }
 
-const UpdatePlaylist = `-- name: UpdatePlaylist :one
+const UpdatePlaylistByName = `-- name: UpdatePlaylistByName :one
 update playlists
-set name = $2, updated_at = now()
-where id = $1 and user_id = $3
+set name = $3, updated_at = now()
+where user_id = $1 and name = $2
 returning id, user_id, name, created_at, updated_at
 `
 
-type UpdatePlaylistParams struct {
-	ID     int64  `json:"id"`
-	Name   string `json:"name"`
+type UpdatePlaylistByNameParams struct {
 	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+	Name_2 string `json:"name_2"`
 }
 
-func (q *Queries) UpdatePlaylist(ctx context.Context, arg *UpdatePlaylistParams) (*Playlist, error) {
-	row := q.db.QueryRow(ctx, UpdatePlaylist, arg.ID, arg.Name, arg.UserID)
+func (q *Queries) UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error) {
+	row := q.db.QueryRow(ctx, UpdatePlaylistByName, arg.UserID, arg.Name, arg.Name_2)
 	var i Playlist
 	err := row.Scan(
 		&i.ID,

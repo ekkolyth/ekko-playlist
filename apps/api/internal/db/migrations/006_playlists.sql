@@ -4,7 +4,8 @@ create table playlists (
     user_id uuid not null references "user"(id) on delete cascade,
     name text not null,
     created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
+    updated_at timestamptz not null default now(),
+    constraint unique_user_playlist_name unique (user_id, name)
 );
 
 create index idx_playlists_user_id on playlists(user_id);

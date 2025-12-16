@@ -196,3 +196,4 @@ The settings page should have three main sections:
 - Tag autocomplete when typing
 - Export/import tags
 
+

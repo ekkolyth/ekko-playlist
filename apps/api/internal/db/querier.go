@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	AddVideoToPlaylist(ctx context.Context, arg *AddVideoToPlaylistParams) (*PlaylistVideo, error)
+	AddVideoToPlaylistByName(ctx context.Context, arg *AddVideoToPlaylistByNameParams) error
 	CleanExpiredSessions(ctx context.Context) error
 	CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error)
 	CreatePlaylist(ctx context.Context, arg *CreatePlaylistParams) (*Playlist, error)
@@ -21,11 +22,14 @@ type Querier interface {
 	DeletePlaylist(ctx context.Context, arg *DeletePlaylistParams) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteUserSessions(ctx context.Context, userID string) error
+	DeleteVideo(ctx context.Context, arg *DeleteVideoParams) error
+	DeleteVideos(ctx context.Context, arg *DeleteVideosParams) error
 	GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error)
 	GetConfig(ctx context.Context, key string) (*Config, error)
-	GetPlaylistByID(ctx context.Context, id int64) (*Playlist, error)
-	GetPlaylistVideoCount(ctx context.Context, playlistID int64) (int64, error)
-	GetPlaylistVideos(ctx context.Context, playlistID int64) ([]*GetPlaylistVideosRow, error)
+	GetPlaylistByName(ctx context.Context, arg *GetPlaylistByNameParams) (*Playlist, error)
+	GetPlaylistIDByName(ctx context.Context, arg *GetPlaylistIDByNameParams) (int64, error)
+	GetPlaylistVideoCount(ctx context.Context, arg *GetPlaylistVideoCountParams) (int64, error)
+	GetPlaylistVideos(ctx context.Context, arg *GetPlaylistVideosParams) ([]*GetPlaylistVideosRow, error)
 	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
@@ -42,8 +46,9 @@ type Querier interface {
 	ListVideosFiltered(ctx context.Context, arg *ListVideosFilteredParams) ([]*Video, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg *RemoveVideoFromPlaylistParams) error
 	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
-	UpdatePlaylist(ctx context.Context, arg *UpdatePlaylistParams) (*Playlist, error)
+	UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error)
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 
 var _ Querier = (*Queries)(nil)
+

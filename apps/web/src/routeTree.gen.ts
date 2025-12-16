@@ -10,34 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthSignupRouteImport } from './routes/auth/signup'
-import { Route as AuthSigninRouteImport } from './routes/auth/signin'
+import { Route as IndexRouteRouteImport } from './routes/index/route'
 import { Route as ApiVerifyTokenRouteImport } from './routes/api/verify-token'
 import { Route as ApiExtensionTokenRouteImport } from './routes/api/extension-token'
-import { Route as AuthenticatedPlaylistsRouteImport } from './routes/_authenticated/playlists'
-import { Route as AuthenticatedExtensionTokensRouteImport } from './routes/_authenticated/extension-tokens'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthSignupRouteRouteImport } from './routes/auth/signup/route'
+import { Route as AuthSigninRouteRouteImport } from './routes/auth/signin/route'
+import { Route as AuthenticatedPlaylistsRouteRouteImport } from './routes/_authenticated/playlists/route'
+import { Route as AuthenticatedExtensionTokensRouteRouteImport } from './routes/_authenticated/extension-tokens/route'
+import { Route as AuthenticatedDashboardRouteRouteImport } from './routes/_authenticated/dashboard/route'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as AuthenticatedPlaylistsIdRouteImport } from './routes/_authenticated/playlists.$id'
+import { Route as AuthenticatedPlaylistsNameRouteRouteImport } from './routes/_authenticated/playlists/$name/route'
+import { Route as AuthenticatedPlaylistsIndexRouteRouteImport } from './routes/_authenticated/playlists/index/route'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const IndexRouteRoute = IndexRouteRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSignupRoute = AuthSignupRouteImport.update({
-  id: '/auth/signup',
-  path: '/auth/signup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthSigninRoute = AuthSigninRouteImport.update({
-  id: '/auth/signin',
-  path: '/auth/signin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVerifyTokenRoute = ApiVerifyTokenRouteImport.update({
@@ -50,70 +41,90 @@ const ApiExtensionTokenRoute = ApiExtensionTokenRouteImport.update({
   path: '/api/extension-token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedPlaylistsRoute = AuthenticatedPlaylistsRouteImport.update({
-  id: '/playlists',
-  path: '/playlists',
-  getParentRoute: () => AuthenticatedRoute,
+const AuthSignupRouteRoute = AuthSignupRouteRouteImport.update({
+  id: '/auth/signup',
+  path: '/auth/signup',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedExtensionTokensRoute =
-  AuthenticatedExtensionTokensRouteImport.update({
+const AuthSigninRouteRoute = AuthSigninRouteRouteImport.update({
+  id: '/auth/signin',
+  path: '/auth/signin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedPlaylistsRouteRoute =
+  AuthenticatedPlaylistsRouteRouteImport.update({
+    id: '/playlists',
+    path: '/playlists',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedExtensionTokensRouteRoute =
+  AuthenticatedExtensionTokensRouteRouteImport.update({
     id: '/extension-tokens',
     path: '/extension-tokens',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
+const AuthenticatedDashboardRouteRoute =
+  AuthenticatedDashboardRouteRouteImport.update({
+    id: '/dashboard',
+    path: '/dashboard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedPlaylistsIdRoute =
-  AuthenticatedPlaylistsIdRouteImport.update({
-    id: '/$id',
-    path: '/$id',
-    getParentRoute: () => AuthenticatedPlaylistsRoute,
+const AuthenticatedPlaylistsNameRouteRoute =
+  AuthenticatedPlaylistsNameRouteRouteImport.update({
+    id: '/$name',
+    path: '/$name',
+    getParentRoute: () => AuthenticatedPlaylistsRouteRoute,
+  } as any)
+const AuthenticatedPlaylistsIndexRouteRoute =
+  AuthenticatedPlaylistsIndexRouteRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPlaylistsRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/extension-tokens': typeof AuthenticatedExtensionTokensRoute
-  '/playlists': typeof AuthenticatedPlaylistsRouteWithChildren
+  '/': typeof IndexRouteRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteRoute
+  '/extension-tokens': typeof AuthenticatedExtensionTokensRouteRoute
+  '/playlists': typeof AuthenticatedPlaylistsRouteRouteWithChildren
+  '/auth/signin': typeof AuthSigninRouteRoute
+  '/auth/signup': typeof AuthSignupRouteRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
-  '/auth/signin': typeof AuthSigninRoute
-  '/auth/signup': typeof AuthSignupRoute
-  '/playlists/$id': typeof AuthenticatedPlaylistsIdRoute
+  '/playlists/': typeof AuthenticatedPlaylistsIndexRouteRoute
+  '/playlists/$name': typeof AuthenticatedPlaylistsNameRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/dashboard': typeof AuthenticatedDashboardRoute
-  '/extension-tokens': typeof AuthenticatedExtensionTokensRoute
-  '/playlists': typeof AuthenticatedPlaylistsRouteWithChildren
+  '/': typeof IndexRouteRoute
+  '/dashboard': typeof AuthenticatedDashboardRouteRoute
+  '/extension-tokens': typeof AuthenticatedExtensionTokensRouteRoute
+  '/auth/signin': typeof AuthSigninRouteRoute
+  '/auth/signup': typeof AuthSignupRouteRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
-  '/auth/signin': typeof AuthSigninRoute
-  '/auth/signup': typeof AuthSignupRoute
-  '/playlists/$id': typeof AuthenticatedPlaylistsIdRoute
+  '/playlists': typeof AuthenticatedPlaylistsIndexRouteRoute
+  '/playlists/$name': typeof AuthenticatedPlaylistsNameRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/': typeof IndexRouteRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
-  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/extension-tokens': typeof AuthenticatedExtensionTokensRoute
-  '/_authenticated/playlists': typeof AuthenticatedPlaylistsRouteWithChildren
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteRoute
+  '/_authenticated/extension-tokens': typeof AuthenticatedExtensionTokensRouteRoute
+  '/_authenticated/playlists': typeof AuthenticatedPlaylistsRouteRouteWithChildren
+  '/auth/signin': typeof AuthSigninRouteRoute
+  '/auth/signup': typeof AuthSignupRouteRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
-  '/auth/signin': typeof AuthSigninRoute
-  '/auth/signup': typeof AuthSignupRoute
-  '/_authenticated/playlists/$id': typeof AuthenticatedPlaylistsIdRoute
+  '/_authenticated/playlists/': typeof AuthenticatedPlaylistsIndexRouteRoute
+  '/_authenticated/playlists/$name': typeof AuthenticatedPlaylistsNameRouteRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRouteTypes {
@@ -123,23 +134,24 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/extension-tokens'
     | '/playlists'
-    | '/api/extension-token'
-    | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
-    | '/playlists/$id'
+    | '/api/extension-token'
+    | '/api/verify-token'
+    | '/playlists/'
+    | '/playlists/$name'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/dashboard'
     | '/extension-tokens'
-    | '/playlists'
-    | '/api/extension-token'
-    | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
-    | '/playlists/$id'
+    | '/api/extension-token'
+    | '/api/verify-token'
+    | '/playlists'
+    | '/playlists/$name'
     | '/api/auth/$'
   id:
     | '__root__'
@@ -148,21 +160,22 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/extension-tokens'
     | '/_authenticated/playlists'
-    | '/api/extension-token'
-    | '/api/verify-token'
     | '/auth/signin'
     | '/auth/signup'
-    | '/_authenticated/playlists/$id'
+    | '/api/extension-token'
+    | '/api/verify-token'
+    | '/_authenticated/playlists/'
+    | '/_authenticated/playlists/$name'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  IndexRouteRoute: typeof IndexRouteRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthSigninRouteRoute: typeof AuthSigninRouteRoute
+  AuthSignupRouteRoute: typeof AuthSignupRouteRoute
   ApiExtensionTokenRoute: typeof ApiExtensionTokenRoute
   ApiVerifyTokenRoute: typeof ApiVerifyTokenRoute
-  AuthSigninRoute: typeof AuthSigninRoute
-  AuthSignupRoute: typeof AuthSignupRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -179,21 +192,7 @@ declare module '@tanstack/react-router' {
       id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/signup': {
-      id: '/auth/signup'
-      path: '/auth/signup'
-      fullPath: '/auth/signup'
-      preLoaderRoute: typeof AuthSignupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth/signin': {
-      id: '/auth/signin'
-      path: '/auth/signin'
-      fullPath: '/auth/signin'
-      preLoaderRoute: typeof AuthSigninRouteImport
+      preLoaderRoute: typeof IndexRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/verify-token': {
@@ -210,25 +209,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExtensionTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/signup': {
+      id: '/auth/signup'
+      path: '/auth/signup'
+      fullPath: '/auth/signup'
+      preLoaderRoute: typeof AuthSignupRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/signin': {
+      id: '/auth/signin'
+      path: '/auth/signin'
+      fullPath: '/auth/signin'
+      preLoaderRoute: typeof AuthSigninRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/playlists': {
       id: '/_authenticated/playlists'
       path: '/playlists'
       fullPath: '/playlists'
-      preLoaderRoute: typeof AuthenticatedPlaylistsRouteImport
+      preLoaderRoute: typeof AuthenticatedPlaylistsRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/extension-tokens': {
       id: '/_authenticated/extension-tokens'
       path: '/extension-tokens'
       fullPath: '/extension-tokens'
-      preLoaderRoute: typeof AuthenticatedExtensionTokensRouteImport
+      preLoaderRoute: typeof AuthenticatedExtensionTokensRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      preLoaderRoute: typeof AuthenticatedDashboardRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/api/auth/$': {
@@ -238,40 +251,52 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/playlists/$id': {
-      id: '/_authenticated/playlists/$id'
-      path: '/$id'
-      fullPath: '/playlists/$id'
-      preLoaderRoute: typeof AuthenticatedPlaylistsIdRouteImport
-      parentRoute: typeof AuthenticatedPlaylistsRoute
+    '/_authenticated/playlists/$name': {
+      id: '/_authenticated/playlists/$name'
+      path: '/$name'
+      fullPath: '/playlists/$name'
+      preLoaderRoute: typeof AuthenticatedPlaylistsNameRouteRouteImport
+      parentRoute: typeof AuthenticatedPlaylistsRouteRoute
+    }
+    '/_authenticated/playlists/': {
+      id: '/_authenticated/playlists/'
+      path: '/'
+      fullPath: '/playlists/'
+      preLoaderRoute: typeof AuthenticatedPlaylistsIndexRouteRouteImport
+      parentRoute: typeof AuthenticatedPlaylistsRouteRoute
     }
   }
 }
 
-interface AuthenticatedPlaylistsRouteChildren {
-  AuthenticatedPlaylistsIdRoute: typeof AuthenticatedPlaylistsIdRoute
+interface AuthenticatedPlaylistsRouteRouteChildren {
+  AuthenticatedPlaylistsIndexRouteRoute: typeof AuthenticatedPlaylistsIndexRouteRoute
+  AuthenticatedPlaylistsNameRouteRoute: typeof AuthenticatedPlaylistsNameRouteRoute
 }
 
-const AuthenticatedPlaylistsRouteChildren: AuthenticatedPlaylistsRouteChildren =
+const AuthenticatedPlaylistsRouteRouteChildren: AuthenticatedPlaylistsRouteRouteChildren =
   {
-    AuthenticatedPlaylistsIdRoute: AuthenticatedPlaylistsIdRoute,
+    AuthenticatedPlaylistsIndexRouteRoute:
+      AuthenticatedPlaylistsIndexRouteRoute,
+    AuthenticatedPlaylistsNameRouteRoute: AuthenticatedPlaylistsNameRouteRoute,
   }
 
-const AuthenticatedPlaylistsRouteWithChildren =
-  AuthenticatedPlaylistsRoute._addFileChildren(
-    AuthenticatedPlaylistsRouteChildren,
+const AuthenticatedPlaylistsRouteRouteWithChildren =
+  AuthenticatedPlaylistsRouteRoute._addFileChildren(
+    AuthenticatedPlaylistsRouteRouteChildren,
   )
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedExtensionTokensRoute: typeof AuthenticatedExtensionTokensRoute
-  AuthenticatedPlaylistsRoute: typeof AuthenticatedPlaylistsRouteWithChildren
+  AuthenticatedDashboardRouteRoute: typeof AuthenticatedDashboardRouteRoute
+  AuthenticatedExtensionTokensRouteRoute: typeof AuthenticatedExtensionTokensRouteRoute
+  AuthenticatedPlaylistsRouteRoute: typeof AuthenticatedPlaylistsRouteRouteWithChildren
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedExtensionTokensRoute: AuthenticatedExtensionTokensRoute,
-  AuthenticatedPlaylistsRoute: AuthenticatedPlaylistsRouteWithChildren,
+  AuthenticatedDashboardRouteRoute: AuthenticatedDashboardRouteRoute,
+  AuthenticatedExtensionTokensRouteRoute:
+    AuthenticatedExtensionTokensRouteRoute,
+  AuthenticatedPlaylistsRouteRoute:
+    AuthenticatedPlaylistsRouteRouteWithChildren,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -279,12 +304,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 )
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  IndexRouteRoute: IndexRouteRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthSigninRouteRoute: AuthSigninRouteRoute,
+  AuthSignupRouteRoute: AuthSignupRouteRoute,
   ApiExtensionTokenRoute: ApiExtensionTokenRoute,
   ApiVerifyTokenRoute: ApiVerifyTokenRoute,
-  AuthSigninRoute: AuthSigninRoute,
-  AuthSignupRoute: AuthSignupRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

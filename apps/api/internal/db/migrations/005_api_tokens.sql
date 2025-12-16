@@ -20,3 +20,4 @@ CREATE INDEX idx_api_tokens_token_hash ON "api_tokens"(token_hash);
 DROP TABLE IF EXISTS "api_tokens";
 -- +goose StatementEnd
 
+

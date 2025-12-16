@@ -132,3 +132,51 @@ func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 	httpx.RespondJSON(w, http.StatusOK, response)
 }
 
+type DeleteVideoRequest struct {
+	VideoIDs []int64 `json:"videoIds"`
+}
+
+// Delete handles DELETE /api/videos
+// Deletes one or more videos for the authenticated user
+func (h *VideosHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(ctx)
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	// Parse request body
+	var req DeleteVideoRequest
+	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+		logging.Warning("Invalid request body: " + err.Error())
+		httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if len(req.VideoIDs) == 0 {
+		httpx.RespondError(w, http.StatusBadRequest, "videoIds array is required and cannot be empty")
+		return
+	}
+
+	// Delete videos
+	err := h.dbService.Queries.DeleteVideos(ctx, &db.DeleteVideosParams{
+		Column1: req.VideoIDs,
+		UserID:  userID,
+	})
+
+	if err != nil {
+		logging.Info("Error deleting videos: %s", err.Error())
+		httpx.RespondError(w, http.StatusInternalServerError, "Failed to delete videos")
+		return
+	}
+
+	httpx.RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"message": "Videos deleted successfully",
+		"deleted": len(req.VideoIDs),
+	})
+}
+

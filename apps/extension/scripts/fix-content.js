@@ -10,3 +10,4 @@ content = content.replace(/^"use strict";\nObject\.defineProperty\(exports, "__e
 fs.writeFileSync(contentPath, content);
 console.log('Fixed content.js - removed CommonJS exports');
 
+

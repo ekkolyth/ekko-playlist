@@ -1,8 +1,7 @@
 import { Link, useRouterState } from '@tanstack/react-router';
-import { useAuth } from '@/contexts/auth-context';
+import { useAuth } from '@/hooks/use-auth';
 import { useState, useEffect, useRef } from 'react';
-import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, LogOut, MoreVertical, Play, Key, ListMusic } from 'lucide-react';
+import { LogOut, MoreVertical, Play } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -26,24 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-type SidebarItem = { label: string; href: string; icon: LucideIcon };
-
-export type SidebarSection = {
-  label: string;
-  items: SidebarItem[];
-};
-
-export const sidebarSections: SidebarSection[] = [
-  {
-    label: 'MAIN',
-    items: [
-      { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-      { label: 'Playlists', href: '/playlists', icon: ListMusic },
-      { label: 'Extension Tokens', href: '/extension-tokens', icon: Key },
-    ],
-  },
-];
+import { sidebarSections } from './sidebar-config';
 
 export function Navbar() {
   const router = useRouterState();

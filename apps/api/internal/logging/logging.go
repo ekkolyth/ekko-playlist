@@ -30,3 +30,4 @@ func Api(message string) {
 	log.Println(config.CLI_BRIGHT_CYAN + "[API]:" + config.CLI_RESET + message)
 }
 
+

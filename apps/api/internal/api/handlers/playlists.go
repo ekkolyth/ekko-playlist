@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -32,7 +31,6 @@ type UpdatePlaylistRequest struct {
 }
 
 type PlaylistResponse struct {
-	ID        int64  `json:"id"`
 	UserID    string `json:"userId"`
 	Name      string `json:"name"`
 	VideoCount int64  `json:"videoCount"`
@@ -41,7 +39,6 @@ type PlaylistResponse struct {
 }
 
 type PlaylistDetailResponse struct {
-	ID        int64           `json:"id"`
 	UserID    string          `json:"userId"`
 	Name      string          `json:"name"`
 	Videos    []VideoResponse `json:"videos"`
@@ -86,7 +83,10 @@ func (h *PlaylistsHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, playlist.ID)
+	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, &db.GetPlaylistVideoCountParams{
+		UserID: userID,
+		Name:   playlist.Name,
+	})
 
 	createdAt := ""
 	if playlist.CreatedAt.Valid {
@@ -98,7 +98,6 @@ func (h *PlaylistsHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.RespondJSON(w, http.StatusCreated, PlaylistResponse{
-		ID:         playlist.ID,
 		UserID:     playlist.UserID,
 		Name:       playlist.Name,
 		VideoCount: videoCount,
@@ -131,7 +130,10 @@ func (h *PlaylistsHandler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	for _, playlist := range playlists {
-		videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, playlist.ID)
+		videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, &db.GetPlaylistVideoCountParams{
+		UserID: userID,
+		Name:   playlist.Name,
+	})
 
 		createdAt := ""
 		if playlist.CreatedAt.Valid {
@@ -143,7 +145,6 @@ func (h *PlaylistsHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response.Playlists = append(response.Playlists, PlaylistResponse{
-			ID:         playlist.ID,
 			UserID:     playlist.UserID,
 			Name:       playlist.Name,
 			VideoCount: videoCount,
@@ -167,28 +168,27 @@ func (h *PlaylistsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlistIDStr := chi.URLParam(r, "id")
-	playlistID, err := strconv.ParseInt(playlistIDStr, 10, 64)
-	if err != nil {
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid playlist ID")
+	playlistName := chi.URLParam(r, "id")
+	if playlistName == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "Playlist name is required")
 		return
 	}
 
-	playlist, err := h.dbService.Queries.GetPlaylistByID(ctx, playlistID)
+	playlist, err := h.dbService.Queries.GetPlaylistByName(ctx, &db.GetPlaylistByNameParams{
+		UserID: userID,
+		Name:   playlistName,
+	})
 	if err != nil {
 		logging.Info("Error getting playlist: %s", err.Error())
 		httpx.RespondError(w, http.StatusNotFound, "Playlist not found")
 		return
 	}
 
-	// Verify ownership
-	if playlist.UserID != userID {
-		httpx.RespondError(w, http.StatusForbidden, "You don't have permission to access this playlist")
-		return
-	}
-
 	// Get videos
-	videoRows, err := h.dbService.Queries.GetPlaylistVideos(ctx, playlistID)
+	videoRows, err := h.dbService.Queries.GetPlaylistVideos(ctx, &db.GetPlaylistVideosParams{
+		UserID: userID,
+		Name:   playlistName,
+	})
 	if err != nil {
 		logging.Info("Error getting playlist videos: %s", err.Error())
 		httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch playlist videos")
@@ -224,7 +224,6 @@ func (h *PlaylistsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.RespondJSON(w, http.StatusOK, PlaylistDetailResponse{
-		ID:        playlist.ID,
 		UserID:    playlist.UserID,
 		Name:      playlist.Name,
 		Videos:    videos,
@@ -245,10 +244,9 @@ func (h *PlaylistsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlistIDStr := chi.URLParam(r, "id")
-	playlistID, err := strconv.ParseInt(playlistIDStr, 10, 64)
-	if err != nil {
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid playlist ID")
+	playlistName := chi.URLParam(r, "id")
+	if playlistName == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "Playlist name is required")
 		return
 	}
 
@@ -263,10 +261,10 @@ func (h *PlaylistsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlist, err := h.dbService.Queries.UpdatePlaylist(ctx, &db.UpdatePlaylistParams{
-		ID:     playlistID,
-		Name:   req.Name,
+	playlist, err := h.dbService.Queries.UpdatePlaylistByName(ctx, &db.UpdatePlaylistByNameParams{
 		UserID: userID,
+		Name:   playlistName,
+		Name_2: req.Name,
 	})
 	if err != nil {
 		logging.Info("Error updating playlist: %s", err.Error())
@@ -274,7 +272,10 @@ func (h *PlaylistsHandler) Update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, playlist.ID)
+	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, &db.GetPlaylistVideoCountParams{
+		UserID: userID,
+		Name:   playlist.Name,
+	})
 
 	createdAt := ""
 	if playlist.CreatedAt.Valid {
@@ -286,7 +287,6 @@ func (h *PlaylistsHandler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	httpx.RespondJSON(w, http.StatusOK, PlaylistResponse{
-		ID:         playlist.ID,
 		UserID:     playlist.UserID,
 		Name:       playlist.Name,
 		VideoCount: videoCount,
@@ -307,16 +307,15 @@ func (h *PlaylistsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	playlistIDStr := chi.URLParam(r, "id")
-	playlistID, err := strconv.ParseInt(playlistIDStr, 10, 64)
-	if err != nil {
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid playlist ID")
+	playlistName := chi.URLParam(r, "id")
+	if playlistName == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "Playlist name is required")
 		return
 	}
 
-	err = h.dbService.Queries.DeletePlaylist(ctx, &db.DeletePlaylistParams{
-		ID:     playlistID,
+	err := h.dbService.Queries.DeletePlaylist(ctx, &db.DeletePlaylistParams{
 		UserID: userID,
+		Name:   playlistName,
 	})
 	if err != nil {
 		logging.Info("Error deleting playlist: %s", err.Error())

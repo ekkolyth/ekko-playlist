@@ -27,3 +27,11 @@ WHERE user_id = $1
   AND channel = ANY($2::text[])
 ORDER BY created_at DESC;
 
+-- name: DeleteVideo :exec
+DELETE FROM videos
+WHERE id = $1 AND user_id = $2;
+
+-- name: DeleteVideos :exec
+DELETE FROM videos
+WHERE id = ANY($1::bigint[]) AND user_id = $2;
+

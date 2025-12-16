@@ -27,6 +27,10 @@ type AddVideoToPlaylistRequest struct {
 	VideoID int64 `json:"videoId"`
 }
 
+type BulkAddVideosToPlaylistRequest struct {
+	VideoIDs []int64 `json:"videoIds"`
+}
+
 // AddVideo handles POST /api/playlists/:id/videos
 // Adds a video to a playlist
 func (h *PlaylistVideosHandler) AddVideo(w http.ResponseWriter, r *http.Request) {
@@ -39,23 +43,9 @@ func (h *PlaylistVideosHandler) AddVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	playlistIDStr := chi.URLParam(r, "id")
-	playlistID, err := strconv.ParseInt(playlistIDStr, 10, 64)
-	if err != nil {
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid playlist ID")
-		return
-	}
-
-	// Verify playlist ownership
-	playlist, err := h.dbService.Queries.GetPlaylistByID(ctx, playlistID)
-	if err != nil {
-		logging.Info("Error getting playlist: %s", err.Error())
-		httpx.RespondError(w, http.StatusNotFound, "Playlist not found")
-		return
-	}
-
-	if playlist.UserID != userID {
-		httpx.RespondError(w, http.StatusForbidden, "You don't have permission to modify this playlist")
+	playlistName := chi.URLParam(r, "id")
+	if playlistName == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "Playlist name is required")
 		return
 	}
 
@@ -79,12 +69,16 @@ func (h *PlaylistVideosHandler) AddVideo(w http.ResponseWriter, r *http.Request)
 	}
 
 	// Get current max position to append at the end
-	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, playlistID)
+	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, &db.GetPlaylistVideoCountParams{
+		UserID: userID,
+		Name:   playlistName,
+	})
 
-	_, err = h.dbService.Queries.AddVideoToPlaylist(ctx, &db.AddVideoToPlaylistParams{
-		PlaylistID: playlistID,
-		VideoID:    req.VideoID,
-		Position:   int32(videoCount),
+	err = h.dbService.Queries.AddVideoToPlaylistByName(ctx, &db.AddVideoToPlaylistByNameParams{
+		UserID:   userID,
+		VideoID:  req.VideoID,
+		Position: int32(videoCount),
+		Name:     playlistName,
 	})
 	if err != nil {
 		logging.Info("Error adding video to playlist: %s", err.Error())
@@ -107,10 +101,9 @@ func (h *PlaylistVideosHandler) RemoveVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	playlistIDStr := chi.URLParam(r, "id")
-	playlistID, err := strconv.ParseInt(playlistIDStr, 10, 64)
-	if err != nil {
-		httpx.RespondError(w, http.StatusBadRequest, "Invalid playlist ID")
+	playlistName := chi.URLParam(r, "id")
+	if playlistName == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "Playlist name is required")
 		return
 	}
 
@@ -121,22 +114,10 @@ func (h *PlaylistVideosHandler) RemoveVideo(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Verify playlist ownership
-	playlist, err := h.dbService.Queries.GetPlaylistByID(ctx, playlistID)
-	if err != nil {
-		logging.Info("Error getting playlist: %s", err.Error())
-		httpx.RespondError(w, http.StatusNotFound, "Playlist not found")
-		return
-	}
-
-	if playlist.UserID != userID {
-		httpx.RespondError(w, http.StatusForbidden, "You don't have permission to modify this playlist")
-		return
-	}
-
 	err = h.dbService.Queries.RemoveVideoFromPlaylist(ctx, &db.RemoveVideoFromPlaylistParams{
-		PlaylistID: playlistID,
-		VideoID:    videoID,
+		UserID: userID,
+		Name:   playlistName,
+		VideoID: videoID,
 	})
 	if err != nil {
 		logging.Info("Error removing video from playlist: %s", err.Error())
@@ -145,5 +126,81 @@ func (h *PlaylistVideosHandler) RemoveVideo(w http.ResponseWriter, r *http.Reque
 	}
 
 	httpx.RespondJSON(w, http.StatusOK, map[string]string{"message": "Video removed from playlist successfully"})
+}
+
+// BulkAddVideos handles POST /api/playlists/:id/videos/bulk
+// Adds multiple videos to a playlist
+func (h *PlaylistVideosHandler) BulkAddVideos(w http.ResponseWriter, r *http.Request) {
+	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	defer cancel()
+
+	userID, ok := auth.GetUserID(ctx)
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	playlistName := chi.URLParam(r, "id")
+	if playlistName == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "Playlist name is required")
+		return
+	}
+
+	var req BulkAddVideosToPlaylistRequest
+	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+		httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if len(req.VideoIDs) == 0 {
+		httpx.RespondError(w, http.StatusBadRequest, "videoIds array is required and cannot be empty")
+		return
+	}
+
+	// Get current max position to append at the end
+	videoCount, _ := h.dbService.Queries.GetPlaylistVideoCount(ctx, &db.GetPlaylistVideoCountParams{
+		UserID: userID,
+		Name:   playlistName,
+	})
+	addedCount := int64(0)
+	failedCount := 0
+
+	// Add each video
+	for _, videoID := range req.VideoIDs {
+		// Verify video exists and belongs to user
+		video, err := h.dbService.Queries.GetVideoByID(ctx, videoID)
+		if err != nil {
+			logging.Info("Error getting video %d: %s", videoID, err.Error())
+			failedCount++
+			continue
+		}
+
+		if video.UserID != userID {
+			logging.Info("Video %d does not belong to user", videoID)
+			failedCount++
+			continue
+		}
+
+		err = h.dbService.Queries.AddVideoToPlaylistByName(ctx, &db.AddVideoToPlaylistByNameParams{
+			UserID:   userID,
+			VideoID:  videoID,
+			Position: int32(videoCount + addedCount),
+			Name:     playlistName,
+		})
+		if err != nil {
+			logging.Info("Error adding video %d to playlist: %s", videoID, err.Error())
+			failedCount++
+			continue
+		}
+
+		addedCount++
+	}
+
+	httpx.RespondJSON(w, http.StatusOK, map[string]interface{}{
+		"message":    "Bulk add completed",
+		"added":      addedCount,
+		"failed":     failedCount,
+		"requested":  len(req.VideoIDs),
+	})
 }
 

@@ -129,9 +129,8 @@ export async function apiRequest<T>(
 
 // Playlist types
 export interface Playlist {
-  id: number;
-  userId: string;
   name: string;
+  userId: string;
   videoCount: number;
   createdAt: string;
   updatedAt: string;
@@ -150,6 +149,10 @@ export interface Video {
   channel: string;
   userId: string;
   createdAt: string;
+}
+
+export interface VideosResponse {
+  videos: Video[];
 }
 
 export interface ListPlaylistsResponse {
@@ -171,28 +174,28 @@ export async function createPlaylist(name: string): Promise<Playlist> {
   });
 }
 
-export async function getPlaylist(id: number): Promise<PlaylistDetail> {
-  return apiRequest<PlaylistDetail>(`/api/playlists/${id}`);
+export async function getPlaylist(name: string): Promise<PlaylistDetail> {
+  return apiRequest<PlaylistDetail>(`/api/playlists/${encodeURIComponent(name)}`);
 }
 
-export async function updatePlaylist(id: number, name: string): Promise<Playlist> {
-  return apiRequest<Playlist>(`/api/playlists/${id}`, {
+export async function updatePlaylist(name: string, newName: string): Promise<Playlist> {
+  return apiRequest<Playlist>(`/api/playlists/${encodeURIComponent(name)}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({ name: newName }),
   });
 }
 
-export async function deletePlaylist(id: number): Promise<void> {
-  await apiRequest(`/api/playlists/${id}`, {
+export async function deletePlaylist(name: string): Promise<void> {
+  await apiRequest(`/api/playlists/${encodeURIComponent(name)}`, {
     method: 'DELETE',
   });
 }
 
-export async function addVideoToPlaylist(playlistId: number, videoId: number): Promise<void> {
-  await apiRequest(`/api/playlists/${playlistId}/videos`, {
+export async function addVideoToPlaylist(playlistName: string, videoId: number): Promise<void> {
+  await apiRequest(`/api/playlists/${encodeURIComponent(playlistName)}/videos`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -201,8 +204,28 @@ export async function addVideoToPlaylist(playlistId: number, videoId: number): P
   });
 }
 
-export async function removeVideoFromPlaylist(playlistId: number, videoId: number): Promise<void> {
-  await apiRequest(`/api/playlists/${playlistId}/videos/${videoId}`, {
+export async function removeVideoFromPlaylist(playlistName: string, videoId: number): Promise<void> {
+  await apiRequest(`/api/playlists/${encodeURIComponent(playlistName)}/videos/${videoId}`, {
     method: 'DELETE',
+  });
+}
+
+export async function bulkAddVideosToPlaylist(playlistName: string, videoIds: number[]): Promise<void> {
+  await apiRequest(`/api/playlists/${encodeURIComponent(playlistName)}/videos/bulk`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ videoIds }),
+  });
+}
+
+export async function deleteVideos(videoIds: number[]): Promise<void> {
+  await apiRequest('/api/videos', {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ videoIds }),
   });
 }

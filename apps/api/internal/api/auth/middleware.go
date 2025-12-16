@@ -31,7 +31,7 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 			// First try to validate as session token
 			session, err := dbService.Queries.GetSessionByToken(ctx, token)
 			if err == nil && session != nil {
-				logging.Info("Auth: Session validated - User ID: %s, Email: %s", session.UserID, session.UserEmail)
+				logging.Api("Auth: Session validated")
 				// Add user info to request context
 				ctx = context.WithValue(ctx, userIDKey, session.UserID)
 				ctx = context.WithValue(ctx, userEmailKey, session.UserEmail)

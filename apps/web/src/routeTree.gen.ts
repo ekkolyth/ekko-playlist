@@ -18,6 +18,7 @@ import { Route as AuthSigninRouteRouteImport } from './routes/auth/signin/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedAppRouteRouteImport } from './routes/_authenticated/app/route'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as AuthenticatedAppKnucklesRouteImport } from './routes/_authenticated/app/knuckles'
 import { Route as AuthenticatedSettingsProfileRouteRouteImport } from './routes/_authenticated/settings/profile/route'
 import { Route as AuthenticatedSettingsPreferencesRouteRouteImport } from './routes/_authenticated/settings/preferences/route'
 import { Route as AuthenticatedSettingsPluginsRouteRouteImport } from './routes/_authenticated/settings/plugins/route'
@@ -73,6 +74,12 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedAppKnucklesRoute =
+  AuthenticatedAppKnucklesRouteImport.update({
+    id: '/knuckles',
+    path: '/knuckles',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
 const AuthenticatedSettingsProfileRouteRoute =
   AuthenticatedSettingsProfileRouteRouteImport.update({
     id: '/profile',
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
+  '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRouteRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
@@ -160,6 +168,7 @@ export interface FileRoutesByTo {
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
+  '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRouteRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -180,6 +189,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/_authenticated/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
+  '/_authenticated/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRouteRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
@@ -201,6 +211,7 @@ export interface FileRouteTypes {
     | '/settings/plugins'
     | '/settings/preferences'
     | '/settings/profile'
+    | '/app/knuckles'
     | '/api/auth/$'
     | '/app/playlists/'
     | '/app/playlists/$name'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/settings/plugins'
     | '/settings/preferences'
     | '/settings/profile'
+    | '/app/knuckles'
     | '/api/auth/$'
     | '/app/playlists'
     | '/app/playlists/$name'
@@ -238,6 +250,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/plugins'
     | '/_authenticated/settings/preferences'
     | '/_authenticated/settings/profile'
+    | '/_authenticated/app/knuckles'
     | '/api/auth/$'
     | '/_authenticated/app/playlists/'
     | '/_authenticated/app/playlists/$name'
@@ -318,6 +331,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/app/knuckles': {
+      id: '/_authenticated/app/knuckles'
+      path: '/knuckles'
+      fullPath: '/app/knuckles'
+      preLoaderRoute: typeof AuthenticatedAppKnucklesRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
     }
     '/_authenticated/settings/profile': {
       id: '/_authenticated/settings/profile'
@@ -421,12 +441,14 @@ const AuthenticatedAppPlaylistsRouteRouteWithChildren =
 interface AuthenticatedAppRouteRouteChildren {
   AuthenticatedAppDashboardRouteRoute: typeof AuthenticatedAppDashboardRouteRoute
   AuthenticatedAppPlaylistsRouteRoute: typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
+  AuthenticatedAppKnucklesRoute: typeof AuthenticatedAppKnucklesRoute
 }
 
 const AuthenticatedAppRouteRouteChildren: AuthenticatedAppRouteRouteChildren = {
   AuthenticatedAppDashboardRouteRoute: AuthenticatedAppDashboardRouteRoute,
   AuthenticatedAppPlaylistsRouteRoute:
     AuthenticatedAppPlaylistsRouteRouteWithChildren,
+  AuthenticatedAppKnucklesRoute: AuthenticatedAppKnucklesRoute,
 }
 
 const AuthenticatedAppRouteRouteWithChildren =

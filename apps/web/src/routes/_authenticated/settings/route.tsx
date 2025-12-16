@@ -18,8 +18,8 @@ const settingsNavItems = [
     icon: User,
   },
   {
-    title: "Extension Tokens",
-    href: "/settings/extension-tokens",
+    title: "API Keys",
+    href: "/settings/api-keys",
     icon: Key,
   },
   {

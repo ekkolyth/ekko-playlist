@@ -1,4 +1,8 @@
-.PHONY: build build/api build/ext build/web dev install install/go db/up db/down db/migrate db/status db/reset db/create db/drop
+.PHONY: build build/api build/ext build/web dev install install/go db/up db/down db/migrate db/status db/reset db/create db/drop docker/build docker/tag docker/push
+
+# Docker configuration
+IMAGE_NAME ?= ekkolyth/ekko-playlist
+IMAGE_TAG ?= dev
 
 # Build all applications
 build: build/api build/ext build/web
@@ -144,3 +148,31 @@ db/drop: check-db-url
 	else \
 		echo "Cancelled."; \
 	fi
+
+# ==========================================================
+# Docker
+# ==========================================================
+
+docker/build:
+	@$(eval IMAGE_TAG := $(or $(filter-out $@,$(MAKECMDGOALS)),$(IMAGE_TAG)))
+	@echo "Building Docker image..."
+	docker build --platform linux/amd64 \
+		-t $(IMAGE_NAME):$(IMAGE_TAG) \
+		-f Docker/Dockerfile .
+	@echo "✅ Docker image built: $(IMAGE_NAME):$(IMAGE_TAG)"
+
+docker/tag:
+	@test -n "$(NEW_TAG)" || (echo "Usage: make docker/tag NEW_TAG=v0.1.0"; exit 1)
+	@echo "Tagging Docker image..."
+	docker tag $(IMAGE_NAME):$(IMAGE_TAG) $(IMAGE_NAME):$(NEW_TAG)
+	@echo "✅ Docker image tagged: $(IMAGE_NAME):$(NEW_TAG)"
+
+docker/push:
+	@$(eval IMAGE_TAG := $(or $(filter-out $@,$(MAKECMDGOALS)),$(IMAGE_TAG)))
+	@echo "Pushing Docker image to registry..."
+	docker push $(IMAGE_NAME):$(IMAGE_TAG)
+	@echo "✅ Docker image pushed: $(IMAGE_NAME):$(IMAGE_TAG)"
+
+# Catch-all target to prevent "No rule to make target" errors for tag arguments
+%:
+	@:

@@ -22,10 +22,11 @@ import { Route as AuthenticatedAppKnucklesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSettingsProfileRouteRouteImport } from './routes/_authenticated/settings/profile/route'
 import { Route as AuthenticatedSettingsPreferencesRouteRouteImport } from './routes/_authenticated/settings/preferences/route'
 import { Route as AuthenticatedSettingsPluginsRouteRouteImport } from './routes/_authenticated/settings/plugins/route'
-import { Route as AuthenticatedSettingsExtensionTokensRouteRouteImport } from './routes/_authenticated/settings/extension-tokens/route'
 import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_authenticated/app/playlists/route'
+import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
 import { Route as AuthenticatedAppPlaylistsIndexRouteImport } from './routes/_authenticated/app/playlists/index'
 import { Route as AuthenticatedAppDashboardIndexRouteImport } from './routes/_authenticated/app/dashboard/index'
+import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as AuthenticatedAppPlaylistsNameIndexRouteImport } from './routes/_authenticated/app/playlists/$name/index'
 
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
@@ -97,17 +98,17 @@ const AuthenticatedSettingsPluginsRouteRoute =
     path: '/plugins',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
-const AuthenticatedSettingsExtensionTokensRouteRoute =
-  AuthenticatedSettingsExtensionTokensRouteRouteImport.update({
-    id: '/extension-tokens',
-    path: '/extension-tokens',
-    getParentRoute: () => AuthenticatedSettingsRouteRoute,
-  } as any)
 const AuthenticatedAppPlaylistsRouteRoute =
   AuthenticatedAppPlaylistsRouteRouteImport.update({
     id: '/playlists',
     path: '/playlists',
     getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedSettingsApiKeysIndexRoute =
+  AuthenticatedSettingsApiKeysIndexRouteImport.update({
+    id: '/api-keys/',
+    path: '/api-keys/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedAppPlaylistsIndexRoute =
   AuthenticatedAppPlaylistsIndexRouteImport.update({
@@ -121,11 +122,17 @@ const AuthenticatedAppDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => AuthenticatedAppRouteRoute,
   } as any)
+const AuthenticatedAppPlaylistsNameRouteRoute =
+  AuthenticatedAppPlaylistsNameRouteRouteImport.update({
+    id: '/$name',
+    path: '/$name',
+    getParentRoute: () => AuthenticatedAppPlaylistsRouteRoute,
+  } as any)
 const AuthenticatedAppPlaylistsNameIndexRoute =
   AuthenticatedAppPlaylistsNameIndexRouteImport.update({
-    id: '/$name/',
-    path: '/$name/',
-    getParentRoute: () => AuthenticatedAppPlaylistsRouteRoute,
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAppPlaylistsNameRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -135,7 +142,6 @@ export interface FileRoutesByFullPath {
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
-  '/settings/extension-tokens': typeof AuthenticatedSettingsExtensionTokensRouteRoute
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
@@ -143,9 +149,11 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
+  '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
-  '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
+  '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -153,7 +161,6 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
-  '/settings/extension-tokens': typeof AuthenticatedSettingsExtensionTokensRouteRoute
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/auth/signup': typeof AuthSignupIndexRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRoute
+  '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
 }
 export interface FileRoutesById {
@@ -174,7 +182,6 @@ export interface FileRoutesById {
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/_authenticated/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
-  '/_authenticated/settings/extension-tokens': typeof AuthenticatedSettingsExtensionTokensRouteRoute
   '/_authenticated/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/_authenticated/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
@@ -182,8 +189,10 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/auth/signin/': typeof AuthSigninIndexRoute
   '/auth/signup/': typeof AuthSignupIndexRoute
+  '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
   '/_authenticated/app/dashboard/': typeof AuthenticatedAppDashboardIndexRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
+  '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/_authenticated/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
 }
 export interface FileRouteTypes {
@@ -195,7 +204,6 @@ export interface FileRouteTypes {
     | '/api/extension-token'
     | '/api/verify-token'
     | '/app/playlists'
-    | '/settings/extension-tokens'
     | '/settings/plugins'
     | '/settings/preferences'
     | '/settings/profile'
@@ -203,9 +211,11 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/auth/signin'
     | '/auth/signup'
+    | '/app/playlists/$name'
     | '/app/dashboard'
     | '/app/playlists/'
-    | '/app/playlists/$name'
+    | '/settings/api-keys'
+    | '/app/playlists/$name/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -213,7 +223,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/api/extension-token'
     | '/api/verify-token'
-    | '/settings/extension-tokens'
     | '/settings/plugins'
     | '/settings/preferences'
     | '/settings/profile'
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/app/dashboard'
     | '/app/playlists'
+    | '/settings/api-keys'
     | '/app/playlists/$name'
   id:
     | '__root__'
@@ -233,7 +243,6 @@ export interface FileRouteTypes {
     | '/api/extension-token'
     | '/api/verify-token'
     | '/_authenticated/app/playlists'
-    | '/_authenticated/settings/extension-tokens'
     | '/_authenticated/settings/plugins'
     | '/_authenticated/settings/preferences'
     | '/_authenticated/settings/profile'
@@ -241,8 +250,10 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/auth/signin/'
     | '/auth/signup/'
+    | '/_authenticated/app/playlists/$name'
     | '/_authenticated/app/dashboard/'
     | '/_authenticated/app/playlists/'
+    | '/_authenticated/settings/api-keys/'
     | '/_authenticated/app/playlists/$name/'
   fileRoutesById: FileRoutesById
 }
@@ -349,19 +360,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsPluginsRouteRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
-    '/_authenticated/settings/extension-tokens': {
-      id: '/_authenticated/settings/extension-tokens'
-      path: '/extension-tokens'
-      fullPath: '/settings/extension-tokens'
-      preLoaderRoute: typeof AuthenticatedSettingsExtensionTokensRouteRouteImport
-      parentRoute: typeof AuthenticatedSettingsRouteRoute
-    }
     '/_authenticated/app/playlists': {
       id: '/_authenticated/app/playlists'
       path: '/playlists'
       fullPath: '/app/playlists'
       preLoaderRoute: typeof AuthenticatedAppPlaylistsRouteRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/settings/api-keys/': {
+      id: '/_authenticated/settings/api-keys/'
+      path: '/api-keys'
+      fullPath: '/settings/api-keys'
+      preLoaderRoute: typeof AuthenticatedSettingsApiKeysIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/app/playlists/': {
       id: '/_authenticated/app/playlists/'
@@ -377,26 +388,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
     }
-    '/_authenticated/app/playlists/$name/': {
-      id: '/_authenticated/app/playlists/$name/'
+    '/_authenticated/app/playlists/$name': {
+      id: '/_authenticated/app/playlists/$name'
       path: '/$name'
       fullPath: '/app/playlists/$name'
-      preLoaderRoute: typeof AuthenticatedAppPlaylistsNameIndexRouteImport
+      preLoaderRoute: typeof AuthenticatedAppPlaylistsNameRouteRouteImport
       parentRoute: typeof AuthenticatedAppPlaylistsRouteRoute
+    }
+    '/_authenticated/app/playlists/$name/': {
+      id: '/_authenticated/app/playlists/$name/'
+      path: '/'
+      fullPath: '/app/playlists/$name/'
+      preLoaderRoute: typeof AuthenticatedAppPlaylistsNameIndexRouteImport
+      parentRoute: typeof AuthenticatedAppPlaylistsNameRouteRoute
     }
   }
 }
 
-interface AuthenticatedAppPlaylistsRouteRouteChildren {
-  AuthenticatedAppPlaylistsIndexRoute: typeof AuthenticatedAppPlaylistsIndexRoute
+interface AuthenticatedAppPlaylistsNameRouteRouteChildren {
   AuthenticatedAppPlaylistsNameIndexRoute: typeof AuthenticatedAppPlaylistsNameIndexRoute
+}
+
+const AuthenticatedAppPlaylistsNameRouteRouteChildren: AuthenticatedAppPlaylistsNameRouteRouteChildren =
+  {
+    AuthenticatedAppPlaylistsNameIndexRoute:
+      AuthenticatedAppPlaylistsNameIndexRoute,
+  }
+
+const AuthenticatedAppPlaylistsNameRouteRouteWithChildren =
+  AuthenticatedAppPlaylistsNameRouteRoute._addFileChildren(
+    AuthenticatedAppPlaylistsNameRouteRouteChildren,
+  )
+
+interface AuthenticatedAppPlaylistsRouteRouteChildren {
+  AuthenticatedAppPlaylistsNameRouteRoute: typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  AuthenticatedAppPlaylistsIndexRoute: typeof AuthenticatedAppPlaylistsIndexRoute
 }
 
 const AuthenticatedAppPlaylistsRouteRouteChildren: AuthenticatedAppPlaylistsRouteRouteChildren =
   {
+    AuthenticatedAppPlaylistsNameRouteRoute:
+      AuthenticatedAppPlaylistsNameRouteRouteWithChildren,
     AuthenticatedAppPlaylistsIndexRoute: AuthenticatedAppPlaylistsIndexRoute,
-    AuthenticatedAppPlaylistsNameIndexRoute:
-      AuthenticatedAppPlaylistsNameIndexRoute,
   }
 
 const AuthenticatedAppPlaylistsRouteRouteWithChildren =
@@ -423,22 +456,22 @@ const AuthenticatedAppRouteRouteWithChildren =
   )
 
 interface AuthenticatedSettingsRouteRouteChildren {
-  AuthenticatedSettingsExtensionTokensRouteRoute: typeof AuthenticatedSettingsExtensionTokensRouteRoute
   AuthenticatedSettingsPluginsRouteRoute: typeof AuthenticatedSettingsPluginsRouteRoute
   AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
   AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRoute
+  AuthenticatedSettingsApiKeysIndexRoute: typeof AuthenticatedSettingsApiKeysIndexRoute
 }
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
-    AuthenticatedSettingsExtensionTokensRouteRoute:
-      AuthenticatedSettingsExtensionTokensRouteRoute,
     AuthenticatedSettingsPluginsRouteRoute:
       AuthenticatedSettingsPluginsRouteRoute,
     AuthenticatedSettingsPreferencesRouteRoute:
       AuthenticatedSettingsPreferencesRouteRoute,
     AuthenticatedSettingsProfileRouteRoute:
       AuthenticatedSettingsProfileRouteRoute,
+    AuthenticatedSettingsApiKeysIndexRoute:
+      AuthenticatedSettingsApiKeysIndexRoute,
   }
 
 const AuthenticatedSettingsRouteRouteWithChildren =

@@ -34,11 +34,15 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM oven/bun:1 AS web-builder
 WORKDIR /web
 
+# Build args only for variables that need to be baked into client-side code
+ARG VITE_API_URL
+
 COPY apps/web/package.json apps/web/bun.lock ./
 RUN bun install --frozen-lockfile
 
 COPY apps/web/ ./
 ENV NODE_ENV=production
+ENV VITE_API_URL=${VITE_API_URL}
 RUN bun run build
 
 ###########################################
@@ -88,6 +92,10 @@ export PORT="${WEB_PORT}"
 export NITRO_PORT="${WEB_PORT}"
 export NITRO_HOST="0.0.0.0"
 export API_URL
+export DB_URL
+export BETTER_AUTH_SECRET
+export BETTER_AUTH_URL
+export TRUSTED_ORIGINS
 node /app/web/.output/server/index.mjs &
 
 wait

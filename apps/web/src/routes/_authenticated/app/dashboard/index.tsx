@@ -19,9 +19,8 @@ async function fetchVideos(
     return await apiRequest<VideosResponse>(url);
   } catch (error) {
     if (error instanceof TypeError && error.message.includes("fetch")) {
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:1337";
       throw new Error(
-        `Failed to connect to API at ${API_URL}. Make sure the API server is running.`,
+        `Failed to connect to API. Make sure the API server is running.`,
       );
     }
     throw error;
@@ -33,9 +32,8 @@ async function fetchAllVideos(): Promise<VideosResponse> {
     return await apiRequest<VideosResponse>("/api/videos");
   } catch (error) {
     if (error instanceof TypeError && error.message.includes("fetch")) {
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:1337";
       throw new Error(
-        `Failed to connect to API at ${API_URL}. Make sure the API server is running.`,
+        `Failed to connect to API. Make sure the API server is running.`,
       );
     }
     throw error;

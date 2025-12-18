@@ -13,10 +13,16 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiVerifyTokenRouteImport } from './routes/api/verify-token'
 import { Route as ApiExtensionTokenRouteImport } from './routes/api/extension-token'
+import { Route as ApiConfigRouteImport } from './routes/api/config'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedAppRouteRouteImport } from './routes/_authenticated/app/route'
 import { Route as AuthSignupIndexRouteImport } from './routes/auth/signup/index'
 import { Route as AuthSigninIndexRouteImport } from './routes/auth/signin/index'
+import { Route as ApiVideosIndexRouteImport } from './routes/api/videos/index'
+import { Route as ApiTokensIndexRouteImport } from './routes/api/tokens/index'
+import { Route as ApiPlaylistsIndexRouteImport } from './routes/api/playlists/index'
+import { Route as ApiTokensSplatRouteImport } from './routes/api/tokens/$'
+import { Route as ApiPlaylistsSplatRouteImport } from './routes/api/playlists/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedAppKnucklesRouteImport } from './routes/_authenticated/app/knuckles'
 import { Route as AuthenticatedSettingsProfileRouteRouteImport } from './routes/_authenticated/settings/profile/route'
@@ -48,6 +54,11 @@ const ApiExtensionTokenRoute = ApiExtensionTokenRouteImport.update({
   path: '/api/extension-token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiConfigRoute = ApiConfigRouteImport.update({
+  id: '/api/config',
+  path: '/api/config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
@@ -67,6 +78,31 @@ const AuthSignupIndexRoute = AuthSignupIndexRouteImport.update({
 const AuthSigninIndexRoute = AuthSigninIndexRouteImport.update({
   id: '/auth/signin/',
   path: '/auth/signin/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiVideosIndexRoute = ApiVideosIndexRouteImport.update({
+  id: '/api/videos/',
+  path: '/api/videos/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTokensIndexRoute = ApiTokensIndexRouteImport.update({
+  id: '/api/tokens/',
+  path: '/api/tokens/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlaylistsIndexRoute = ApiPlaylistsIndexRouteImport.update({
+  id: '/api/playlists/',
+  path: '/api/playlists/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTokensSplatRoute = ApiTokensSplatRouteImport.update({
+  id: '/api/tokens/$',
+  path: '/api/tokens/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlaylistsSplatRoute = ApiPlaylistsSplatRouteImport.update({
+  id: '/api/playlists/$',
+  path: '/api/playlists/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -139,6 +175,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/api/config': typeof ApiConfigRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
@@ -147,6 +184,11 @@ export interface FileRoutesByFullPath {
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/playlists/$': typeof ApiPlaylistsSplatRoute
+  '/api/tokens/$': typeof ApiTokensSplatRoute
+  '/api/playlists': typeof ApiPlaylistsIndexRoute
+  '/api/tokens': typeof ApiTokensIndexRoute
+  '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
@@ -159,6 +201,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/api/config': typeof ApiConfigRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
@@ -166,6 +209,11 @@ export interface FileRoutesByTo {
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/playlists/$': typeof ApiPlaylistsSplatRoute
+  '/api/tokens/$': typeof ApiTokensSplatRoute
+  '/api/playlists': typeof ApiPlaylistsIndexRoute
+  '/api/tokens': typeof ApiTokensIndexRoute
+  '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
@@ -179,6 +227,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
+  '/api/config': typeof ApiConfigRoute
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/_authenticated/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
@@ -187,6 +236,11 @@ export interface FileRoutesById {
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/_authenticated/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/playlists/$': typeof ApiPlaylistsSplatRoute
+  '/api/tokens/$': typeof ApiTokensSplatRoute
+  '/api/playlists/': typeof ApiPlaylistsIndexRoute
+  '/api/tokens/': typeof ApiTokensIndexRoute
+  '/api/videos/': typeof ApiVideosIndexRoute
   '/auth/signin/': typeof AuthSigninIndexRoute
   '/auth/signup/': typeof AuthSignupIndexRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
@@ -201,6 +255,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/settings'
+    | '/api/config'
     | '/api/extension-token'
     | '/api/verify-token'
     | '/app/playlists'
@@ -209,6 +264,11 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/app/knuckles'
     | '/api/auth/$'
+    | '/api/playlists/$'
+    | '/api/tokens/$'
+    | '/api/playlists'
+    | '/api/tokens'
+    | '/api/videos'
     | '/auth/signin'
     | '/auth/signup'
     | '/app/playlists/$name'
@@ -221,6 +281,7 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/settings'
+    | '/api/config'
     | '/api/extension-token'
     | '/api/verify-token'
     | '/settings/plugins'
@@ -228,6 +289,11 @@ export interface FileRouteTypes {
     | '/settings/profile'
     | '/app/knuckles'
     | '/api/auth/$'
+    | '/api/playlists/$'
+    | '/api/tokens/$'
+    | '/api/playlists'
+    | '/api/tokens'
+    | '/api/videos'
     | '/auth/signin'
     | '/auth/signup'
     | '/app/dashboard'
@@ -240,6 +306,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/_authenticated/app'
     | '/_authenticated/settings'
+    | '/api/config'
     | '/api/extension-token'
     | '/api/verify-token'
     | '/_authenticated/app/playlists'
@@ -248,6 +315,11 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/profile'
     | '/_authenticated/app/knuckles'
     | '/api/auth/$'
+    | '/api/playlists/$'
+    | '/api/tokens/$'
+    | '/api/playlists/'
+    | '/api/tokens/'
+    | '/api/videos/'
     | '/auth/signin/'
     | '/auth/signup/'
     | '/_authenticated/app/playlists/$name'
@@ -260,9 +332,15 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  ApiConfigRoute: typeof ApiConfigRoute
   ApiExtensionTokenRoute: typeof ApiExtensionTokenRoute
   ApiVerifyTokenRoute: typeof ApiVerifyTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiPlaylistsSplatRoute: typeof ApiPlaylistsSplatRoute
+  ApiTokensSplatRoute: typeof ApiTokensSplatRoute
+  ApiPlaylistsIndexRoute: typeof ApiPlaylistsIndexRoute
+  ApiTokensIndexRoute: typeof ApiTokensIndexRoute
+  ApiVideosIndexRoute: typeof ApiVideosIndexRoute
   AuthSigninIndexRoute: typeof AuthSigninIndexRoute
   AuthSignupIndexRoute: typeof AuthSignupIndexRoute
 }
@@ -297,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiExtensionTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/config': {
+      id: '/api/config'
+      path: '/api/config'
+      fullPath: '/api/config'
+      preLoaderRoute: typeof ApiConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -323,6 +408,41 @@ declare module '@tanstack/react-router' {
       path: '/auth/signin'
       fullPath: '/auth/signin'
       preLoaderRoute: typeof AuthSigninIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/videos/': {
+      id: '/api/videos/'
+      path: '/api/videos'
+      fullPath: '/api/videos'
+      preLoaderRoute: typeof ApiVideosIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tokens/': {
+      id: '/api/tokens/'
+      path: '/api/tokens'
+      fullPath: '/api/tokens'
+      preLoaderRoute: typeof ApiTokensIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/playlists/': {
+      id: '/api/playlists/'
+      path: '/api/playlists'
+      fullPath: '/api/playlists'
+      preLoaderRoute: typeof ApiPlaylistsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tokens/$': {
+      id: '/api/tokens/$'
+      path: '/api/tokens/$'
+      fullPath: '/api/tokens/$'
+      preLoaderRoute: typeof ApiTokensSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/playlists/$': {
+      id: '/api/playlists/$'
+      path: '/api/playlists/$'
+      fullPath: '/api/playlists/$'
+      preLoaderRoute: typeof ApiPlaylistsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/$': {
@@ -496,9 +616,15 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  ApiConfigRoute: ApiConfigRoute,
   ApiExtensionTokenRoute: ApiExtensionTokenRoute,
   ApiVerifyTokenRoute: ApiVerifyTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiPlaylistsSplatRoute: ApiPlaylistsSplatRoute,
+  ApiTokensSplatRoute: ApiTokensSplatRoute,
+  ApiPlaylistsIndexRoute: ApiPlaylistsIndexRoute,
+  ApiTokensIndexRoute: ApiTokensIndexRoute,
+  ApiVideosIndexRoute: ApiVideosIndexRoute,
   AuthSigninIndexRoute: AuthSigninIndexRoute,
   AuthSignupIndexRoute: AuthSignupIndexRoute,
 }

@@ -37,35 +37,14 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
 ): Promise<T> {
-  let token = getBearerToken();
-
-  // If no token stored, try to get it from the current session
-  if (!token) {
-    try {
-      const { getSessionToken } = await import("@/lib/auth-client");
-      token = await getSessionToken();
-      if (token && typeof window !== "undefined") {
-        localStorage.setItem(BEARER_TOKEN_KEY, token);
-      }
-    } catch (err) {
-      console.error("Error getting session token:", err);
-    }
-  }
-
+  // Browser makes requests to same origin (TanStack proxy routes)
+  // The proxy routes handle authentication with the Go API server-side
   const headers = new Headers(options.headers);
-
-  // Add Authorization header with Better Auth Bearer token
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
-    console.log("Sending API request with Bearer token");
-  } else {
-    console.warn("No Bearer token available for API request");
-  }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: "include",
+    credentials: "include", // Include cookies for Better Auth session
   });
 
   // Read response body once (can only be read once)

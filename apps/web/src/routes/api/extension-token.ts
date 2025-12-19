@@ -1,13 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth.server";
-import { authenticateWithApi } from "@/lib/api-client";
-
-const API_URL = process.env.API_URL || "http://localhost:1337";
 
 export const Route = createFileRoute("/api/extension-token")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: async ({ request }: { request: Request }) => {
         try {
           // Get the Better Auth session from the request
           const session = await auth.api.getSession({
@@ -65,18 +62,6 @@ export const Route = createFileRoute("/api/extension-token")({
             }),
             {
               status: 501,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
-
-          return new Response(
-            JSON.stringify({
-              token: apiResponse.token,
-              user_id: apiResponse.user_id,
-              email: apiResponse.email,
-            }),
-            {
-              status: 200,
               headers: { "Content-Type": "application/json" },
             },
           );

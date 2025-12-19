@@ -6,7 +6,7 @@ const API_URL = process.env.API_URL || "http://localhost:1337";
 export const Route = createFileRoute("/api/videos/")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/videos/")({
           headers: { "Content-Type": "application/json" },
         });
       },
-      DELETE: async ({ request }) => {
+      DELETE: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {

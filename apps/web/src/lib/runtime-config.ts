@@ -11,18 +11,19 @@ export async function getRuntimeConfig(): Promise<{ apiUrl: string }> {
 
   // Try to fetch runtime config from server endpoint
   try {
-    const response = await fetch('/api/config');
+    const response = await fetch("/api/config");
     if (response.ok) {
-      runtimeConfig = await response.json();
-      return runtimeConfig;
+      const config = await response.json();
+      runtimeConfig = config;
+      return config;
     }
   } catch (error) {
-    console.warn('Failed to fetch runtime config, using defaults:', error);
+    console.warn("Failed to fetch runtime config, using defaults:", error);
   }
 
   // Fallback to build-time env var or default
   runtimeConfig = {
-    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:1337',
+    apiUrl: import.meta.env.VITE_API_URL || "http://localhost:1337",
   };
 
   return runtimeConfig;
@@ -36,6 +37,6 @@ export function getRuntimeConfigSync(): { apiUrl: string } {
   }
 
   return {
-    apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:1337',
+    apiUrl: import.meta.env.VITE_API_URL || "http://localhost:1337",
   };
 }

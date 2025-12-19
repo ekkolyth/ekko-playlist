@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   fetchPlaylists,
   createPlaylist as apiCreatePlaylist,
@@ -12,8 +12,7 @@ import {
   bulkAddVideosToPlaylist as apiBulkAddVideosToPlaylist,
   deleteVideos as apiDeleteVideos,
   type Playlist,
-  type PlaylistDetail,
-} from '@/lib/api-client';
+} from "@/lib/api-client";
 
 // Helper function to create a URL-safe slug from playlist name
 export function createSlug(name: string): string {
@@ -42,42 +41,42 @@ interface UsePlaylistsOptions {
 export function usePlaylists(options: UsePlaylistsOptions = {}) {
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newPlaylistName, setNewPlaylistName] = useState("");
 
   const query = useQuery({
-    queryKey: ['playlists'],
+    queryKey: ["playlists"],
     queryFn: fetchPlaylists,
   });
 
   const createMutation = useMutation({
     mutationFn: (name: string) => apiCreatePlaylist(name),
     onSuccess: (playlist) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
       setIsCreateDialogOpen(false);
-      setNewPlaylistName('');
-      toast.success('Playlist created successfully');
+      setNewPlaylistName("");
+      toast.success("Playlist created successfully");
       options.onCreateSuccess?.(playlist);
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to create playlist');
+      toast.error(err.message || "Failed to create playlist");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (name: string) => apiDeletePlaylist(name),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast.success('Playlist deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      toast.success("Playlist deleted successfully");
       options.onDeleteSuccess?.();
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to delete playlist');
+      toast.error(err.message || "Failed to delete playlist");
     },
   });
 
   const createPlaylist = () => {
     if (!newPlaylistName.trim()) {
-      toast.error('Please enter a playlist name');
+      toast.error("Please enter a playlist name");
       return;
     }
     createMutation.mutate(newPlaylistName.trim());
@@ -96,7 +95,7 @@ export function usePlaylists(options: UsePlaylistsOptions = {}) {
   const openCreateDialog = () => setIsCreateDialogOpen(true);
   const closeCreateDialog = () => {
     setIsCreateDialogOpen(false);
-    setNewPlaylistName('');
+    setNewPlaylistName("");
   };
 
   return {
@@ -133,59 +132,59 @@ export function usePlaylistDetail(options: UsePlaylistDetailOptions) {
   const { playlistName, onUpdateSuccess, onDeleteSuccess } = options;
   const queryClient = useQueryClient();
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState('');
+  const [editedName, setEditedName] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const query = useQuery({
-    queryKey: ['playlist', playlistName],
+    queryKey: ["playlist", playlistName],
     queryFn: () => apiGetPlaylist(playlistName),
     enabled: !!playlistName,
   });
 
   const updateMutation = useMutation({
     mutationFn: (newName: string) => {
-      if (!query.data) throw new Error('Playlist not found');
+      if (!query.data) throw new Error("Playlist not found");
       return apiUpdatePlaylist(query.data.name, newName);
     },
     onSuccess: (_, newName) => {
-      queryClient.invalidateQueries({ queryKey: ['playlist', playlistName] });
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ["playlist", playlistName] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
       setIsEditingName(false);
-      toast.success('Playlist updated successfully');
+      toast.success("Playlist updated successfully");
       onUpdateSuccess?.(newName);
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to update playlist');
+      toast.error(err.message || "Failed to update playlist");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: () => {
-      if (!query.data) throw new Error('Playlist not found');
+      if (!query.data) throw new Error("Playlist not found");
       return apiDeletePlaylist(query.data.name);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast.success('Playlist deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      toast.success("Playlist deleted successfully");
       onDeleteSuccess?.();
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to delete playlist');
+      toast.error(err.message || "Failed to delete playlist");
     },
   });
 
   const removeVideoMutation = useMutation({
     mutationFn: (videoId: number) => {
-      if (!query.data) throw new Error('Playlist not found');
+      if (!query.data) throw new Error("Playlist not found");
       return apiRemoveVideoFromPlaylist(query.data.name, videoId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlist', playlistName] });
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast.success('Video removed from playlist');
+      queryClient.invalidateQueries({ queryKey: ["playlist", playlistName] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      toast.success("Video removed from playlist");
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to remove video');
+      toast.error(err.message || "Failed to remove video");
     },
   });
 
@@ -198,7 +197,7 @@ export function usePlaylistDetail(options: UsePlaylistDetailOptions) {
 
   const saveEdit = () => {
     if (!editedName.trim()) {
-      toast.error('Playlist name cannot be empty');
+      toast.error("Playlist name cannot be empty");
       return;
     }
     updateMutation.mutate(editedName.trim());
@@ -206,7 +205,7 @@ export function usePlaylistDetail(options: UsePlaylistDetailOptions) {
 
   const cancelEdit = () => {
     setIsEditingName(false);
-    setEditedName('');
+    setEditedName("");
   };
 
   const deletePlaylist = () => {
@@ -264,25 +263,27 @@ interface UsePlaylistVideosOptions {
 export function usePlaylistVideos(options: UsePlaylistVideosOptions = {}) {
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [newPlaylistName, setNewPlaylistName] = useState("");
   const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
   const [isSelectMode, setIsSelectMode] = useState(false);
-  const [selectedVideoIds, setSelectedVideoIds] = useState<Set<number>>(new Set());
+  const [selectedVideoIds, setSelectedVideoIds] = useState<Set<number>>(
+    new Set(),
+  );
   const [isBulkAddDialogOpen, setIsBulkAddDialogOpen] = useState(false);
 
   // Fetch playlists for dropdowns
   const { data: playlistsData } = useQuery({
-    queryKey: ['playlists'],
+    queryKey: ["playlists"],
     queryFn: fetchPlaylists,
   });
 
   const createPlaylistMutation = useMutation({
     mutationFn: (name: string) => apiCreatePlaylist(name),
     onSuccess: async (newPlaylist) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
       setIsCreateDialogOpen(false);
-      setNewPlaylistName('');
-      toast.success('Playlist created successfully');
+      setNewPlaylistName("");
+      toast.success("Playlist created successfully");
 
       // If videos were selected in bulk mode, add them to the new playlist
       if (isSelectMode && selectedVideoIds.size > 0) {
@@ -290,50 +291,60 @@ export function usePlaylistVideos(options: UsePlaylistVideosOptions = {}) {
           const videoIds = Array.from(selectedVideoIds);
           await apiBulkAddVideosToPlaylist(newPlaylist.name, videoIds);
           toast.success(`${videoIds.length} video(s) added to playlist`);
-          queryClient.invalidateQueries({ queryKey: ['playlists'] });
-          queryClient.invalidateQueries({ queryKey: ['videos'] });
+          queryClient.invalidateQueries({ queryKey: ["playlists"] });
+          queryClient.invalidateQueries({ queryKey: ["videos"] });
           setIsSelectMode(false);
           setSelectedVideoIds(new Set());
           setIsBulkAddDialogOpen(false);
         } catch (err) {
-          toast.error('Failed to add videos to playlist');
+          toast.error("Failed to add videos to playlist");
         }
       } else if (selectedVideoId !== null) {
         // If a single video was selected, add it to the new playlist
         try {
           await apiAddVideoToPlaylist(newPlaylist.name, selectedVideoId);
-          toast.success('Video added to playlist');
-          queryClient.invalidateQueries({ queryKey: ['playlists'] });
+          toast.success("Video added to playlist");
+          queryClient.invalidateQueries({ queryKey: ["playlists"] });
         } catch (err) {
-          toast.error('Failed to add video to playlist');
+          toast.error("Failed to add video to playlist");
         }
         setSelectedVideoId(null);
       }
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to create playlist');
+      toast.error(err.message || "Failed to create playlist");
     },
   });
 
   const addToPlaylistMutation = useMutation({
-    mutationFn: ({ playlistName, videoId }: { playlistName: string; videoId: number }) =>
-      apiAddVideoToPlaylist(playlistName, videoId),
+    mutationFn: ({
+      playlistName,
+      videoId,
+    }: {
+      playlistName: string;
+      videoId: number;
+    }) => apiAddVideoToPlaylist(playlistName, videoId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      toast.success('Video added to playlist');
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      toast.success("Video added to playlist");
       options.onAddSuccess?.();
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to add video to playlist');
+      toast.error(err.message || "Failed to add video to playlist");
     },
   });
 
   const bulkAddToPlaylistMutation = useMutation({
-    mutationFn: ({ playlistName, videoIds }: { playlistName: string; videoIds: number[] }) =>
-      apiBulkAddVideosToPlaylist(playlistName, videoIds),
+    mutationFn: ({
+      playlistName,
+      videoIds,
+    }: {
+      playlistName: string;
+      videoIds: number[];
+    }) => apiBulkAddVideosToPlaylist(playlistName, videoIds),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
       toast.success(`${variables.videoIds.length} video(s) added to playlist`);
       setIsSelectMode(false);
       setSelectedVideoIds(new Set());
@@ -341,31 +352,31 @@ export function usePlaylistVideos(options: UsePlaylistVideosOptions = {}) {
       options.onBulkAddSuccess?.();
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to add videos to playlist');
+      toast.error(err.message || "Failed to add videos to playlist");
     },
   });
 
   const deleteVideosMutation = useMutation({
     mutationFn: (videoIds: number[]) => apiDeleteVideos(videoIds),
     onSuccess: (_, videoIds) => {
-      queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      queryClient.invalidateQueries({ queryKey: ["playlists"] });
       toast.success(`${videoIds.length} video(s) deleted`);
       setIsSelectMode(false);
       setSelectedVideoIds(new Set());
       options.onDeleteSuccess?.();
     },
     onError: (err: Error) => {
-      toast.error(err.message || 'Failed to delete videos');
+      toast.error(err.message || "Failed to delete videos");
     },
   });
 
   const copyLink = async (url: string) => {
     try {
       await navigator.clipboard.writeText(url);
-      toast.success('Link copied to clipboard!');
+      toast.success("Link copied to clipboard!");
     } catch (err) {
-      toast.error('Failed to copy link');
+      toast.error("Failed to copy link");
     }
   };
 
@@ -378,13 +389,13 @@ export function usePlaylistVideos(options: UsePlaylistVideosOptions = {}) {
 
   const closeCreateDialog = () => {
     setIsCreateDialogOpen(false);
-    setNewPlaylistName('');
+    setNewPlaylistName("");
     setSelectedVideoId(null);
   };
 
   const createPlaylist = () => {
     if (!newPlaylistName.trim()) {
-      toast.error('Please enter a playlist name');
+      toast.error("Please enter a playlist name");
       return;
     }
     createPlaylistMutation.mutate(newPlaylistName.trim());
@@ -421,7 +432,9 @@ export function usePlaylistVideos(options: UsePlaylistVideosOptions = {}) {
   const deleteVideos = (videoIds?: number[]) => {
     const idsToDelete = videoIds || Array.from(selectedVideoIds);
     if (idsToDelete.length === 0) return;
-    if (confirm(`Are you sure you want to delete ${idsToDelete.length} video(s)?`)) {
+    if (
+      confirm(`Are you sure you want to delete ${idsToDelete.length} video(s)?`)
+    ) {
       deleteVideosMutation.mutate(idsToDelete);
     }
   };

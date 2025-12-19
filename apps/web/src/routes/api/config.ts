@@ -6,7 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/config")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: async ({ request }: { request: Request }) => {
         // Get the API URL from environment or construct it from the request
         const apiUrl =
           process.env.API_URL ||

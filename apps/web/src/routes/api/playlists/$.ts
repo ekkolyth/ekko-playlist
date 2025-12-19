@@ -6,7 +6,12 @@ const API_URL = process.env.API_URL || "http://localhost:1337";
 export const Route = createFileRoute("/api/playlists/$")({
   server: {
     handlers: {
-      GET: async ({ request, params }) => {
+      GET: async ({
+        request,
+      }: {
+        request: Request;
+        params: Record<string, string>;
+      }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
@@ -45,7 +50,7 @@ export const Route = createFileRoute("/api/playlists/$")({
           headers: { "Content-Type": "application/json" },
         });
       },
-      PUT: async ({ request }) => {
+      PUT: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
@@ -86,7 +91,7 @@ export const Route = createFileRoute("/api/playlists/$")({
           headers: { "Content-Type": "application/json" },
         });
       },
-      DELETE: async ({ request }) => {
+      DELETE: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
@@ -125,7 +130,7 @@ export const Route = createFileRoute("/api/playlists/$")({
           headers: { "Content-Type": "application/json" },
         });
       },
-      POST: async ({ request }) => {
+      POST: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {

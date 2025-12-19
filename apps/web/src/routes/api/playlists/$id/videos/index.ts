@@ -6,7 +6,13 @@ const API_URL = process.env.API_URL || "http://localhost:1337";
 export const Route = createFileRoute("/api/playlists/$id/videos/")({
   server: {
     handlers: {
-      POST: async ({ request, params }) => {
+      POST: async ({
+        request,
+        params,
+      }: {
+        request: Request;
+        params: { id: string };
+      }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
@@ -27,14 +33,17 @@ export const Route = createFileRoute("/api/playlists/$id/videos/")({
 
         // Forward request to Go API
         const body = await request.text();
-        const response = await fetch(`${API_URL}/api/playlists/${params.id}/videos`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${API_URL}/api/playlists/${params.id}/videos`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body,
           },
-          body,
-        });
+        );
 
         const data = await response.text();
         return new Response(data, {

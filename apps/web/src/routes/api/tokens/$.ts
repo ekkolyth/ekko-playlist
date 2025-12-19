@@ -6,7 +6,7 @@ const API_URL = process.env.API_URL || "http://localhost:1337";
 export const Route = createFileRoute("/api/tokens/$")({
   server: {
     handlers: {
-      PUT: async ({ request }) => {
+      PUT: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {
@@ -47,7 +47,7 @@ export const Route = createFileRoute("/api/tokens/$")({
           headers: { "Content-Type": "application/json" },
         });
       },
-      DELETE: async ({ request }) => {
+      DELETE: async ({ request }: { request: Request }) => {
         // Verify session
         const session = await auth.api.getSession({ headers: request.headers });
         if (!session?.user) {

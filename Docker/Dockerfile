@@ -79,6 +79,10 @@ API_PORT="${API_PORT:-1337}"
 WEB_PORT="${WEB_PORT:-3000}"
 API_URL="${API_URL:-http://localhost:${API_PORT}}"
 
+# Use BETTER_AUTH_URL as the canonical public URL
+# WEB_APP_URL is just an alias for the Go API
+WEB_APP_URL="${BETTER_AUTH_URL:-http://localhost:${WEB_PORT}}"
+
 shutdown() {
   kill $(jobs -p) 2>/dev/null || true
   wait || true
@@ -86,6 +90,8 @@ shutdown() {
 }
 trap shutdown SIGTERM SIGINT
 
+export DB_URL
+export WEB_APP_URL
 /app/bin/api-server &
 
 export PORT="${WEB_PORT}"

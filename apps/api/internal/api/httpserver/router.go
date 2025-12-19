@@ -84,6 +84,7 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 		tokens.Use(authMiddleware)
 		tokens.Post("/", tokensHandler.CreateToken)
 		tokens.Get("/", tokensHandler.ListTokens)
+		tokens.Put("/{id}", tokensHandler.UpdateToken)
 		tokens.Delete("/{id}", tokensHandler.DeleteToken)
 	})
 
@@ -139,4 +140,3 @@ func envList(key string) []string {
 	}
 	return parts
 }
-

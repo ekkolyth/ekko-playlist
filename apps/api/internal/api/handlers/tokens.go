@@ -58,7 +58,8 @@ func (h *TokensHandler) CreateToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req CreateTokenRequest
-	if err := httpx.DecodeJSON(w, r, &req, 0); err != nil {
+	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+		httpx.RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -170,6 +171,56 @@ func (h *TokensHandler) ListTokens(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// UpdateToken handles PUT /api/tokens/:id - updates an API token's name
+func (h *TokensHandler) UpdateToken(w http.ResponseWriter, r *http.Request) {
+	userID, ok := auth.GetUserID(r.Context())
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+
+	tokenID := r.PathValue("id")
+	if tokenID == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "token id is required")
+		return
+	}
+
+	var req struct {
+		Name string `json:"name"`
+	}
+	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+		httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if req.Name == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "name is required")
+		return
+	}
+
+	ctx := r.Context()
+
+	// Parse UUID
+	var id pgtype.UUID
+	if err := id.Scan(tokenID); err != nil {
+		httpx.RespondError(w, http.StatusBadRequest, "invalid token id")
+		return
+	}
+
+	err := h.dbService.Queries.UpdateAPITokenName(ctx, &db.UpdateAPITokenNameParams{
+		Name:   req.Name,
+		ID:     id,
+		UserID: userID,
+	})
+	if err != nil {
+		logging.Info("Error updating API token: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to update token")
+		return
+	}
+
+	httpx.RespondJSON(w, http.StatusOK, map[string]string{"message": "token updated"})
+}
+
 // DeleteToken handles DELETE /api/tokens/:id - deletes an API token
 func (h *TokensHandler) DeleteToken(w http.ResponseWriter, r *http.Request) {
 	userID, ok := auth.GetUserID(r.Context())
@@ -205,4 +256,3 @@ func (h *TokensHandler) DeleteToken(w http.ResponseWriter, r *http.Request) {
 
 	httpx.RespondJSON(w, http.StatusOK, map[string]string{"message": "token deleted"})
 }
-

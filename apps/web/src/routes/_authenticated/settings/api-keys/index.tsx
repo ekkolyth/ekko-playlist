@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiRequest } from "@/lib/api-client";
-import { Copy, Check, RefreshCw, Trash2, Eye, EyeOff } from "lucide-react";
+import { Check, RefreshCw, Trash2, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 import { GenerateTokenCard } from "@/components/generate-token-card";
 
@@ -35,8 +35,8 @@ interface TokensResponse {
 function ExtensionTokensPage() {
   const [tokens, setTokens] = useState<Token[]>([]);
   const [error, setError] = useState("");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   // Get the current URL for the server URL display
   const serverUrl = typeof window !== "undefined" ? window.location.origin : "";
@@ -90,6 +90,49 @@ function ExtensionTokensPage() {
     }
   };
 
+  const startEditing = (token: Token) => {
+    setEditingId(token.id);
+    setEditingName(token.name);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingName("");
+  };
+
+  const saveTokenName = async (tokenId: string) => {
+    if (!editingName.trim()) {
+      setError("Token name cannot be empty");
+      return;
+    }
+
+    try {
+      await apiRequest(`/api/tokens/${tokenId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editingName.trim(),
+        }),
+      });
+
+      // Update local state
+      setTokens((prev) =>
+        prev.map((t) =>
+          t.id === tokenId ? { ...t, name: editingName.trim() } : t,
+        ),
+      );
+
+      cancelEditing();
+    } catch (err) {
+      console.error("Error updating token name:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to update token name",
+      );
+    }
+  };
+
   const deleteToken = async (tokenId: string) => {
     if (
       !confirm(
@@ -112,29 +155,6 @@ function ExtensionTokensPage() {
     }
   };
 
-  const maskToken = (prefix: string, revealed: boolean) => {
-    if (revealed) {
-      return prefix;
-    }
-    // Show first 4 characters, mask the rest
-    if (prefix.length <= 4) {
-      return prefix;
-    }
-    return prefix.substring(0, 4) + "•".repeat(12);
-  };
-
-  const toggleReveal = (tokenId: string) => {
-    setRevealedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(tokenId)) {
-        next.delete(tokenId);
-      } else {
-        next.add(tokenId);
-      }
-      return next;
-    });
-  };
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <Card>
@@ -151,6 +171,21 @@ function ExtensionTokensPage() {
               {error}
             </div>
           )}
+
+          {/* Server URL info */}
+          <div className="p-4 bg-muted rounded-lg">
+            <Label htmlFor="server-url">Server URL</Label>
+            <Input
+              id="server-url"
+              type="text"
+              value={serverUrl}
+              readOnly
+              className="bg-background mt-1"
+            />
+            <p className="text-sm text-muted-foreground mt-1">
+              Use this URL when configuring the extension
+            </p>
+          </div>
 
           {/* Generate new token */}
           <GenerateTokenCard onTokenGenerated={loadTokens} />
@@ -175,8 +210,7 @@ function ExtensionTokensPage() {
             ) : (
               <div className="space-y-2">
                 {tokens.map((token) => {
-                  const revealed = revealedIds.has(token.id);
-                  const masked = maskToken(token.token_prefix, revealed);
+                  const isEditing = editingId === token.id;
 
                   return (
                     <div
@@ -184,23 +218,45 @@ function ExtensionTokensPage() {
                       className="flex items-center justify-between p-4 border rounded-lg"
                     >
                       <div className="flex-1 space-y-1">
-                        <div className="font-medium">{token.name}</div>
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="text"
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  saveTokenName(token.id);
+                                } else if (e.key === "Escape") {
+                                  cancelEditing();
+                                }
+                              }}
+                              className="font-medium"
+                              autoFocus
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => saveTokenName(token.id)}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={cancelEditing}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="font-medium">{token.name}</div>
+                        )}
                         <div className="flex items-center gap-2">
                           <code className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                            {masked}
+                            {token.token_prefix.substring(0, 4) +
+                              "•".repeat(12)}
                           </code>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleReveal(token.id)}
-                            title={revealed ? "Hide token" : "Show token"}
-                          >
-                            {revealed ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Created{" "}
@@ -227,54 +283,31 @@ function ExtensionTokensPage() {
                           )}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => {
-                            // For copying, we need the full token, but we only have the prefix
-                            // So we'll show a message that they need to regenerate
-                            alert(
-                              "To copy the full token, you need to regenerate it. The full token is only shown once when generated.",
-                            );
-                          }}
-                          title="Copy token"
-                        >
-                          {copiedId === token.id ? (
-                            <Check className="h-4 w-4 text-green-600" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => deleteToken(token.id)}
-                          title="Delete token"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
+                      {!isEditing && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => startEditing(token)}
+                            title="Edit token name"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => deleteToken(token.id)}
+                            title="Delete token"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             )}
-          </div>
-
-          {/* Server URL info */}
-          <div className="p-4 bg-muted rounded-lg">
-            <Label htmlFor="server-url">Server URL</Label>
-            <Input
-              id="server-url"
-              type="text"
-              value={serverUrl}
-              readOnly
-              className="bg-background mt-1"
-            />
-            <p className="text-sm text-muted-foreground mt-1">
-              Use this URL when configuring the extension
-            </p>
           </div>
         </CardContent>
       </Card>

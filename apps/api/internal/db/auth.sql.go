@@ -409,3 +409,20 @@ func (q *Queries) UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) er
 	_, err := q.db.Exec(ctx, UpdateAPITokenLastUsed, id)
 	return err
 }
+
+const UpdateAPITokenName = `-- name: UpdateAPITokenName :exec
+update "api_tokens"
+set name = $1
+where id = $2 and user_id = $3
+`
+
+type UpdateAPITokenNameParams struct {
+	Name   string      `json:"name"`
+	ID     pgtype.UUID `json:"id"`
+	UserID string      `json:"user_id"`
+}
+
+func (q *Queries) UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error {
+	_, err := q.db.Exec(ctx, UpdateAPITokenName, arg.Name, arg.ID, arg.UserID)
+	return err
+}

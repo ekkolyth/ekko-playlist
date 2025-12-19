@@ -16,29 +16,13 @@ export const Route = createFileRoute("/api/videos/")({
           });
         }
 
-        // Get Bearer token from session - try different locations
-        const token = session.session?.token || session.token;
-
-        console.log("Session structure:", JSON.stringify(session, null, 2));
-        console.log("Token found:", !!token);
-
+        // Get Bearer token from session
+        const token = session.session?.token;
         if (!token) {
-          return new Response(
-            JSON.stringify({
-              error: "No session token",
-              debug: {
-                hasSession: !!session.session,
-                sessionKeys: session.session
-                  ? Object.keys(session.session)
-                  : [],
-                topLevelKeys: Object.keys(session),
-              },
-            }),
-            {
-              status: 401,
-              headers: { "Content-Type": "application/json" },
-            },
-          );
+          return new Response(JSON.stringify({ error: "No session token" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
         }
 
         // Forward request to Go API with query params

@@ -46,10 +46,9 @@ type Querier interface {
 	ListVideosFiltered(ctx context.Context, arg *ListVideosFilteredParams) ([]*Video, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg *RemoveVideoFromPlaylistParams) error
 	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
+	UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error
 	UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error)
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 
 var _ Querier = (*Queries)(nil)
-
-

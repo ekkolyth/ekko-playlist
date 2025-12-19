@@ -93,3 +93,7 @@ update "api_tokens"
 set last_used_at = now()
 where id = $1;
 
+-- name: UpdateAPITokenName :exec
+update "api_tokens"
+set name = $1
+where id = $2 and user_id = $3;

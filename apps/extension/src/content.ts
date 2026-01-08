@@ -248,6 +248,143 @@ async function scrollToLoadContent(maxScrolls: number = 100): Promise<void> {
     );
 }
 
+// Shared function to extract channel name from a channel element
+function extractChannelName(channelElement: HTMLElement | null): string {
+    let channelName = "Unknown Channel";
+    if (channelElement) {
+        // Try innerText first (it excludes hidden elements)
+        channelName = channelElement.innerText?.trim() || "";
+
+        // If innerText is empty or has issues, try textContent and clean it
+        if (!channelName || channelName.includes("\n")) {
+            const text = channelElement.textContent?.trim() || "";
+            // Remove duplicate channel names and extra whitespace/newlines
+            // Split by newlines, filter out empty strings, get unique values
+            const parts = text
+                .split(/\s*\n\s*/)
+                .filter((p) => p.trim().length > 0);
+            if (parts.length > 0) {
+                // Get the first non-empty part (usually the actual channel name)
+                channelName = parts[0].trim();
+            }
+        }
+
+        // If still empty, try looking in child elements (common on YouTube watch pages)
+        if (!channelName || channelName === "") {
+            // FIRST: Check for alt attributes on child elements (especially yt-img-shadow which contains the channel avatar)
+            // The alt attribute on the avatar image often contains the actual channel display name
+            const imgShadow = channelElement.querySelector("yt-img-shadow") as HTMLElement;
+            if (imgShadow) {
+                const altText = imgShadow.getAttribute("alt")?.trim();
+                if (altText && altText.length > 0) {
+                    channelName = altText;
+                }
+            }
+            
+            // Also check for alt on any img elements
+            if (!channelName || channelName === "") {
+                const imgElement = channelElement.querySelector("img") as HTMLImageElement;
+                if (imgElement) {
+                    const altText = imgElement.getAttribute("alt")?.trim();
+                    if (altText && altText.length > 0) {
+                        channelName = altText;
+                    }
+                }
+            }
+            
+            // Try common child element selectors for text content
+            if (!channelName || channelName === "") {
+                const childSelectors = [
+                    "yt-formatted-string",
+                    "#text",
+                    "span",
+                    "ytd-channel-name #text",
+                ];
+                
+                for (const selector of childSelectors) {
+                    const childElement = channelElement.querySelector(selector) as HTMLElement;
+                    if (childElement) {
+                        const childText = childElement.innerText?.trim() || childElement.textContent?.trim() || "";
+                        if (childText) {
+                            channelName = childText;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // If still empty, try getting all direct children and find the one with text
+            if (!channelName || channelName === "") {
+                const children = Array.from(channelElement.children) as HTMLElement[];
+                for (const child of children) {
+                    const childText = child.innerText?.trim() || child.textContent?.trim() || "";
+                    if (childText && childText.length > 0) {
+                        // Clean up the text (remove extra whitespace, newlines)
+                        const cleaned = childText.split(/\s*\n\s*/).filter(p => p.trim().length > 0)[0]?.trim();
+                        if (cleaned && cleaned.length > 0) {
+                            channelName = cleaned;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Last attempt: try to find any element with text inside
+            if (!channelName || channelName === "") {
+                const allElements = channelElement.querySelectorAll("*");
+                for (const el of Array.from(allElements)) {
+                    const text = (el as HTMLElement).innerText?.trim() || (el as HTMLElement).textContent?.trim() || "";
+                    if (text && text.length > 0 && text.length < 100) { // Reasonable channel name length
+                        // Skip if it looks like a URL or handle
+                        if (!text.startsWith("@") && !text.startsWith("/") && !text.includes("http")) {
+                            const cleaned = text.split(/\s*\n\s*/).filter(p => p.trim().length > 0)[0]?.trim();
+                            if (cleaned && cleaned.length > 0) {
+                                channelName = cleaned;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback to attributes
+        if (!channelName || channelName === "") {
+            channelName =
+                channelElement.getAttribute("title")?.trim() ||
+                channelElement.getAttribute("aria-label")?.trim() ||
+                "";
+        }
+
+        // Last resort: try to extract from href if it's a YouTube channel URL
+        if (!channelName || channelName === "") {
+            const href = channelElement.getAttribute("href");
+            if (href) {
+                // Handle YouTube channel URLs like /@ChannelName or /c/ChannelName or /user/ChannelName
+                const channelMatch = href.match(/\/(?:@|c\/|user\/)([^\/\?]+)/);
+                if (channelMatch && channelMatch[1]) {
+                    // Convert handle format to readable name (e.g., "ZeroTOMVP" -> "Zero to MVP")
+                    // This is a simple heuristic - replace capital letters with space + lowercase
+                    let readableName = channelMatch[1]
+                        .replace(/([A-Z])/g, " $1")
+                        .replace(/^@/, "")
+                        .trim();
+                    // If it looks like a handle (all caps or mixed), try to format it better
+                    if (readableName && readableName.length > 0) {
+                        channelName = readableName;
+                    }
+                }
+            }
+        }
+
+        // Final fallback
+        if (!channelName || channelName === "") {
+            channelName = "Unknown Channel";
+        }
+    }
+    return channelName;
+}
+
 async function extractVideoInfo(): Promise<VideoInfo[]> {
     const videos: VideoInfo[] = [];
     const processedLinks = new Set<string>();
@@ -352,40 +489,8 @@ async function extractVideoInfo(): Promise<VideoInfo[]> {
                             videoTitle = linkElement.textContent.trim();
                         }
 
-                        // Extract channel name, cleaning up duplicates and newlines
-                        let channelName = "Unknown Channel";
-                        if (channelElement) {
-                            // Try innerText first (it excludes hidden elements)
-                            channelName =
-                                channelElement.innerText?.trim() || "";
-
-                            // If innerText is empty or has issues, try textContent and clean it
-                            if (!channelName || channelName.includes("\n")) {
-                                const text =
-                                    channelElement.textContent?.trim() || "";
-                                // Remove duplicate channel names and extra whitespace/newlines
-                                // Split by newlines, filter out empty strings, get unique values
-                                const parts = text
-                                    .split(/\s*\n\s*/)
-                                    .filter((p) => p.trim().length > 0);
-                                if (parts.length > 0) {
-                                    // Get the first non-empty part (usually the actual channel name)
-                                    channelName = parts[0].trim();
-                                }
-                            }
-
-                            // Fallback to attributes
-                            if (!channelName || channelName === "") {
-                                channelName =
-                                    channelElement
-                                        .getAttribute("title")
-                                        ?.trim() ||
-                                    channelElement
-                                        .getAttribute("aria-label")
-                                        ?.trim() ||
-                                    "Unknown Channel";
-                            }
-                        }
+                        // Extract channel name using shared function
+                        const channelName = extractChannelName(channelElement);
 
                         videos.push({
                             channel: channelName,
@@ -461,38 +566,8 @@ async function extractVideoInfo(): Promise<VideoInfo[]> {
                             anchor.textContent?.trim() ||
                             "Unknown Title";
 
-                        // Extract channel name, cleaning up duplicates and newlines
-                        let channelName = "Unknown Channel";
-                        if (channelElement) {
-                            // Try innerText first (it excludes hidden elements)
-                            channelName =
-                                channelElement.innerText?.trim() || "";
-
-                            // If innerText is empty or has issues, try textContent and clean it
-                            if (!channelName || channelName.includes("\n")) {
-                                const text =
-                                    channelElement.textContent?.trim() || "";
-                                // Remove duplicate channel names and extra whitespace/newlines
-                                const parts = text
-                                    .split(/\s*\n\s*/)
-                                    .filter((p) => p.trim().length > 0);
-                                if (parts.length > 0) {
-                                    channelName = parts[0].trim();
-                                }
-                            }
-
-                            // Fallback to attributes
-                            if (!channelName || channelName === "") {
-                                channelName =
-                                    channelElement
-                                        .getAttribute("title")
-                                        ?.trim() ||
-                                    channelElement
-                                        .getAttribute("aria-label")
-                                        ?.trim() ||
-                                    "Unknown Channel";
-                            }
-                        }
+                        // Extract channel name using shared function
+                        const channelName = extractChannelName(channelElement);
 
                         videos.push({
                             channel: channelName,
@@ -538,36 +613,49 @@ function getCurrentVideoInfo(): CurrentVideoInfoResponse {
             document.title.replace(" - YouTube", "").trim() ||
             "Unknown Title";
 
-        // Try to get channel name
-        const channelElement = document.querySelector(
-            "ytd-channel-name a, #channel-name a, ytd-video-owner-renderer a",
+        // Try to get channel name - prioritize selectors that work on single video pages
+        // Put ytd-video-owner-renderer selectors FIRST since they're most specific for watch pages
+        // Prioritize <a> tags over container elements
+        let channelElement = document.querySelector(
+            'ytd-video-owner-renderer a.yt-simple-endpoint, ytd-video-owner-renderer #channel-name a, ytd-video-owner-renderer ytd-channel-name a, ytd-channel-name a, #channel-name a',
         ) as HTMLElement;
 
-        // Extract channel name, cleaning up duplicates and newlines
-        let channelName = "Unknown Channel";
-        if (channelElement) {
-            // Try innerText first (it excludes hidden elements)
-            channelName = channelElement.innerText?.trim() || "";
-
-            // If innerText is empty or has issues, try textContent and clean it
-            if (!channelName || channelName.includes("\n")) {
-                const text = channelElement.textContent?.trim() || "";
-                // Remove duplicate channel names and extra whitespace/newlines
-                const parts = text
-                    .split(/\s*\n\s*/)
-                    .filter((p) => p.trim().length > 0);
-                if (parts.length > 0) {
-                    channelName = parts[0].trim();
+        // If we didn't find an <a> tag, try finding container and then the <a> inside it
+        if (!channelElement || channelElement.tagName !== 'A') {
+            const container = document.querySelector(
+                'ytd-video-owner-renderer, ytd-channel-name, [id="channel-name"]',
+            ) as HTMLElement;
+            if (container) {
+                // Try to find the <a> tag inside the container
+                const linkInside = container.querySelector('a') as HTMLElement;
+                if (linkInside) {
+                    channelElement = linkInside;
+                } else {
+                    channelElement = container;
                 }
             }
+        }
 
-            // Fallback to attributes
-            if (!channelName || channelName === "") {
-                channelName =
-                    channelElement.getAttribute("title")?.trim() ||
-                    channelElement.getAttribute("aria-label")?.trim() ||
-                    "Unknown Channel";
+        // Check parent container - it often contains the channel name even when the <a> tag is empty
+        const parentContainer = channelElement?.closest('ytd-video-owner-renderer') as HTMLElement;
+        let channelName = "Unknown Channel";
+        
+        // First, try to get channel name from the parent container's text content
+        // This works for both single-channel and collaboration videos
+        if (parentContainer) {
+            const parentText = parentContainer.innerText?.trim() || parentContainer.textContent?.trim() || "";
+            if (parentText && parentText.length > 0 && parentText.length < 200) {
+                // Clean up the text - remove extra whitespace and newlines
+                const cleaned = parentText.split(/\s*\n\s*/).filter(p => p.trim().length > 0)[0]?.trim();
+                if (cleaned && cleaned.length > 0) {
+                    channelName = cleaned;
+                }
             }
+        }
+        
+        // If parent container didn't have text, fall back to extracting from the channelElement
+        if (!channelName || channelName === "Unknown Channel") {
+            channelName = extractChannelName(channelElement);
         }
 
         return {

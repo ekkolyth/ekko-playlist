@@ -677,11 +677,42 @@ async function saveCurrentUrl(): Promise<void> {
 
         try {
             // Try to get video info from the page
-            const response = (await chrome.tabs.sendMessage(tab.id, {
-                type: "GET_CURRENT_VIDEO_INFO",
-            } as GetCurrentVideoInfoMessage)) as
-                | CurrentVideoInfoResponse
-                | undefined;
+            let response: CurrentVideoInfoResponse | undefined;
+            try {
+                response = (await chrome.tabs.sendMessage(tab.id, {
+                    type: "GET_CURRENT_VIDEO_INFO",
+                } as GetCurrentVideoInfoMessage)) as
+                    | CurrentVideoInfoResponse
+                    | undefined;
+            } catch (error) {
+                // Content script might not be injected, try to inject it
+                if (
+                    error instanceof Error &&
+                    error.message.includes("Could not establish connection")
+                ) {
+                    // Try to inject the content script
+                    try {
+                        await chrome.scripting.executeScript({
+                            target: { tabId: tab.id },
+                            files: ["content.js"],
+                        });
+                        // Wait a bit for the script to initialize
+                        await new Promise((resolve) => setTimeout(resolve, 500));
+                        // Try again
+                        response = (await chrome.tabs.sendMessage(tab.id, {
+                            type: "GET_CURRENT_VIDEO_INFO",
+                        } as GetCurrentVideoInfoMessage)) as
+                            | CurrentVideoInfoResponse
+                            | undefined;
+                    } catch (injectError) {
+                        throw new Error(
+                            "Failed to inject content script. Please refresh the page and try again.",
+                        );
+                    }
+                } else {
+                    throw error;
+                }
+            }
 
             if (
                 response &&
@@ -705,7 +736,7 @@ async function saveCurrentUrl(): Promise<void> {
                     title: pageTitle,
                 };
             }
-        } catch {
+        } catch (error) {
             // If content script fails, use fallback
             const pageTitle =
                 tab.title?.replace(" - YouTube", "").trim() || "Unknown Title";

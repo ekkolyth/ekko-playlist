@@ -32,9 +32,12 @@ import { Route as AuthenticatedSettingsProfileRouteRouteImport } from './routes/
 import { Route as AuthenticatedSettingsPreferencesRouteRouteImport } from './routes/_authenticated/settings/preferences/route'
 import { Route as AuthenticatedSettingsPluginsRouteRouteImport } from './routes/_authenticated/settings/plugins/route'
 import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_authenticated/app/playlists/route'
+import { Route as ApiConfigSmtpIndexRouteImport } from './routes/api/config/smtp/index'
+import { Route as AuthenticatedSettingsEmailIndexRouteImport } from './routes/_authenticated/settings/email/index'
 import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
 import { Route as AuthenticatedAppPlaylistsIndexRouteImport } from './routes/_authenticated/app/playlists/index'
 import { Route as AuthenticatedAppDashboardIndexRouteImport } from './routes/_authenticated/app/dashboard/index'
+import { Route as ApiConfigSmtpTestRouteImport } from './routes/api/config/smtp/test'
 import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as ApiPlaylistsIdVideosIndexRouteImport } from './routes/api/playlists/$id/videos/index'
 import { Route as AuthenticatedAppPlaylistsNameIndexRouteImport } from './routes/_authenticated/app/playlists/$name/index'
@@ -161,6 +164,17 @@ const AuthenticatedAppPlaylistsRouteRoute =
     path: '/playlists',
     getParentRoute: () => AuthenticatedAppRouteRoute,
   } as any)
+const ApiConfigSmtpIndexRoute = ApiConfigSmtpIndexRouteImport.update({
+  id: '/smtp/',
+  path: '/smtp/',
+  getParentRoute: () => ApiConfigRoute,
+} as any)
+const AuthenticatedSettingsEmailIndexRoute =
+  AuthenticatedSettingsEmailIndexRouteImport.update({
+    id: '/email/',
+    path: '/email/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsApiKeysIndexRoute =
   AuthenticatedSettingsApiKeysIndexRouteImport.update({
     id: '/api-keys/',
@@ -179,6 +193,11 @@ const AuthenticatedAppDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => AuthenticatedAppRouteRoute,
   } as any)
+const ApiConfigSmtpTestRoute = ApiConfigSmtpTestRouteImport.update({
+  id: '/smtp/test',
+  path: '/smtp/test',
+  getParentRoute: () => ApiConfigRoute,
+} as any)
 const AuthenticatedAppPlaylistsNameRouteRoute =
   AuthenticatedAppPlaylistsNameRouteRouteImport.update({
     id: '/$name',
@@ -214,7 +233,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/api/config': typeof ApiConfigRoute
+  '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
@@ -234,9 +253,12 @@ export interface FileRoutesByFullPath {
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
+  '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -246,7 +268,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/api/config': typeof ApiConfigRoute
+  '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
@@ -264,9 +286,12 @@ export interface FileRoutesByTo {
   '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
+  '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
+  '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -278,7 +303,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
-  '/api/config': typeof ApiConfigRoute
+  '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/_authenticated/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
@@ -298,9 +323,12 @@ export interface FileRoutesById {
   '/auth/signin/': typeof AuthSigninIndexRoute
   '/auth/signup/': typeof AuthSignupIndexRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
   '/_authenticated/app/dashboard/': typeof AuthenticatedAppDashboardIndexRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/_authenticated/settings/email/': typeof AuthenticatedSettingsEmailIndexRoute
+  '/api/config/smtp/': typeof ApiConfigSmtpIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/_authenticated/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -332,9 +360,12 @@ export interface FileRouteTypes {
     | '/auth/signin'
     | '/auth/signup'
     | '/app/playlists/$name'
+    | '/api/config/smtp/test'
     | '/app/dashboard'
     | '/app/playlists/'
     | '/settings/api-keys'
+    | '/settings/email'
+    | '/api/config/smtp'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/app/playlists/$name/'
@@ -362,9 +393,12 @@ export interface FileRouteTypes {
     | '/api/videos'
     | '/auth/signin'
     | '/auth/signup'
+    | '/api/config/smtp/test'
     | '/app/dashboard'
     | '/app/playlists'
     | '/settings/api-keys'
+    | '/settings/email'
+    | '/api/config/smtp'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/app/playlists/$name'
@@ -395,9 +429,12 @@ export interface FileRouteTypes {
     | '/auth/signin/'
     | '/auth/signup/'
     | '/_authenticated/app/playlists/$name'
+    | '/api/config/smtp/test'
     | '/_authenticated/app/dashboard/'
     | '/_authenticated/app/playlists/'
     | '/_authenticated/settings/api-keys/'
+    | '/_authenticated/settings/email/'
+    | '/api/config/smtp/'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/_authenticated/app/playlists/$name/'
@@ -407,7 +444,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
-  ApiConfigRoute: typeof ApiConfigRoute
+  ApiConfigRoute: typeof ApiConfigRouteWithChildren
   ApiExtensionTokenRoute: typeof ApiExtensionTokenRoute
   ApiVerifyTokenRoute: typeof ApiVerifyTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -589,6 +626,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppPlaylistsRouteRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
     }
+    '/api/config/smtp/': {
+      id: '/api/config/smtp/'
+      path: '/smtp'
+      fullPath: '/api/config/smtp'
+      preLoaderRoute: typeof ApiConfigSmtpIndexRouteImport
+      parentRoute: typeof ApiConfigRoute
+    }
+    '/_authenticated/settings/email/': {
+      id: '/_authenticated/settings/email/'
+      path: '/email'
+      fullPath: '/settings/email'
+      preLoaderRoute: typeof AuthenticatedSettingsEmailIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/api-keys/': {
       id: '/_authenticated/settings/api-keys/'
       path: '/api-keys'
@@ -609,6 +660,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/dashboard'
       preLoaderRoute: typeof AuthenticatedAppDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/api/config/smtp/test': {
+      id: '/api/config/smtp/test'
+      path: '/smtp/test'
+      fullPath: '/api/config/smtp/test'
+      preLoaderRoute: typeof ApiConfigSmtpTestRouteImport
+      parentRoute: typeof ApiConfigRoute
     }
     '/_authenticated/app/playlists/$name': {
       id: '/_authenticated/app/playlists/$name'
@@ -703,6 +761,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
   AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRoute
   AuthenticatedSettingsApiKeysIndexRoute: typeof AuthenticatedSettingsApiKeysIndexRoute
+  AuthenticatedSettingsEmailIndexRoute: typeof AuthenticatedSettingsEmailIndexRoute
 }
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
@@ -715,6 +774,7 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
       AuthenticatedSettingsProfileRouteRoute,
     AuthenticatedSettingsApiKeysIndexRoute:
       AuthenticatedSettingsApiKeysIndexRoute,
+    AuthenticatedSettingsEmailIndexRoute: AuthenticatedSettingsEmailIndexRoute,
   }
 
 const AuthenticatedSettingsRouteRouteWithChildren =
@@ -736,10 +796,24 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ApiConfigRouteChildren {
+  ApiConfigSmtpTestRoute: typeof ApiConfigSmtpTestRoute
+  ApiConfigSmtpIndexRoute: typeof ApiConfigSmtpIndexRoute
+}
+
+const ApiConfigRouteChildren: ApiConfigRouteChildren = {
+  ApiConfigSmtpTestRoute: ApiConfigSmtpTestRoute,
+  ApiConfigSmtpIndexRoute: ApiConfigSmtpIndexRoute,
+}
+
+const ApiConfigRouteWithChildren = ApiConfigRoute._addFileChildren(
+  ApiConfigRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
-  ApiConfigRoute: ApiConfigRoute,
+  ApiConfigRoute: ApiConfigRouteWithChildren,
   ApiExtensionTokenRoute: ApiExtensionTokenRoute,
   ApiVerifyTokenRoute: ApiVerifyTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

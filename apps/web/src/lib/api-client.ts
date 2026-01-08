@@ -238,3 +238,50 @@ export async function deleteVideos(videoIds: number[]): Promise<void> {
     body: JSON.stringify({ videoIds }),
   });
 }
+
+// SMTP Config types
+export interface SmtpConfig {
+  host: string;
+  port: number;
+  username: string;
+  password: string; // Masked in response
+  from_email: string;
+  from_name?: string;
+}
+
+export interface SmtpConfigResponse {
+  message: string;
+}
+
+export interface TestEmailResponse {
+  message: string;
+}
+
+// SMTP Config API functions
+export async function getSmtpConfig(): Promise<SmtpConfig> {
+  return apiRequest<SmtpConfig>("/api/config/smtp");
+}
+
+export async function updateSmtpConfig(
+  config: Omit<SmtpConfig, "password"> & { password?: string },
+): Promise<SmtpConfigResponse> {
+  return apiRequest<SmtpConfigResponse>("/api/config/smtp", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(config),
+  });
+}
+
+export async function sendTestEmail(
+  email: string,
+): Promise<TestEmailResponse> {
+  return apiRequest<TestEmailResponse>("/api/config/smtp/test", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email }),
+  });
+}

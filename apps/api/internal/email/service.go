@@ -61,6 +61,95 @@ func NewService() (*Service, error) {
 	}, nil
 }
 
+// NewServiceFromConfig creates a new email service with SMTP configuration from a config map
+// This allows the service to be created from database-stored configuration
+func NewServiceFromConfig(config map[string]string) (*Service, error) {
+	host, ok := config["smtp_host"]
+	if !ok || host == "" {
+		return nil, fmt.Errorf("smtp_host is required")
+	}
+
+	portStr, ok := config["smtp_port"]
+	if !ok || portStr == "" {
+		portStr = "587" // Default to TLS port
+	}
+	port, err := strconv.Atoi(portStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid smtp_port: %w", err)
+	}
+
+	username, ok := config["smtp_username"]
+	if !ok || username == "" {
+		return nil, fmt.Errorf("smtp_username is required")
+	}
+
+	password, ok := config["smtp_password"]
+	if !ok || password == "" {
+		return nil, fmt.Errorf("smtp_password is required")
+	}
+
+	fromEmail, ok := config["smtp_from_email"]
+	if !ok || fromEmail == "" {
+		return nil, fmt.Errorf("smtp_from_email is required")
+	}
+
+	fromName, ok := config["smtp_from_name"]
+	if !ok || fromName == "" {
+		fromName = "Ekko Playlist" // Default name
+	}
+
+	dialer := gomail.NewDialer(host, port, username, password)
+
+	return &Service{
+		dialer:    dialer,
+		fromEmail: fromEmail,
+		fromName:  fromName,
+	}, nil
+}
+
+// SendTestEmail sends a test email to verify SMTP configuration
+func (s *Service) SendTestEmail(toEmail string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("From", m.FormatAddress(s.fromEmail, s.fromName))
+	m.SetHeader("To", toEmail)
+	m.SetHeader("Subject", "Test Email from Ekko Playlist")
+
+	htmlBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Test Email</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+	<div style="background-color: #ffffff; border-radius: 8px; padding: 40px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+		<h1 style="color: #000000; margin-top: 0;">Test Email</h1>
+		<p>This is a test email to verify your SMTP configuration is working correctly.</p>
+		<p style="color: #666; font-size: 14px; margin-top: 30px;">If you received this email, your SMTP settings are configured correctly!</p>
+	</div>
+</body>
+</html>
+`)
+
+	textBody := `Test Email
+
+This is a test email to verify your SMTP configuration is working correctly.
+
+If you received this email, your SMTP settings are configured correctly!`
+
+	m.SetBody("text/plain", textBody)
+	m.AddAlternative("text/html", htmlBody)
+
+	if err := s.dialer.DialAndSend(m); err != nil {
+		logging.Error(fmt.Sprintf("Failed to send test email: %v", err))
+		return fmt.Errorf("failed to send test email: %w", err)
+	}
+
+	logging.Info("Test email sent successfully to %s", toEmail)
+	return nil
+}
+
 // SendVerificationEmail sends an email verification email to the specified address
 func (s *Service) SendVerificationEmail(email, token, verificationURL string) error {
 	m := gomail.NewMessage()

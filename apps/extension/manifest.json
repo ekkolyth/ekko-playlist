@@ -1,12 +1,11 @@
 {
     "manifest_version": 3,
-    "name": "YouTube Playlist Scanner",
+    "name": "Ekko Playlist",
     "version": "1.0.0",
-    "description": "Scan YouTube playlists and save video information to JSON",
-    "permissions": ["activeTab", "downloads", "scripting", "storage"],
+    "description": "Save YouTube videos and Playlists and filter, sort,and organize your YouTube playlists.",
+    "permissions": ["activeTab", "scripting", "storage"],
     "host_permissions": [
         "https://www.youtube.com/*",
-        "https://*/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
     ],

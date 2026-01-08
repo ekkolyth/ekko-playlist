@@ -13,11 +13,10 @@ import (
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/handlers"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
-	"github.com/ekkolyth/ekko-playlist/api/internal/email"
 	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 )
 
-func NewRouter(dbService *db.Service, luaService *lua.Service, emailService *email.Service) http.Handler {
+func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	router := chi.NewRouter()
 
 	// standard middleware
@@ -87,6 +86,17 @@ func NewRouter(dbService *db.Service, luaService *lua.Service, emailService *ema
 		tokens.Get("/", tokensHandler.ListTokens)
 		tokens.Put("/{id}", tokensHandler.UpdateToken)
 		tokens.Delete("/{id}", tokensHandler.DeleteToken)
+	})
+
+	// Config routes - require authentication
+	configHandler := handlers.NewConfigHandler(dbService)
+	router.Route("/api/config", func(config chi.Router) {
+		config.Use(authMiddleware)
+		config.Route("/smtp", func(smtp chi.Router) {
+			smtp.Get("/", configHandler.GetSmtpConfig)
+			smtp.Put("/", configHandler.UpdateSmtpConfig)
+			smtp.Post("/test", configHandler.SendTestEmail)
+		})
 	})
 
 	router.Route("/api", func(api chi.Router) {

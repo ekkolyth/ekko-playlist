@@ -37,7 +37,8 @@ export const Route = createFileRoute("/_authenticated/settings/profile")({
 const profileSchema = z.object({
   name: z.string().optional().nullable(),
   email: z.string().email("Invalid email format").min(1, "Email is required"),
-  image: z.string().url("Invalid image URL").optional().nullable().or(z.literal("")),
+  // Image field is not validated - it's set by the upload process, not user input
+  image: z.string().optional().nullable(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -263,29 +264,10 @@ function ProfilePage() {
                           </p>
                         </div>
                       </div>
+                      {/* Image field is hidden - no validation needed as it's set by upload */}
                       <form.Field
                         name="image"
-                        validators={{
-                          onBlur: ({ value }) => {
-                            if (value && value.trim()) {
-                              try {
-                                new URL(value);
-                              } catch {
-                                return "Invalid image URL";
-                              }
-                            }
-                            return undefined;
-                          },
-                        }}
-                        children={(field) => (
-                          <>
-                            {field.state.meta.errors.length > 0 && (
-                              <FieldError>
-                                {field.state.meta.errors[0]}
-                              </FieldError>
-                            )}
-                          </>
-                        )}
+                        children={() => null}
                       />
                     </FieldContent>
                   </Field>

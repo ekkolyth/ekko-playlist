@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Play, Link as LinkIcon, Plus, ListMusic } from "lucide-react";
+import { Play, Link as LinkIcon, Plus, ListMusic, Trash2 } from "lucide-react";
 import type { Video, Playlist } from "@/lib/api-client";
 import { getYouTubeThumbnail } from "@/hooks/use-playlist";
 
@@ -33,6 +33,7 @@ interface VideoCardProps {
     videoId: number,
   ) => void;
   onCreatePlaylist: (e: React.MouseEvent, videoId: number) => void;
+  onDeleteVideo?: (e: React.MouseEvent, videoId: number, title: string) => void;
   isAddingToPlaylist?: boolean;
 }
 
@@ -46,6 +47,7 @@ export function VideoCard({
   onShareClick,
   onAddToPlaylist,
   onCreatePlaylist,
+  onDeleteVideo,
   isAddingToPlaylist = false,
 }: VideoCardProps) {
   return (
@@ -152,6 +154,20 @@ export function VideoCard({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              {onDeleteVideo && (
+                <Button
+                  size="icon-sm"
+                  variant="ghost"
+                  className="bg-background border border-border shadow-md hover:bg-background hover:border-destructive hover:text-destructive"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteVideo(e, video.id, video.title);
+                  }}
+                  aria-label="Delete video"
+                >
+                  <Trash2 className="size-4" />
+                </Button>
+              )}
             </div>
           </>
         )}

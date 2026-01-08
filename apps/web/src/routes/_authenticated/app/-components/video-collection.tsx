@@ -144,6 +144,21 @@ export function VideoCollection({
     openCreateDialog(videoId);
   };
 
+  const deleteVideoClick = (
+    e: React.MouseEvent,
+    videoId: number,
+    title: string,
+  ) => {
+    e.stopPropagation();
+    if (onRemoveVideo) {
+      // Remove from playlist mode - removeVideo already has confirmation built in
+      onRemoveVideo(videoId, title);
+    } else {
+      // Global delete mode - deleteVideos already has confirmation built in
+      deleteVideos([videoId]);
+    }
+  };
+
   const videoClick = (video: Video) => {
     if (isSelectMode) {
       const isSelected = selectedVideoIds.has(video.id);
@@ -332,6 +347,7 @@ export function VideoCollection({
               onShareClick={shareClick}
               onAddToPlaylist={selectPlaylist}
               onCreatePlaylist={addToPlaylistClick}
+              onDeleteVideo={deleteVideoClick}
               isAddingToPlaylist={isAddingToPlaylist}
             />
           );

@@ -72,7 +72,7 @@ function SettingsLayout() {
                 return (
                   <Button
                     key={item.href}
-                    variant={isActive ? "secondary" : "ghost"}
+                    variant={isActive ? "default" : "ghost"}
                     className="w-full justify-start"
                     asChild
                   >

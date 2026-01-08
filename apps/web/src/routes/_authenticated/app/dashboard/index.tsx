@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, type VideosResponse } from "@/lib/api-client";
+import { apiRequest, getUserProfile, type VideosResponse } from "@/lib/api-client";
 import { ChannelFilter } from "../-components/channel-filter";
 import { VideoCollection } from "../-components/video-collection";
 
@@ -50,6 +50,12 @@ function DashboardPage() {
   const [selectModeActions, setSelectModeActions] =
     useState<React.ReactNode>(null);
 
+  // Fetch user profile for display name
+  const { data: profile } = useQuery({
+    queryKey: ["user-profile"],
+    queryFn: getUserProfile,
+  });
+
   // Fetch all videos to get the list of available channels
   const { data: allVideosData } = useQuery({
     queryKey: ["videos", "all"],
@@ -81,7 +87,7 @@ function DashboardPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight mb-1">
-                Welcome, {user?.email || "User"}
+                Welcome back, {profile?.name?.trim() || user?.email || "User"}
               </h1>
               <p className="text-muted-foreground">All YouTube videos</p>
             </div>

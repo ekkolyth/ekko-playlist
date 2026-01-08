@@ -27,6 +27,10 @@ const config = defineConfig(({ mode }) => {
       conditions: ["import", "module", "browser", "default"],
       // Remove the postgres alias - let SSR handle it via external config
       // The alias was causing issues during SSR evaluation
+      alias: {
+        // Fix for use-sync-external-store shim compatibility with React 19
+        "use-sync-external-store/shim/with-selector": "use-sync-external-store/shim/with-selector.js",
+      },
     },
     ssr: {
       noExternal: ["better-auth"],
@@ -39,7 +43,10 @@ const config = defineConfig(({ mode }) => {
       },
     },
     optimizeDeps: {
-      include: ["better-auth/react"],
+      include: [
+        "better-auth/react",
+        "use-sync-external-store/shim/with-selector",
+      ],
       exclude: ["postgres", "drizzle-orm/postgres-js"],
     },
   };

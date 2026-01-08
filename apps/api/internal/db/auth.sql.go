@@ -473,3 +473,26 @@ func (q *Queries) UpdateUserEmailVerified(ctx context.Context, id string) error 
 	_, err := q.db.Exec(ctx, UpdateUserEmailVerified, id)
 	return err
 }
+
+const UpdateUserProfile = `-- name: UpdateUserProfile :exec
+update "user"
+set name = $1, email = $2, image = $3, updated_at = now()
+where id = $4
+`
+
+type UpdateUserProfileParams struct {
+	Name  *string `json:"name"`
+	Email string  `json:"email"`
+	Image *string `json:"image"`
+	ID    string  `json:"id"`
+}
+
+func (q *Queries) UpdateUserProfile(ctx context.Context, arg *UpdateUserProfileParams) error {
+	_, err := q.db.Exec(ctx, UpdateUserProfile,
+		arg.Name,
+		arg.Email,
+		arg.Image,
+		arg.ID,
+	)
+	return err
+}

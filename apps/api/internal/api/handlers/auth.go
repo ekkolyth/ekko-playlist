@@ -8,8 +8,14 @@ import (
 	"os"
 	"time"
 
+	"fmt"
+	"path/filepath"
+	"regexp"
+	"strings"
+
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
+	"github.com/ekkolyth/ekko-playlist/api/internal/api/upload"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
 )
@@ -38,6 +44,19 @@ type AuthResponse struct {
 	Token  string `json:"token"`
 	UserID string `json:"user_id"`
 	Email  string `json:"email"`
+}
+
+type UserProfileResponse struct {
+	ID    string  `json:"id"`
+	Name  *string `json:"name"`
+	Email string  `json:"email"`
+	Image *string `json:"image"`
+}
+
+type UpdateUserProfileRequest struct {
+	Name  *string `json:"name"`
+	Email string  `json:"email"`
+	Image *string `json:"image"`
 }
 
 // Register handles POST /api/auth/register
@@ -210,3 +229,245 @@ func extractTokenFromRequest(r *http.Request) string {
 	return ""
 }
 
+// GetUserProfile handles GET /api/user/profile - returns current user profile
+func (h *AuthHandler) GetUserProfile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(ctx)
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	// Get user from database
+	user, err := h.dbService.Queries.GetUserByID(ctx, userID)
+	if err != nil {
+		logging.Info("Error fetching user profile: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch user profile")
+		return
+	}
+
+	httpx.RespondJSON(w, http.StatusOK, UserProfileResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Image: user.Image,
+	})
+}
+
+// UpdateUserProfile handles PUT /api/user/profile - updates current user profile
+// Supports both multipart/form-data (for file uploads) and application/json (for backward compatibility)
+func (h *AuthHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(ctx)
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	var req UpdateUserProfileRequest
+	var imagePath *string
+	var oldImagePath *string
+
+	// Check content type
+	contentType := r.Header.Get("Content-Type")
+	if strings.HasPrefix(contentType, "multipart/form-data") {
+		// Handle multipart form data
+		if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max
+			logging.Info("Error parsing multipart form: %v", err)
+			httpx.RespondError(w, http.StatusBadRequest, "Failed to parse form data")
+			return
+		}
+
+		// Extract form fields
+		email := r.FormValue("email")
+		name := r.FormValue("name")
+
+		// Validate email
+		if email == "" {
+			httpx.RespondError(w, http.StatusBadRequest, "email is required")
+			return
+		}
+
+		emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+		if !emailRegex.MatchString(email) {
+			httpx.RespondError(w, http.StatusBadRequest, "invalid email format")
+			return
+		}
+
+		// Get current user to check for old image
+		currentUser, err := h.dbService.Queries.GetUserByID(ctx, userID)
+		if err == nil && currentUser.Image != nil && *currentUser.Image != "" {
+			// Extract filename from old image path/URL
+			oldImageFilename := upload.ExtractFilenameFromPath(*currentUser.Image)
+			if oldImageFilename != "" {
+				uploadDir := upload.GetUploadDir()
+				oldImagePathStr := filepath.Join(uploadDir, oldImageFilename)
+				oldImagePath = &oldImagePathStr
+			}
+		}
+
+		// Handle image file upload if present
+		file, fileHeader, err := r.FormFile("image")
+		if err == nil {
+			defer file.Close()
+
+			// Validate file
+			if err := upload.ValidateImageFile(fileHeader); err != nil {
+				logging.Info("File validation failed: %v", err)
+				httpx.RespondError(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			// Read file content
+			fileContent, err := io.ReadAll(file)
+			if err != nil {
+				logging.Info("Error reading file content: %v", err)
+				httpx.RespondError(w, http.StatusInternalServerError, "Failed to read file")
+				return
+			}
+
+			// Generate filename
+			filename := upload.GenerateFilename(userID, fileHeader.Filename, fileContent)
+
+			// Check if this is the same file as the current one (same hash = same content)
+			var newImageFilename string
+			if currentUser != nil && currentUser.Image != nil && *currentUser.Image != "" {
+				currentImageFilename := upload.ExtractFilenameFromPath(*currentUser.Image)
+				if currentImageFilename == filename {
+					// Same file content, no need to upload again or delete
+					logging.Info("UpdateUserProfile: Same image content, keeping existing file")
+					imagePath = currentUser.Image
+					oldImagePath = nil // Don't delete, it's the same file
+				} else {
+					newImageFilename = filename
+				}
+			} else {
+				newImageFilename = filename
+			}
+
+			// Only save if it's a new file
+			if newImageFilename != "" {
+				// Save file
+				_, err = upload.SaveFile(userID, newImageFilename, fileContent)
+				if err != nil {
+					logging.Info("Error saving file: %v", err)
+					httpx.RespondError(w, http.StatusInternalServerError, "Failed to save file")
+					return
+				}
+
+				// Set image path to the URL path (not filesystem path)
+				imageURL := fmt.Sprintf("/api/uploads/%s", newImageFilename)
+				imagePath = &imageURL
+				logging.Info("UpdateUserProfile: Image uploaded successfully, URL: %s", imageURL)
+			}
+		} else {
+			// No file uploaded, check if image field was provided as a string (for clearing)
+			imageValue := r.FormValue("image")
+			if imageValue == "" {
+				// Keep existing image if no new image and no explicit clear
+				if currentUser != nil && currentUser.Image != nil {
+					imagePath = currentUser.Image
+				}
+			} else {
+				// Explicit image value provided (could be empty string to clear)
+				if imageValue == "" {
+					imagePath = nil
+				} else {
+					imagePath = &imageValue
+				}
+			}
+		}
+
+		// Build request
+		req.Email = email
+		if name != "" {
+			req.Name = &name
+		} else {
+			req.Name = nil
+		}
+		req.Image = imagePath
+	} else {
+		// Handle JSON request (backward compatibility)
+		if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+			httpx.RespondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// Validate email format
+		if req.Email == "" {
+			httpx.RespondError(w, http.StatusBadRequest, "email is required")
+			return
+		}
+
+		emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+		if !emailRegex.MatchString(req.Email) {
+			httpx.RespondError(w, http.StatusBadRequest, "invalid email format")
+			return
+		}
+
+		// Get current user to check for old image
+		currentUser, err := h.dbService.Queries.GetUserByID(ctx, userID)
+		if err == nil && currentUser.Image != nil && *currentUser.Image != "" {
+			// Extract filename from old image path/URL
+			oldImageFilename := upload.ExtractFilenameFromPath(*currentUser.Image)
+			if oldImageFilename != "" {
+				uploadDir := upload.GetUploadDir()
+				oldImagePathStr := filepath.Join(uploadDir, oldImageFilename)
+				oldImagePath = &oldImagePathStr
+			}
+		}
+	}
+
+	// Update user profile
+	err := h.dbService.Queries.UpdateUserProfile(ctx, &db.UpdateUserProfileParams{
+		Name:  req.Name,
+		Email: req.Email,
+		Image: req.Image,
+		ID:    userID,
+	})
+
+	if err != nil {
+		logging.Info("Error updating user profile: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "Failed to update user profile")
+		return
+	}
+
+	// Delete old image file if it exists and we uploaded a new one
+	// Only delete if the old and new filenames are different (different content)
+	if oldImagePath != nil && imagePath != nil && *oldImagePath != "" {
+		// Extract filenames to compare
+		oldFilename := upload.ExtractFilenameFromPath(*oldImagePath)
+		newFilename := upload.ExtractFilenameFromPath(*imagePath)
+		
+		// Only delete if they're different files
+		if oldFilename != "" && newFilename != "" && oldFilename != newFilename {
+			logging.Info("UpdateUserProfile: Deleting old image file: %s (new: %s)", oldFilename, newFilename)
+			if err := upload.DeleteFile(*oldImagePath); err != nil {
+				logging.Info("Error deleting old image file: %v", err)
+				// Don't fail the request if deletion fails
+			}
+		} else {
+			logging.Info("UpdateUserProfile: Skipping deletion - same file (old: %s, new: %s)", oldFilename, newFilename)
+		}
+	}
+
+	// Fetch updated user to return
+	user, err := h.dbService.Queries.GetUserByID(ctx, userID)
+	if err != nil {
+		logging.Info("Error fetching updated user profile: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "Profile updated but failed to fetch updated data")
+		return
+	}
+
+	logging.Info("User profile updated successfully for user %s", userID)
+	httpx.RespondJSON(w, http.StatusOK, UserProfileResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Image: user.Image,
+	})
+}

@@ -111,3 +111,8 @@ where id = $1;
 -- name: DeleteVerification :exec
 delete from "verification"
 where value = $1;
+
+-- name: UpdateUserProfile :exec
+update "user"
+set name = $1, email = $2, image = $3, updated_at = now()
+where id = $4;

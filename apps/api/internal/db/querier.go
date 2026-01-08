@@ -51,6 +51,7 @@ type Querier interface {
 	UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error
 	UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error)
 	UpdateUserEmailVerified(ctx context.Context, id string) error
+	UpdateUserProfile(ctx context.Context, arg *UpdateUserProfileParams) error
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 

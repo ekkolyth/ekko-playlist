@@ -21,6 +21,7 @@ import { Route as AuthSigninIndexRouteImport } from './routes/auth/signin/index'
 import { Route as ApiVideosIndexRouteImport } from './routes/api/videos/index'
 import { Route as ApiTokensIndexRouteImport } from './routes/api/tokens/index'
 import { Route as ApiPlaylistsIndexRouteImport } from './routes/api/playlists/index'
+import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
 import { Route as ApiTokensSplatRouteImport } from './routes/api/tokens/$'
 import { Route as ApiProcessVideoRouteImport } from './routes/api/process/video'
 import { Route as ApiProcessPlaylistRouteImport } from './routes/api/process/playlist'
@@ -32,6 +33,7 @@ import { Route as AuthenticatedSettingsProfileRouteRouteImport } from './routes/
 import { Route as AuthenticatedSettingsPreferencesRouteRouteImport } from './routes/_authenticated/settings/preferences/route'
 import { Route as AuthenticatedSettingsPluginsRouteRouteImport } from './routes/_authenticated/settings/plugins/route'
 import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_authenticated/app/playlists/route'
+import { Route as ApiUserProfileIndexRouteImport } from './routes/api/user/profile/index'
 import { Route as ApiConfigSmtpIndexRouteImport } from './routes/api/config/smtp/index'
 import { Route as AuthenticatedSettingsEmailIndexRouteImport } from './routes/_authenticated/settings/email/index'
 import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
@@ -104,6 +106,11 @@ const ApiPlaylistsIndexRoute = ApiPlaylistsIndexRouteImport.update({
   path: '/api/playlists/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUploadsFilenameRoute = ApiUploadsFilenameRouteImport.update({
+  id: '/api/uploads/$filename',
+  path: '/api/uploads/$filename',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTokensSplatRoute = ApiTokensSplatRouteImport.update({
   id: '/api/tokens/$',
   path: '/api/tokens/$',
@@ -164,6 +171,11 @@ const AuthenticatedAppPlaylistsRouteRoute =
     path: '/playlists',
     getParentRoute: () => AuthenticatedAppRouteRoute,
   } as any)
+const ApiUserProfileIndexRoute = ApiUserProfileIndexRouteImport.update({
+  id: '/api/user/profile/',
+  path: '/api/user/profile/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiConfigSmtpIndexRoute = ApiConfigSmtpIndexRouteImport.update({
   id: '/smtp/',
   path: '/smtp/',
@@ -247,6 +259,7 @@ export interface FileRoutesByFullPath {
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
   '/api/tokens': typeof ApiTokensIndexRoute
   '/api/videos': typeof ApiVideosIndexRoute
@@ -259,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
   '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
+  '/api/user/profile': typeof ApiUserProfileIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -281,6 +295,7 @@ export interface FileRoutesByTo {
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
   '/api/tokens': typeof ApiTokensIndexRoute
   '/api/videos': typeof ApiVideosIndexRoute
@@ -292,6 +307,7 @@ export interface FileRoutesByTo {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
   '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
+  '/api/user/profile': typeof ApiUserProfileIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -317,6 +333,7 @@ export interface FileRoutesById {
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
+  '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
   '/api/playlists/': typeof ApiPlaylistsIndexRoute
   '/api/tokens/': typeof ApiTokensIndexRoute
   '/api/videos/': typeof ApiVideosIndexRoute
@@ -329,6 +346,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/_authenticated/settings/email/': typeof AuthenticatedSettingsEmailIndexRoute
   '/api/config/smtp/': typeof ApiConfigSmtpIndexRoute
+  '/api/user/profile/': typeof ApiUserProfileIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/_authenticated/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
@@ -354,6 +372,7 @@ export interface FileRouteTypes {
     | '/api/process/playlist'
     | '/api/process/video'
     | '/api/tokens/$'
+    | '/api/uploads/$filename'
     | '/api/playlists'
     | '/api/tokens'
     | '/api/videos'
@@ -366,6 +385,7 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/email'
     | '/api/config/smtp'
+    | '/api/user/profile'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/app/playlists/$name/'
@@ -388,6 +408,7 @@ export interface FileRouteTypes {
     | '/api/process/playlist'
     | '/api/process/video'
     | '/api/tokens/$'
+    | '/api/uploads/$filename'
     | '/api/playlists'
     | '/api/tokens'
     | '/api/videos'
@@ -399,6 +420,7 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/email'
     | '/api/config/smtp'
+    | '/api/user/profile'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/app/playlists/$name'
@@ -423,6 +445,7 @@ export interface FileRouteTypes {
     | '/api/process/playlist'
     | '/api/process/video'
     | '/api/tokens/$'
+    | '/api/uploads/$filename'
     | '/api/playlists/'
     | '/api/tokens/'
     | '/api/videos/'
@@ -435,6 +458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/api-keys/'
     | '/_authenticated/settings/email/'
     | '/api/config/smtp/'
+    | '/api/user/profile/'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/_authenticated/app/playlists/$name/'
@@ -453,11 +477,13 @@ export interface RootRouteChildren {
   ApiProcessPlaylistRoute: typeof ApiProcessPlaylistRoute
   ApiProcessVideoRoute: typeof ApiProcessVideoRoute
   ApiTokensSplatRoute: typeof ApiTokensSplatRoute
+  ApiUploadsFilenameRoute: typeof ApiUploadsFilenameRoute
   ApiPlaylistsIndexRoute: typeof ApiPlaylistsIndexRoute
   ApiTokensIndexRoute: typeof ApiTokensIndexRoute
   ApiVideosIndexRoute: typeof ApiVideosIndexRoute
   AuthSigninIndexRoute: typeof AuthSigninIndexRoute
   AuthSignupIndexRoute: typeof AuthSignupIndexRoute
+  ApiUserProfileIndexRoute: typeof ApiUserProfileIndexRoute
   ApiPlaylistsIdVideosVideoIdRoute: typeof ApiPlaylistsIdVideosVideoIdRoute
   ApiPlaylistsIdVideosBulkRoute: typeof ApiPlaylistsIdVideosBulkRoute
   ApiPlaylistsIdVideosIndexRoute: typeof ApiPlaylistsIdVideosIndexRoute
@@ -549,6 +575,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlaylistsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/uploads/$filename': {
+      id: '/api/uploads/$filename'
+      path: '/api/uploads/$filename'
+      fullPath: '/api/uploads/$filename'
+      preLoaderRoute: typeof ApiUploadsFilenameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/tokens/$': {
       id: '/api/tokens/$'
       path: '/api/tokens/$'
@@ -625,6 +658,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/playlists'
       preLoaderRoute: typeof AuthenticatedAppPlaylistsRouteRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/api/user/profile/': {
+      id: '/api/user/profile/'
+      path: '/api/user/profile'
+      fullPath: '/api/user/profile'
+      preLoaderRoute: typeof ApiUserProfileIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/config/smtp/': {
       id: '/api/config/smtp/'
@@ -822,11 +862,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProcessPlaylistRoute: ApiProcessPlaylistRoute,
   ApiProcessVideoRoute: ApiProcessVideoRoute,
   ApiTokensSplatRoute: ApiTokensSplatRoute,
+  ApiUploadsFilenameRoute: ApiUploadsFilenameRoute,
   ApiPlaylistsIndexRoute: ApiPlaylistsIndexRoute,
   ApiTokensIndexRoute: ApiTokensIndexRoute,
   ApiVideosIndexRoute: ApiVideosIndexRoute,
   AuthSigninIndexRoute: AuthSigninIndexRoute,
   AuthSignupIndexRoute: AuthSignupIndexRoute,
+  ApiUserProfileIndexRoute: ApiUserProfileIndexRoute,
   ApiPlaylistsIdVideosVideoIdRoute: ApiPlaylistsIdVideosVideoIdRoute,
   ApiPlaylistsIdVideosBulkRoute: ApiPlaylistsIdVideosBulkRoute,
   ApiPlaylistsIdVideosIndexRoute: ApiPlaylistsIdVideosIndexRoute,

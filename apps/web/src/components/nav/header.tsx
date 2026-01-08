@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserProfileAvatar } from "@/components/user-profile-avatar";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -51,17 +51,10 @@ export default function Header() {
                     size="sm"
                     className="flex items-center gap-2"
                   >
-                    <Avatar className="size-6">
-                      <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                        {user?.email
-                          ?.split("@")[0]
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")
-                          .toUpperCase()
-                          .slice(0, 2) || "U"}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserProfileAvatar
+                      size="sm"
+                      fallbackText={user?.email?.split("@")[0] || "U"}
+                    />
                     <span className="text-sm text-muted-foreground">
                       {user?.email}
                     </span>

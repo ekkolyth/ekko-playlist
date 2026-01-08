@@ -301,3 +301,44 @@ export async function sendTestEmail(
     body: JSON.stringify({ email }),
   });
 }
+
+// User Profile types
+export interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
+export interface UpdateUserProfileRequest {
+  name?: string | null;
+  email: string;
+  image?: string | null;
+}
+
+// User Profile API functions
+export async function getUserProfile(): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/api/user/profile");
+}
+
+export async function updateUserProfile(
+  profile: UpdateUserProfileRequest | FormData,
+): Promise<UserProfile> {
+  // Check if profile is FormData (for file uploads)
+  if (profile instanceof FormData) {
+    return apiRequest<UserProfile>("/api/user/profile", {
+      method: "PUT",
+      // Don't set Content-Type header - browser will set it with boundary for FormData
+      body: profile,
+    });
+  }
+
+  // Otherwise, send as JSON (backward compatibility)
+  return apiRequest<UserProfile>("/api/user/profile", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profile),
+  });
+}

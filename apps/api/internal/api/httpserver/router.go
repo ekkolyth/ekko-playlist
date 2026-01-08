@@ -99,6 +99,22 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 		})
 	})
 
+	// User profile routes - require authentication
+	router.Route("/api/user", func(user chi.Router) {
+		user.Use(authMiddleware)
+		user.Route("/profile", func(profile chi.Router) {
+			profile.Get("/", authHandler.GetUserProfile)
+			profile.Put("/", authHandler.UpdateUserProfile)
+		})
+	})
+
+	// Upload routes - require authentication
+	uploadHandler := handlers.NewUploadHandler()
+	router.Route("/api/uploads", func(uploads chi.Router) {
+		uploads.Use(authMiddleware)
+		uploads.Get("/{filename}", uploadHandler.ServeFile)
+	})
+
 	router.Route("/api", func(api chi.Router) {
 		// Process routes (playlist and video) - require authentication
 		processHandler := handlers.NewProcessHandler(luaService, dbService)

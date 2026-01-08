@@ -1,8 +1,8 @@
 import { useAuth } from "@/hooks/use-auth";
 import { useState, useEffect, forwardRef } from "react";
 import { MoreVertical } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSidebar } from "@/components/ui/sidebar";
+import { UserProfileAvatar } from "@/components/user-profile-avatar";
 
 export const UserMenu = forwardRef<HTMLDivElement>((props, ref) => {
   const { state } = useSidebar();
@@ -15,16 +15,6 @@ export const UserMenu = forwardRef<HTMLDivElement>((props, ref) => {
   }, []);
 
   const displayName = user?.email || "User";
-  const userInitials =
-    isMounted && displayName
-      ? displayName
-          .split("@")[0]
-          .split(" ")
-          .map((n: string) => n[0])
-          .join("")
-          .toUpperCase()
-          .slice(0, 2) || "U"
-      : "U";
 
   return (
     <div
@@ -34,11 +24,11 @@ export const UserMenu = forwardRef<HTMLDivElement>((props, ref) => {
     >
       {!isCollapsed && (
         <>
-          <Avatar className="size-8">
-            <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-              {userInitials}
-            </AvatarFallback>
-          </Avatar>
+          <UserProfileAvatar
+            size="md"
+            fallbackText={user?.email?.split("@")[0] || "U"}
+            className="size-8"
+          />
           <div className="grid flex-1 text-left text-sm leading-tight">
             <span className="truncate font-semibold text-sidebar-foreground">
               {isMounted ? displayName : "User"}
@@ -54,11 +44,11 @@ export const UserMenu = forwardRef<HTMLDivElement>((props, ref) => {
         </>
       )}
       {isCollapsed && (
-        <Avatar className="size-8">
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-            {userInitials}
-          </AvatarFallback>
-        </Avatar>
+        <UserProfileAvatar
+          size="md"
+          fallbackText={user?.email?.split("@")[0] || "U"}
+          className="size-8"
+        />
       )}
     </div>
   );

@@ -93,6 +93,32 @@ func (q *Queries) CreateSession(ctx context.Context, arg *CreateSessionParams) (
 	return &i, err
 }
 
+const CreateVerification = `-- name: CreateVerification :one
+insert into "verification" (identifier, value, expires_at)
+values ($1, $2, $3)
+returning id, identifier, value, expires_at, created_at, updated_at
+`
+
+type CreateVerificationParams struct {
+	Identifier string             `json:"identifier"`
+	Value      string             `json:"value"`
+	ExpiresAt  pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) CreateVerification(ctx context.Context, arg *CreateVerificationParams) (*Verification, error) {
+	row := q.db.QueryRow(ctx, CreateVerification, arg.Identifier, arg.Value, arg.ExpiresAt)
+	var i Verification
+	err := row.Scan(
+		&i.ID,
+		&i.Identifier,
+		&i.Value,
+		&i.ExpiresAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return &i, err
+}
+
 const DeleteAPIToken = `-- name: DeleteAPIToken :exec
 delete from "api_tokens"
 where id = $1 and user_id = $2
@@ -125,6 +151,16 @@ where user_id = $1
 
 func (q *Queries) DeleteUserSessions(ctx context.Context, userID string) error {
 	_, err := q.db.Exec(ctx, DeleteUserSessions, userID)
+	return err
+}
+
+const DeleteVerification = `-- name: DeleteVerification :exec
+delete from "verification"
+where value = $1
+`
+
+func (q *Queries) DeleteVerification(ctx context.Context, value string) error {
+	_, err := q.db.Exec(ctx, DeleteVerification, value)
 	return err
 }
 
@@ -424,5 +460,16 @@ type UpdateAPITokenNameParams struct {
 
 func (q *Queries) UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error {
 	_, err := q.db.Exec(ctx, UpdateAPITokenName, arg.Name, arg.ID, arg.UserID)
+	return err
+}
+
+const UpdateUserEmailVerified = `-- name: UpdateUserEmailVerified :exec
+update "user"
+set email_verified = true, updated_at = now()
+where id = $1
+`
+
+func (q *Queries) UpdateUserEmailVerified(ctx context.Context, id string) error {
+	_, err := q.db.Exec(ctx, UpdateUserEmailVerified, id)
 	return err
 }

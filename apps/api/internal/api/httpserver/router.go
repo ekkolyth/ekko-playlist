@@ -13,10 +13,11 @@ import (
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/handlers"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
+	"github.com/ekkolyth/ekko-playlist/api/internal/email"
 	"github.com/ekkolyth/ekko-playlist/api/internal/lua"
 )
 
-func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
+func NewRouter(dbService *db.Service, luaService *lua.Service, emailService *email.Service) http.Handler {
 	router := chi.NewRouter()
 
 	// standard middleware

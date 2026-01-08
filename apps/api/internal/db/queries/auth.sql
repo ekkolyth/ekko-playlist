@@ -97,3 +97,17 @@ where id = $1;
 update "api_tokens"
 set name = $1
 where id = $2 and user_id = $3;
+
+-- name: CreateVerification :one
+insert into "verification" (identifier, value, expires_at)
+values ($1, $2, $3)
+returning id, identifier, value, expires_at, created_at, updated_at;
+
+-- name: UpdateUserEmailVerified :exec
+update "user"
+set email_verified = true, updated_at = now()
+where id = $1;
+
+-- name: DeleteVerification :exec
+delete from "verification"
+where value = $1;

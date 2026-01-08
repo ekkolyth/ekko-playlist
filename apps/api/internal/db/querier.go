@@ -17,11 +17,13 @@ type Querier interface {
 	CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error)
 	CreatePlaylist(ctx context.Context, arg *CreatePlaylistParams) (*Playlist, error)
 	CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error)
+	CreateVerification(ctx context.Context, arg *CreateVerificationParams) (*Verification, error)
 	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
 	DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams) error
 	DeletePlaylist(ctx context.Context, arg *DeletePlaylistParams) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteUserSessions(ctx context.Context, userID string) error
+	DeleteVerification(ctx context.Context, value string) error
 	DeleteVideo(ctx context.Context, arg *DeleteVideoParams) error
 	DeleteVideos(ctx context.Context, arg *DeleteVideosParams) error
 	GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error)
@@ -48,9 +50,8 @@ type Querier interface {
 	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
 	UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error
 	UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error)
+	UpdateUserEmailVerified(ctx context.Context, id string) error
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
 }
 
 var _ Querier = (*Queries)(nil)
-
-

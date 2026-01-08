@@ -12,3 +12,5 @@ console.log('Fixed content.js - removed CommonJS exports');
 
 
 
+
+

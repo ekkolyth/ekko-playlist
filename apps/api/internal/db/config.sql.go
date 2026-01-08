@@ -68,3 +68,5 @@ func (q *Queries) UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*C
 	err := row.Scan(&i.Key, &i.Value, &i.UpdatedAt)
 	return &i, err
 }
+
+

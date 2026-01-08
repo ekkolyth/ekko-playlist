@@ -48,6 +48,17 @@ interface ProcessPlaylistResponse {
     invalid: number;
 }
 
+interface ProcessVideoResponse {
+    processed: {
+        channel: string;
+        originalUrl: string;
+        normalizedUrl: string;
+        title: string;
+        isValid: boolean;
+        error?: string;
+    };
+}
+
 interface ParsedYouTubeUrl {
     isValid: boolean;
     videoId: string | null;
@@ -475,6 +486,61 @@ async function sendPlaylistToAPI(
     }
 }
 
+async function sendVideoToAPI(
+    video: VideoInfo,
+): Promise<ProcessVideoResponse> {
+    // Get authentication token and server URL
+    const token = await getStoredToken();
+    const apiUrl = await getApiBaseUrl();
+
+    // If no token, user needs to configure
+    if (!token) {
+        throw new Error(
+            "Authentication required. Please configure your API connection.",
+        );
+    }
+
+    try {
+        const response = await fetch(`${apiUrl}/api/process/video`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ video }),
+        });
+
+        if (!response.ok) {
+            // Handle 401 Unauthorized - token might be expired
+            if (response.status === 401) {
+                // Clear stored token and prompt for re-authentication
+                await clearStoredToken();
+                showLoginPrompt();
+                throw new Error("Session expired. Please log in again.");
+            }
+
+            const errorData = await response
+                .json()
+                .catch(() => ({ message: "Unknown error" }));
+            throw new Error(
+                errorData.message || `HTTP error! status: ${response.status}`,
+            );
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+            const apiUrl = await getApiBaseUrl();
+            throw new Error(
+                "Failed to connect to API. Make sure the API server is running on " +
+                    apiUrl,
+            );
+        }
+        throw error;
+    }
+}
+
 async function scanPlaylist(): Promise<void> {
     console.log("scanPlaylist called");
     if (!scanButton || !statusDiv) {
@@ -650,25 +716,22 @@ async function saveCurrentUrl(): Promise<void> {
             };
         }
 
-        // Save to JSON file
-        const jsonData = JSON.stringify([videoInfo], null, 2);
-        const blob = new Blob([jsonData], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
+        // Send to API instead of downloading
+        setStatus("Sending to API and normalizing URL...", "info");
 
-        const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-        const filename = `youtube-video-${timestamp}.json`;
+        const result = await sendVideoToAPI(videoInfo);
 
-        await chrome.downloads.download({
-            url: url,
-            filename: filename,
-            saveAs: true,
-        });
-
-        setStatus("URL saved successfully!", "success");
+        if (result.processed.isValid) {
+            setStatus("Video processed and saved successfully!", "success");
+        } else {
+            const errorMsg =
+                result.processed.error || "Video processing failed";
+            setStatus(`Error: ${errorMsg}`, "error");
+        }
 
         setTimeout(() => {
             clearStatus();
-        }, 3000);
+        }, 5000);
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : "Unknown error occurred";

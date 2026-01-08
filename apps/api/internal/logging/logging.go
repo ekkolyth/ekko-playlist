@@ -33,3 +33,5 @@ func DB(message string, args ...any) {
 	output := fmt.Sprintf(message, args...)
 	log.Println(config.CLI_BRIGHT_GREEN + "[DB]:" + config.CLI_RESET + output)
 }
+
+

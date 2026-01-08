@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,7 +14,6 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   FieldSet,
-  FieldLegend,
   FieldGroup,
   Field,
   FieldLabel,
@@ -34,55 +35,70 @@ export const Route = createFileRoute(
   component: EmailPage,
 });
 
+// Zod schema for SMTP config validation
+const smtpConfigSchema = z.object({
+  host: z.string().min(1, "SMTP host is required"),
+  port: z
+    .string()
+    .min(1, "SMTP port is required")
+    .refine(
+      (val) => {
+        const num = parseInt(val, 10);
+        return !isNaN(num) && num >= 1 && num <= 65535;
+      },
+      { message: "Port must be a number between 1 and 65535" },
+    ),
+  username: z.string().min(1, "SMTP username is required"),
+  password: z.string().optional(),
+  from_email: z.string().email("Invalid email format").min(1, "From email is required"),
+  from_name: z.string().optional(),
+});
+
+type SmtpConfigFormValues = z.infer<typeof smtpConfigSchema>;
+
 function EmailPage() {
   const queryClient = useQueryClient();
   const [testEmail, setTestEmail] = useState("");
-
-  // Form state
-  const [host, setHost] = useState("");
-  const [port, setPort] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [fromEmail, setFromEmail] = useState("");
-  const [fromName, setFromName] = useState("");
-
-  // Form validation errors
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Fetch SMTP config
   const { data: config, isLoading: isLoadingConfig } = useQuery({
     queryKey: ["smtp-config"],
     queryFn: async () => {
-      const data = await getSmtpConfig();
-      // Populate form fields when config loads
-      if (data) {
-        setHost(data.host || "");
-        setPort(data.port?.toString() || "");
-        setUsername(data.username || "");
-        setPassword(""); // Don't populate password field
-        setFromEmail(data.from_email || "");
-        setFromName(data.from_name || "");
-      }
-      return data;
+      return getSmtpConfig();
     },
   });
 
   // Update SMTP config mutation
   const updateMutation = useMutation({
-    mutationFn: async (config: {
-      host: string;
-      port: number;
-      username: string;
-      password: string;
-      from_email: string;
-      from_name?: string;
-    }) => {
-      return updateSmtpConfig(config);
+    mutationFn: async (formData: SmtpConfigFormValues) => {
+      const updateData: {
+        host: string;
+        port: number;
+        username: string;
+        password?: string;
+        from_email: string;
+        from_name?: string;
+      } = {
+        host: formData.host.trim(),
+        port: parseInt(formData.port, 10),
+        username: formData.username.trim(),
+        from_email: formData.from_email.trim(),
+      };
+
+      // Only include password if provided (allows keeping existing password)
+      if (formData.password?.trim()) {
+        updateData.password = formData.password.trim();
+      }
+
+      if (formData.from_name?.trim()) {
+        updateData.from_name = formData.from_name.trim();
+      }
+
+      return updateSmtpConfig(updateData);
     },
     onSuccess: () => {
       toast.success("SMTP configuration saved successfully");
       queryClient.invalidateQueries({ queryKey: ["smtp-config"] });
-      setErrors({});
     },
     onError: (err: Error) => {
       toast.error(err.message || "Failed to save SMTP configuration");
@@ -103,55 +119,52 @@ function EmailPage() {
     },
   });
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!host.trim()) {
-      newErrors.host = "SMTP host is required";
-    }
-    if (!port.trim()) {
-      newErrors.port = "SMTP port is required";
-    } else {
-      const portNum = parseInt(port, 10);
-      if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
-        newErrors.port = "Port must be a number between 1 and 65535";
+  // TanStack Form with Zod validation
+  const form = useForm<SmtpConfigFormValues>({
+    defaultValues: {
+      host: config?.host || "",
+      port: config?.port?.toString() || "",
+      username: config?.username || "",
+      password: "",
+      from_email: config?.from_email || "",
+      from_name: config?.from_name || "",
+    },
+    // Update form values when config loads
+    onUpdate: ({ formApi }) => {
+      if (config && !formApi.state.isDirty) {
+        formApi.setFieldValue("host", config.host || "");
+        formApi.setFieldValue("port", config.port?.toString() || "");
+        formApi.setFieldValue("username", config.username || "");
+        formApi.setFieldValue("password", "");
+        formApi.setFieldValue("from_email", config.from_email || "");
+        formApi.setFieldValue("from_name", config.from_name || "");
       }
-    }
-    if (!username.trim()) {
-      newErrors.username = "SMTP username is required";
-    }
-    if (!password.trim()) {
-      newErrors.password = "SMTP password is required";
-    }
-    if (!fromEmail.trim()) {
-      newErrors.fromEmail = "From email is required";
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(fromEmail)) {
-        newErrors.fromEmail = "Invalid email format";
+    },
+    validationLogic: revalidateLogic(),
+    validators: {
+      onDynamic: ({ value }) => {
+        const result = smtpConfigSchema.safeParse(value);
+        if (!result.success) {
+          const errors: Record<string, string> = {};
+          result.error.errors.forEach((err) => {
+            const path = err.path.join(".");
+            errors[path] = err.message;
+          });
+          return errors;
+        }
+        return undefined;
+      },
+    },
+    onSubmit: async ({ value }) => {
+      // Check if password is required (only if no existing config)
+      if (!value.password && !config) {
+        toast.error("SMTP password is required");
+        return;
       }
-    }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
-    updateMutation.mutate({
-      host: host.trim(),
-      port: parseInt(port, 10),
-      username: username.trim(),
-      password: password.trim(),
-      from_email: fromEmail.trim(),
-      from_name: fromName.trim() || undefined,
-    });
-  };
+      updateMutation.mutate(value);
+    },
+  });
 
   const handleTestEmail = () => {
     if (!testEmail.trim()) {
@@ -189,7 +202,13 @@ function EmailPage() {
             </CardContent>
           </Card>
         ) : (
-          <form onSubmit={handleSubmit}>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              form.handleSubmit();
+            }}
+          >
             <Card>
               <CardHeader>
                 <CardTitle>SMTP Configuration</CardTitle>
@@ -200,122 +219,205 @@ function EmailPage() {
               <CardContent>
                 <FieldSet>
                   <FieldGroup>
-                    <Field>
-                      <FieldLabel htmlFor="smtp-host">SMTP Host</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="smtp-host"
-                          type="text"
-                          value={host}
-                          onChange={(e) => setHost(e.target.value)}
-                          placeholder="smtp.example.com"
-                          aria-invalid={!!errors.host}
-                        />
-                        {errors.host && (
-                          <FieldError>{errors.host}</FieldError>
-                        )}
-                      </FieldContent>
-                    </Field>
-
-                    <Field>
-                      <FieldLabel htmlFor="smtp-port">SMTP Port</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="smtp-port"
-                          type="number"
-                          value={port}
-                          onChange={(e) => setPort(e.target.value)}
-                          placeholder="587"
-                          min="1"
-                          max="65535"
-                          aria-invalid={!!errors.port}
-                        />
-                        {errors.port && (
-                          <FieldError>{errors.port}</FieldError>
-                        )}
-                      </FieldContent>
-                    </Field>
-
-                    <Field>
-                      <FieldLabel htmlFor="smtp-username">
-                        SMTP Username
-                      </FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="smtp-username"
-                          type="text"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          placeholder="your-username"
-                          aria-invalid={!!errors.username}
-                        />
-                        {errors.username && (
-                          <FieldError>{errors.username}</FieldError>
-                        )}
-                      </FieldContent>
-                    </Field>
-
-                    <Field>
-                      <FieldLabel htmlFor="smtp-password">
-                        SMTP Password
-                      </FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="smtp-password"
-                          type="password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          placeholder={
-                            config?.password
-                              ? "Enter new password or leave blank to keep current"
-                              : "your-password"
+                    <form.Field
+                      name="host"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          if (!value || !value.trim()) {
+                            return "SMTP host is required";
                           }
-                          aria-invalid={!!errors.password}
-                        />
-                        {errors.password && (
-                          <FieldError>{errors.password}</FieldError>
-                        )}
-                      </FieldContent>
-                    </Field>
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <Field>
+                          <FieldLabel htmlFor={field.name}>SMTP Host</FieldLabel>
+                          <FieldContent>
+                            <Input
+                              id={field.name}
+                              type="text"
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              placeholder="smtp.example.com"
+                              aria-invalid={!!field.state.meta.errors.length}
+                            />
+                            {field.state.meta.errors.length > 0 && (
+                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            )}
+                          </FieldContent>
+                        </Field>
+                      )}
+                    />
 
-                    <Field>
-                      <FieldLabel htmlFor="from-email">From Email</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="from-email"
-                          type="email"
-                          value={fromEmail}
-                          onChange={(e) => setFromEmail(e.target.value)}
-                          placeholder="noreply@example.com"
-                          aria-invalid={!!errors.fromEmail}
-                        />
-                        {errors.fromEmail && (
-                          <FieldError>{errors.fromEmail}</FieldError>
-                        )}
-                      </FieldContent>
-                    </Field>
+                    <form.Field
+                      name="port"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          if (!value || !value.trim()) {
+                            return "SMTP port is required";
+                          }
+                          const num = parseInt(value, 10);
+                          if (isNaN(num) || num < 1 || num > 65535) {
+                            return "Port must be a number between 1 and 65535";
+                          }
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <Field>
+                          <FieldLabel htmlFor={field.name}>SMTP Port</FieldLabel>
+                          <FieldContent>
+                            <Input
+                              id={field.name}
+                              type="number"
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              placeholder="587"
+                              min="1"
+                              max="65535"
+                              aria-invalid={!!field.state.meta.errors.length}
+                            />
+                            {field.state.meta.errors.length > 0 && (
+                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            )}
+                          </FieldContent>
+                        </Field>
+                      )}
+                    />
 
-                    <Field>
-                      <FieldLabel htmlFor="from-name">From Name</FieldLabel>
-                      <FieldContent>
-                        <Input
-                          id="from-name"
-                          type="text"
-                          value={fromName}
-                          onChange={(e) => setFromName(e.target.value)}
-                          placeholder="Ekko Playlist"
-                        />
-                      </FieldContent>
-                    </Field>
+                    <form.Field
+                      name="username"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          if (!value || !value.trim()) {
+                            return "SMTP username is required";
+                          }
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <Field>
+                          <FieldLabel htmlFor={field.name}>SMTP Username</FieldLabel>
+                          <FieldContent>
+                            <Input
+                              id={field.name}
+                              type="text"
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              placeholder="your-username"
+                              aria-invalid={!!field.state.meta.errors.length}
+                            />
+                            {field.state.meta.errors.length > 0 && (
+                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            )}
+                          </FieldContent>
+                        </Field>
+                      )}
+                    />
+
+                    <form.Field
+                      name="password"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          // Password is optional - only required if no existing config
+                          if (!value || !value.trim()) {
+                            if (!config) {
+                              return "SMTP password is required";
+                            }
+                          }
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <Field>
+                          <FieldLabel htmlFor={field.name}>SMTP Password</FieldLabel>
+                          <FieldContent>
+                            <Input
+                              id={field.name}
+                              type="password"
+                              value={field.state.value || ""}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              placeholder={
+                                config?.password
+                                  ? "Enter new password or leave blank to keep current"
+                                  : "your-password"
+                              }
+                              aria-invalid={!!field.state.meta.errors.length}
+                            />
+                            {field.state.meta.errors.length > 0 && (
+                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            )}
+                          </FieldContent>
+                        </Field>
+                      )}
+                    />
+
+                    <form.Field
+                      name="from_email"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          if (!value || !value.trim()) {
+                            return "From email is required";
+                          }
+                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                          if (!emailRegex.test(value)) {
+                            return "Invalid email format";
+                          }
+                          return undefined;
+                        },
+                      }}
+                      children={(field) => (
+                        <Field>
+                          <FieldLabel htmlFor={field.name}>From Email</FieldLabel>
+                          <FieldContent>
+                            <Input
+                              id={field.name}
+                              type="email"
+                              value={field.state.value}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              placeholder="noreply@example.com"
+                              aria-invalid={!!field.state.meta.errors.length}
+                            />
+                            {field.state.meta.errors.length > 0 && (
+                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            )}
+                          </FieldContent>
+                        </Field>
+                      )}
+                    />
+
+                    <form.Field
+                      name="from_name"
+                      children={(field) => (
+                        <Field>
+                          <FieldLabel htmlFor={field.name}>From Name</FieldLabel>
+                          <FieldContent>
+                            <Input
+                              id={field.name}
+                              type="text"
+                              value={field.state.value || ""}
+                              onChange={(e) => field.handleChange(e.target.value)}
+                              onBlur={field.handleBlur}
+                              placeholder="Ekko Playlist"
+                            />
+                          </FieldContent>
+                        </Field>
+                      )}
+                    />
                   </FieldGroup>
                 </FieldSet>
 
                 <div className="mt-6 flex justify-end">
                   <Button
                     type="submit"
-                    disabled={updateMutation.isPending}
+                    disabled={updateMutation.isPending || form.state.isSubmitting}
                   >
-                    {updateMutation.isPending ? (
+                    {updateMutation.isPending || form.state.isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Saving...
@@ -341,9 +443,7 @@ function EmailPage() {
             <FieldSet>
               <FieldGroup>
                 <Field>
-                  <FieldLabel htmlFor="test-email">
-                    Test Email Address
-                  </FieldLabel>
+                  <FieldLabel htmlFor="test-email">Test Email Address</FieldLabel>
                   <FieldContent>
                     <div className="flex gap-2">
                       <Input

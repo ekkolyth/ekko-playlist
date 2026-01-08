@@ -265,12 +265,28 @@ export async function getSmtpConfig(): Promise<SmtpConfig> {
 export async function updateSmtpConfig(
   config: Omit<SmtpConfig, "password"> & { password?: string },
 ): Promise<SmtpConfigResponse> {
+  // Remove password from body if not provided (omitempty)
+  const body: Record<string, unknown> = {
+    host: config.host,
+    port: config.port,
+    username: config.username,
+    from_email: config.from_email,
+  };
+
+  if (config.password) {
+    body.password = config.password;
+  }
+
+  if (config.from_name) {
+    body.from_name = config.from_name;
+  }
+
   return apiRequest<SmtpConfigResponse>("/api/config/smtp", {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(config),
+    body: JSON.stringify(body),
   });
 }
 

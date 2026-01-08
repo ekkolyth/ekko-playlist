@@ -26,7 +26,7 @@ type SmtpConfigRequest struct {
 	Host     string `json:"host"`
 	Port     int    `json:"port"`
 	Username string `json:"username"`
-	Password string `json:"password"`
+	Password string `json:"password,omitempty"` // Optional - only update if provided
 	FromEmail string `json:"from_email"`
 	FromName  string `json:"from_name"`
 }
@@ -117,10 +117,6 @@ func (h *ConfigHandler) UpdateSmtpConfig(w http.ResponseWriter, r *http.Request)
 		httpx.RespondError(w, http.StatusBadRequest, "username is required")
 		return
 	}
-	if strings.TrimSpace(req.Password) == "" {
-		httpx.RespondError(w, http.StatusBadRequest, "password is required")
-		return
-	}
 	if strings.TrimSpace(req.FromEmail) == "" {
 		httpx.RespondError(w, http.StatusBadRequest, "from_email is required")
 		return
@@ -141,8 +137,12 @@ func (h *ConfigHandler) UpdateSmtpConfig(w http.ResponseWriter, r *http.Request)
 		"smtp_host":      strings.TrimSpace(req.Host),
 		"smtp_port":      strconv.Itoa(req.Port),
 		"smtp_username":   strings.TrimSpace(req.Username),
-		"smtp_password":  req.Password, // Store as-is (no trimming for password)
 		"smtp_from_email": strings.TrimSpace(req.FromEmail),
+	}
+
+	// Only update password if provided (allows keeping existing password)
+	if strings.TrimSpace(req.Password) != "" {
+		configs["smtp_password"] = req.Password // Store as-is (no trimming for password)
 	}
 
 	if strings.TrimSpace(req.FromName) != "" {

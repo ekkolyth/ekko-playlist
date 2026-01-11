@@ -9,6 +9,7 @@ import (
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
+	"github.com/ekkolyth/ekko-playlist/api/internal/config"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/email"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
@@ -16,14 +17,13 @@ import (
 )
 
 type VerificationHandler struct {
-	dbService   *db.Service
-	emailService *email.Service
+	dbService *db.Service
+	// Removed emailService field - create on-demand using shared config utility
 }
 
-func NewVerificationHandler(dbService *db.Service, emailService *email.Service) *VerificationHandler {
+func NewVerificationHandler(dbService *db.Service) *VerificationHandler {
 	return &VerificationHandler{
-		dbService:   dbService,
-		emailService: emailService,
+		dbService: dbService,
 	}
 }
 
@@ -97,8 +97,33 @@ func (h *VerificationHandler) SendVerificationEmail(w http.ResponseWriter, r *ht
 	}
 	verificationURL := webAppURL + "/verify-email?token=" + token
 
+	// Get SMTP config using shared utility (ENV → DB fallback)
+	configMap, err := config.GetSmtpConfigMap(ctx, h.dbService)
+	if err != nil {
+		logging.Info("Error getting SMTP config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to load SMTP configuration")
+		return
+	}
+
+	// Check if required config is present
+	requiredKeys := []string{"smtp_host", "smtp_port", "smtp_username", "smtp_password", "smtp_from_email"}
+	for _, key := range requiredKeys {
+		if _, ok := configMap[key]; !ok || configMap[key] == "" {
+			httpx.RespondError(w, http.StatusBadRequest, "SMTP configuration is incomplete. Please configure SMTP settings first.")
+			return
+		}
+	}
+
+	// Create email service from config
+	emailService, err := email.NewServiceFromConfig(configMap)
+	if err != nil {
+		logging.Info("Error creating email service from config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to initialize email service: "+err.Error())
+		return
+	}
+
 	// Send verification email
-	if err := h.emailService.SendVerificationEmail(userEmail, token, verificationURL); err != nil {
+	if err := emailService.SendVerificationEmail(userEmail, token, verificationURL); err != nil {
 		logging.Info("Error sending verification email: %v", err)
 		httpx.RespondError(w, http.StatusInternalServerError, "failed to send verification email")
 		return

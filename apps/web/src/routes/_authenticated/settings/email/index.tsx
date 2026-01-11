@@ -20,9 +20,10 @@ import {
   FieldContent,
   FieldError,
 } from "@/components/ui/field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { SmtpConfig, SmtpConfigResponse, TestEmailResponse } from "@/lib/api-types";
 import { toast } from "sonner";
-import { Loader2, Mail } from "lucide-react";
+import { Loader2, Mail, Info } from "lucide-react";
 
 export const Route = createFileRoute(
   "/_authenticated/settings/email/",
@@ -237,6 +238,15 @@ function EmailPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {config?.env_configured && (
+                  <Alert className="mb-6">
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      SMTP configuration is managed via environment variables. 
+                      These settings cannot be modified through the UI.
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <FieldSet>
                   <FieldGroup>
                     <form.Field
@@ -260,6 +270,7 @@ function EmailPage() {
                               onChange={(e) => field.handleChange(e.target.value)}
                               onBlur={field.handleBlur}
                               placeholder="smtp.example.com"
+                              disabled={config?.env_configured}
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
@@ -297,6 +308,7 @@ function EmailPage() {
                               placeholder="587"
                               min="1"
                               max="65535"
+                              disabled={config?.env_configured}
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
@@ -328,6 +340,7 @@ function EmailPage() {
                               onChange={(e) => field.handleChange(e.target.value)}
                               onBlur={field.handleBlur}
                               placeholder="your-username"
+                              disabled={config?.env_configured}
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
@@ -366,6 +379,7 @@ function EmailPage() {
                                   ? "Enter new password or leave blank to keep current"
                                   : "your-password"
                               }
+                              disabled={config?.env_configured}
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
@@ -401,6 +415,7 @@ function EmailPage() {
                               onChange={(e) => field.handleChange(e.target.value)}
                               onBlur={field.handleBlur}
                               placeholder="noreply@example.com"
+                              disabled={config?.env_configured}
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
@@ -424,6 +439,7 @@ function EmailPage() {
                               onChange={(e) => field.handleChange(e.target.value)}
                               onBlur={field.handleBlur}
                               placeholder="Ekko Playlist"
+                              disabled={config?.env_configured}
                             />
                           </FieldContent>
                         </Field>
@@ -432,21 +448,23 @@ function EmailPage() {
                   </FieldGroup>
                 </FieldSet>
 
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    type="submit"
-                    disabled={updateMutation.isPending || form.state.isSubmitting}
-                  >
-                    {updateMutation.isPending || form.state.isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      "Save Settings"
-                    )}
-                  </Button>
-                </div>
+                {!config?.env_configured && (
+                  <div className="mt-6 flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={updateMutation.isPending || form.state.isSubmitting}
+                    >
+                      {updateMutation.isPending || form.state.isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        "Save Settings"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </form>

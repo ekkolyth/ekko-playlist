@@ -38,6 +38,8 @@ export interface SmtpConfig {
   password: string; // Masked in response
   from_email: string;
   from_name?: string;
+  source?: Record<string, "env" | "db">;
+  env_configured?: boolean;
 }
 
 export interface SmtpConfigResponse {

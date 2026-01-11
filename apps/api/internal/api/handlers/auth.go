@@ -17,6 +17,7 @@ import (
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/auth"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/upload"
+	"github.com/ekkolyth/ekko-playlist/api/internal/config"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/email"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
@@ -24,20 +25,13 @@ import (
 )
 
 type AuthHandler struct {
-	dbService   *db.Service
-	emailService *email.Service
+	dbService *db.Service
+	// Removed emailService field - create on-demand using shared config utility
 }
 
 func NewAuthHandler(dbService *db.Service) *AuthHandler {
-	// Initialize email service from environment variables
-	emailService, err := email.NewService()
-	if err != nil {
-		logging.Info("Warning: Email service not available: %v", err)
-		// Continue without email service - handlers will check for nil
-	}
 	return &AuthHandler{
-		dbService:   dbService,
-		emailService: emailService,
+		dbService: dbService,
 	}
 }
 
@@ -522,9 +516,28 @@ func (h *AuthHandler) SendEmailVerification(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	// Check if email service is available
-	if h.emailService == nil {
-		httpx.RespondError(w, http.StatusInternalServerError, "email service not configured")
+	// Get SMTP config using shared utility (ENV → DB fallback)
+	configMap, err := config.GetSmtpConfigMap(ctx, h.dbService)
+	if err != nil {
+		logging.Info("Error getting SMTP config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to load SMTP configuration")
+		return
+	}
+
+	// Check if required config is present
+	requiredKeys := []string{"smtp_host", "smtp_port", "smtp_username", "smtp_password", "smtp_from_email"}
+	for _, key := range requiredKeys {
+		if _, ok := configMap[key]; !ok || configMap[key] == "" {
+			httpx.RespondError(w, http.StatusBadRequest, "SMTP configuration is incomplete. Please configure SMTP settings first.")
+			return
+		}
+	}
+
+	// Create email service from config
+	emailService, err := email.NewServiceFromConfig(configMap)
+	if err != nil {
+		logging.Info("Error creating email service from config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to initialize email service: "+err.Error())
 		return
 	}
 
@@ -573,7 +586,7 @@ func (h *AuthHandler) SendEmailVerification(w http.ResponseWriter, r *http.Reque
 	}
 
 	// Send OTP email
-	if err := h.emailService.SendOTPEmail(req.Email, otpCode); err != nil {
+	if err := emailService.SendOTPEmail(req.Email, otpCode); err != nil {
 		logging.Info("Error sending OTP email: %v", err)
 		httpx.RespondError(w, http.StatusInternalServerError, "failed to send verification email")
 		return

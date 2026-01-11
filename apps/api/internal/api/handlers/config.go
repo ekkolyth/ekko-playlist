@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
+	"github.com/ekkolyth/ekko-playlist/api/internal/config"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
 	"github.com/ekkolyth/ekko-playlist/api/internal/email"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
@@ -32,12 +33,14 @@ type SmtpConfigRequest struct {
 }
 
 type SmtpConfigResponse struct {
-	Host      string `json:"host"`
-	Port      int    `json:"port"`
-	Username  string `json:"username"`
-	Password  string `json:"password"` // Will be masked in response
-	FromEmail string `json:"from_email"`
-	FromName  string `json:"from_name"`
+	Host      string            `json:"host"`
+	Port      int               `json:"port"`
+	Username  string            `json:"username"`
+	Password  string            `json:"password"` // Will be masked in response
+	FromEmail string            `json:"from_email"`
+	FromName  string            `json:"from_name"`
+	Source        map[string]string `json:"source"`        // "env" or "db" for each field
+	EnvConfigured bool              `json:"env_configured"` // true if any ENV vars present
 }
 
 type TestEmailRequest struct {
@@ -47,50 +50,31 @@ type TestEmailRequest struct {
 // GetSmtpConfig handles GET /api/config/smtp - Retrieve SMTP configuration
 func (h *ConfigHandler) GetSmtpConfig(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	configService := db.NewConfigService(h.dbService.Queries)
 
-	// Read all SMTP config keys from database
-	configKeys := []string{"smtp_host", "smtp_port", "smtp_username", "smtp_password", "smtp_from_email", "smtp_from_name"}
-	configMap := make(map[string]string)
-
-	for _, key := range configKeys {
-		config, err := configService.GetConfig(ctx, key)
-		if err != nil {
-			logging.Info("Error reading config key %s: %v", key, err)
-			continue
-		}
-		if config != nil {
-			configMap[key] = config.Value
-		}
+	// Get SMTP config using shared utility (ENV → DB fallback)
+	smtpConfig, err := config.GetSmtpConfig(ctx, h.dbService)
+	if err != nil {
+		logging.Info("Error getting SMTP config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to load SMTP configuration")
+		return
 	}
 
 	// Build response
-	response := SmtpConfigResponse{}
+	response := SmtpConfigResponse{
+		Host:          smtpConfig.Host,
+		Port:          smtpConfig.Port,
+		Username:      smtpConfig.Username,
+		FromEmail:     smtpConfig.FromEmail,
+		FromName:      smtpConfig.FromName,
+		Source:        smtpConfig.Source,
+		EnvConfigured: smtpConfig.EnvConfigured,
+	}
 
-	if host, ok := configMap["smtp_host"]; ok {
-		response.Host = host
-	}
-	if portStr, ok := configMap["smtp_port"]; ok {
-		if port, err := strconv.Atoi(portStr); err == nil {
-			response.Port = port
-		}
-	}
-	if username, ok := configMap["smtp_username"]; ok {
-		response.Username = username
-	}
-	if password, ok := configMap["smtp_password"]; ok {
-		// Mask password - show only first 2 characters and mask the rest
-		if len(password) > 2 {
-			response.Password = password[:2] + strings.Repeat("*", len(password)-2)
-		} else {
-			response.Password = strings.Repeat("*", len(password))
-		}
-	}
-	if fromEmail, ok := configMap["smtp_from_email"]; ok {
-		response.FromEmail = fromEmail
-	}
-	if fromName, ok := configMap["smtp_from_name"]; ok {
-		response.FromName = fromName
+	// Mask password - show only first 2 characters and mask the rest
+	if len(smtpConfig.Password) > 2 {
+		response.Password = smtpConfig.Password[:2] + strings.Repeat("*", len(smtpConfig.Password)-2)
+	} else if len(smtpConfig.Password) > 0 {
+		response.Password = strings.Repeat("*", len(smtpConfig.Password))
 	}
 
 	httpx.RespondJSON(w, http.StatusOK, response)
@@ -98,6 +82,12 @@ func (h *ConfigHandler) GetSmtpConfig(w http.ResponseWriter, r *http.Request) {
 
 // UpdateSmtpConfig handles PUT /api/config/smtp - Update SMTP configuration
 func (h *ConfigHandler) UpdateSmtpConfig(w http.ResponseWriter, r *http.Request) {
+	// Check if ENV vars are present - if so, block updates
+	if config.HasEnvSmtpConfig() {
+		httpx.RespondError(w, http.StatusBadRequest, "Configuration is managed via environment variables. Cannot update via API.")
+		return
+	}
+
 	var req SmtpConfigRequest
 	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
 		httpx.RespondError(w, http.StatusBadRequest, err.Error())
@@ -185,21 +175,13 @@ func (h *ConfigHandler) SendTestEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	configService := db.NewConfigService(h.dbService.Queries)
 
-	// Read SMTP config from database
-	configKeys := []string{"smtp_host", "smtp_port", "smtp_username", "smtp_password", "smtp_from_email", "smtp_from_name"}
-	configMap := make(map[string]string)
-
-	for _, key := range configKeys {
-		config, err := configService.GetConfig(ctx, key)
-		if err != nil {
-			logging.Info("Error reading config key %s: %v", key, err)
-			continue
-		}
-		if config != nil {
-			configMap[key] = config.Value
-		}
+	// Get SMTP config using shared utility (ENV → DB fallback)
+	configMap, err := config.GetSmtpConfigMap(ctx, h.dbService)
+	if err != nil {
+		logging.Info("Error getting SMTP config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to load SMTP configuration")
+		return
 	}
 
 	// Check if required config is present

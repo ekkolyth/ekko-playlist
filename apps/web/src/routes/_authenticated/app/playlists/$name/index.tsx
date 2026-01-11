@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Trash2, Edit2, Loader2, ArrowLeft, Save, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -18,11 +19,12 @@ import {
 } from "@/components/ui/tooltip";
 import { VideoCollection } from "../../-components/video-collection";
 import {
-  usePlaylistDetail,
+  usePlaylist,
   decodeSlug,
   createSlug,
 } from "@/hooks/use-playlist";
 import { assertDefined } from "@/lib/assert";
+import { useQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/_authenticated/app/playlists/$name/")({
   component: PlaylistDetailPage,
@@ -36,36 +38,57 @@ function PlaylistDetailPage() {
 
   // Decode the playlist name from the URL
   const playlistName = decodeSlug(nameSlug);
+  const playlist = usePlaylist();
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
-  const {
-    playlist,
-    isLoading,
-    error,
-    isEditingName,
-    editedName,
-    setEditedName,
-    startEdit,
-    saveEdit,
-    cancelEdit,
-    isDeleteDialogOpen,
-    openDeleteDialog,
-    closeDeleteDialog,
-    deletePlaylist,
-    removeVideo,
-    isUpdating,
-    isDeleting,
-  } = usePlaylistDetail({
-    playlistName,
-    onUpdateSuccess: (newName) => {
-      navigate({
-        to: "/app/playlists/$name",
-        params: { name: createSlug(newName) },
-      });
-    },
-    onDeleteSuccess: () => {
-      navigate({ to: "/app/playlists" });
-    },
+  const { data: playlistDetail, isLoading, error } = useQuery({
+    queryKey: ["playlist", playlistName],
+    queryFn: () => playlist.get(playlistName),
+    enabled: !!playlistName,
   });
+
+  const startEdit = () => {
+    if (playlistDetail) {
+      setEditedName(playlistDetail.name);
+      setIsEditingName(true);
+    }
+  };
+
+  const saveEdit = () => {
+    if (!editedName.trim()) {
+      toast.error("Playlist name cannot be empty");
+      return;
+    }
+    playlist.update(playlistName, editedName.trim());
+    setIsEditingName(false);
+    setEditedName("");
+    navigate({
+      to: "/app/playlists/$name",
+      params: { name: createSlug(editedName.trim()) },
+    });
+  };
+
+  const cancelEdit = () => {
+    setIsEditingName(false);
+    setEditedName("");
+  };
+
+  const handleDeletePlaylist = () => {
+    playlist.delete(playlistName);
+    navigate({ to: "/app/playlists" });
+  };
+
+  const removeVideo = (videoId: number, title: string) => {
+    if (!confirm(`Remove "${title}" from this playlist?`)) {
+      return;
+    }
+    playlist.removeVideo(playlistName, videoId);
+  };
+
+  const openDeleteDialog = () => setIsDeleteDialogOpen(true);
+  const closeDeleteDialog = () => setIsDeleteDialogOpen(false);
 
   const videoClick = (video: { id: number; normalizedUrl: string }) => {
     window.open(video.normalizedUrl, "_blank");
@@ -99,7 +122,7 @@ function PlaylistDetailPage() {
     );
   }
 
-  if (!playlist && !isLoading) {
+  if (!playlistDetail && !isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Playlist not found</div>
@@ -116,7 +139,7 @@ function PlaylistDetailPage() {
   }
 
   // assert my invariant
-  assertDefined(playlist);
+  assertDefined(playlistDetail);
 
   return (
     <div className="flex-1 p-6">
@@ -152,7 +175,7 @@ function PlaylistDetailPage() {
                     size="icon"
                     variant="ghost"
                     onClick={saveEdit}
-                    disabled={isUpdating}
+                    disabled={playlist.isUpdating}
                   >
                     <Save className="h-4 w-4" />
                   </Button>
@@ -160,7 +183,7 @@ function PlaylistDetailPage() {
                     size="icon"
                     variant="ghost"
                     onClick={cancelEdit}
-                    disabled={isUpdating}
+                    disabled={playlist.isUpdating}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -168,7 +191,7 @@ function PlaylistDetailPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <h1 className="text-3xl font-semibold tracking-tight">
-                    {playlist.name}
+                    {playlistDetail.name}
                   </h1>
                   <Button
                     size="icon"
@@ -181,8 +204,8 @@ function PlaylistDetailPage() {
                 </div>
               )}
               <p className="text-muted-foreground mt-1">
-                {playlist.videos.length}{" "}
-                {playlist.videos.length === 1 ? "video" : "videos"}
+                {playlistDetail.videos.length}{" "}
+                {playlistDetail.videos.length === 1 ? "video" : "videos"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -206,7 +229,7 @@ function PlaylistDetailPage() {
         </div>
 
         <VideoCollection
-          videos={playlist.videos}
+          videos={playlistDetail.videos}
           isLoading={false}
           error={null}
           emptyTitle="No videos in this playlist"
@@ -221,7 +244,7 @@ function PlaylistDetailPage() {
             <DialogHeader>
               <DialogTitle>Delete Playlist</DialogTitle>
               <DialogDescription>
-                Are you sure you want to delete "{playlist.name}"? This will
+                Are you sure you want to delete "{playlistDetail.name}"? This will
                 remove all videos from the playlist. This action cannot be
                 undone.
               </DialogDescription>
@@ -230,16 +253,16 @@ function PlaylistDetailPage() {
               <Button
                 variant="outline"
                 onClick={closeDeleteDialog}
-                disabled={isDeleting}
+                disabled={playlist.isDeleting}
               >
                 Cancel
               </Button>
               <Button
                 variant="destructive"
-                onClick={deletePlaylist}
-                disabled={isDeleting}
+                onClick={handleDeletePlaylist}
+                disabled={playlist.isDeleting}
               >
-                {isDeleting ? (
+                {playlist.isDeleting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Deleting...

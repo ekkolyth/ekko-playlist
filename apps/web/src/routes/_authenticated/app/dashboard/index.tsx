@@ -2,42 +2,42 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { apiRequest, getUserProfile, type VideosResponse } from "@/lib/api-client";
+import type { VideosResponse, UserProfile } from "@/lib/api-types";
 import { ChannelFilter } from "../-components/channel-filter";
 import { VideoCollection } from "../-components/video-collection";
 
 async function fetchVideos(
   selectedChannels?: string[],
 ): Promise<VideosResponse> {
-  try {
-    let url = "/api/videos";
-    if (selectedChannels && selectedChannels.length > 0) {
-      // Encode channels as comma-separated query parameter
-      const channelsParam = selectedChannels.map(encodeURIComponent).join(",");
-      url += `?channels=${channelsParam}`;
-    }
-    return await apiRequest<VideosResponse>(url);
-  } catch (error) {
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new Error(
-        `Failed to connect to API. Make sure the API server is running.`,
-      );
-    }
-    throw error;
+  let url = "/api/videos";
+  if (selectedChannels && selectedChannels.length > 0) {
+    const channelsParam = selectedChannels.map(encodeURIComponent).join(",");
+    url += `?channels=${channelsParam}`;
   }
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(error.message || "Failed to fetch videos");
+  }
+  return res.json();
 }
 
 async function fetchAllVideos(): Promise<VideosResponse> {
-  try {
-    return await apiRequest<VideosResponse>("/api/videos");
-  } catch (error) {
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new Error(
-        `Failed to connect to API. Make sure the API server is running.`,
-      );
-    }
-    throw error;
+  const res = await fetch("/api/videos", { credentials: "include" });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(error.message || "Failed to fetch videos");
   }
+  return res.json();
+}
+
+async function getUserProfile(): Promise<UserProfile> {
+  const res = await fetch("/api/user/profile", { credentials: "include" });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({ message: res.statusText }));
+    throw new Error(error.message || "Failed to fetch profile");
+  }
+  return res.json();
 }
 
 export const Route = createFileRoute("/_authenticated/app/dashboard/")({

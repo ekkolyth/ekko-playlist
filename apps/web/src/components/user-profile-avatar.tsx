@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getUserProfile } from "@/lib/api-client";
+import type { UserProfile } from "@/lib/api-types";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -24,7 +24,14 @@ export function UserProfileAvatar({
   // Query always runs - component is only rendered when authenticated (checked in parent)
   const { data: profile, dataUpdatedAt } = useQuery({
     queryKey: ["user-profile"],
-    queryFn: getUserProfile,
+    queryFn: async (): Promise<UserProfile> => {
+      const res = await fetch("/api/user/profile", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to fetch profile");
+      }
+      return res.json();
+    },
     staleTime: 0, // Always consider data stale
     refetchOnMount: "always",
   });

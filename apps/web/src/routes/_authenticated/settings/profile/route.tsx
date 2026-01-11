@@ -20,12 +20,7 @@ import {
   FieldContent,
   FieldError,
 } from "@/components/ui/field";
-import {
-  getUserProfile,
-  updateUserProfile,
-  verifyEmailUpdate,
-  type UserProfile,
-} from "@/lib/api-client";
+import type { UserProfile } from "@/lib/api-types";
 import { sendEmailVerification } from "@/lib/auth-client";
 import { EmailVerificationDialog } from "@/components/email-verification-dialog";
 import { toast } from "sonner";
@@ -57,14 +52,19 @@ function ProfilePage() {
   // Fetch user profile
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["user-profile"],
-    queryFn: async () => {
-      return getUserProfile();
+    queryFn: async (): Promise<UserProfile> => {
+      const res = await fetch("/api/user/profile", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to fetch profile");
+      }
+      return res.json();
     },
   });
 
   // Upload image mutation - runs immediately when file is selected
   const uploadImageMutation = useMutation({
-    mutationFn: async (file: File) => {
+    mutationFn: async (file: File): Promise<UserProfile> => {
       // Create FormData with just the image and current profile data
       const formDataToSend = new FormData();
       formDataToSend.append("email", profile?.email || "");
@@ -72,7 +72,16 @@ function ProfilePage() {
         formDataToSend.append("name", profile.name);
       }
       formDataToSend.append("image", file);
-      return updateUserProfile(formDataToSend);
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        credentials: "include",
+        body: formDataToSend,
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to update profile");
+      }
+      return res.json();
     },
     onSuccess: async (data) => {
       toast.success("Profile image updated successfully");
@@ -104,7 +113,7 @@ function ProfilePage() {
 
   // Update profile mutation (for name/email changes)
   const updateMutation = useMutation({
-    mutationFn: async (formData: ProfileFormValues) => {
+    mutationFn: async (formData: ProfileFormValues): Promise<UserProfile> => {
       // Create FormData for multipart/form-data request
       const formDataToSend = new FormData();
       formDataToSend.append("email", formData.email.trim());
@@ -119,7 +128,16 @@ function ProfilePage() {
         formDataToSend.append("image", "");
       }
 
-      return updateUserProfile(formDataToSend);
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
+        credentials: "include",
+        body: formDataToSend,
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to update profile");
+      }
+      return res.json();
     },
     onSuccess: (data) => {
       toast.success("Profile updated successfully");
@@ -197,7 +215,17 @@ function ProfilePage() {
 
     try {
       // Verify OTP and update email
-      const updatedProfile = await verifyEmailUpdate(pendingEmail, code);
+      const res = await fetch("/api/user/profile/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email: pendingEmail, code }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to verify email");
+      }
+      const updatedProfile = await res.json();
       
       // Update the form with the new email
       form.setFieldValue("email", updatedProfile.email);

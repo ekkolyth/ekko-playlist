@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth.server";
 
-const API_URL = process.env.API_URL || "http://localhost:1337";
-
 export const Route = createFileRoute("/api/user/profile/send-verification")({
   server: {
     handlers: {
@@ -27,7 +25,7 @@ export const Route = createFileRoute("/api/user/profile/send-verification")({
 
         // Forward request to Go API
         const body = await request.text();
-        const response = await fetch(`${API_URL}/api/user/profile/send-verification`, {
+        const response = await fetch(`${process.env.API_URL}/api/user/profile/send-verification`, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,

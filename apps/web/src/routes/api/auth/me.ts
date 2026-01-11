@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const API_URL = process.env.API_URL || "http://localhost:1337";
-
 export const Route = createFileRoute("/api/auth/me")({
   server: {
     handlers: {
@@ -19,7 +17,7 @@ export const Route = createFileRoute("/api/auth/me")({
         const token = authHeader.substring(7); // Remove "Bearer " prefix
 
         // Forward request to Go API
-        const response = await fetch(`${API_URL}/api/auth/me`, {
+        const response = await fetch(`${process.env.API_URL}/api/auth/me`, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,

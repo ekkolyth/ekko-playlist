@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { apiRequest } from "@/lib/api-client";
 import { Check, RefreshCw, Trash2, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 import { GenerateTokenCard } from "@/components/generate-token-card";
@@ -48,7 +47,12 @@ function ExtensionTokensPage() {
 
   const loadTokens = async () => {
     try {
-      const data = await apiRequest<TokensResponse>("/api/tokens");
+      const res = await fetch("/api/tokens", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to fetch tokens");
+      }
+      const data = await res.json();
       console.log("Loaded tokens response:", data);
 
       // Handle response - check for both 'tokens' and 'Tokens' (Go might capitalize)
@@ -107,15 +111,20 @@ function ExtensionTokensPage() {
     }
 
     try {
-      await apiRequest(`/api/tokens/${tokenId}`, {
+      const res = await fetch(`/api/tokens/${tokenId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           name: editingName.trim(),
         }),
       });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to update token");
+      }
 
       // Update local state
       setTokens((prev) =>
@@ -143,9 +152,14 @@ function ExtensionTokensPage() {
     }
 
     try {
-      await apiRequest(`/api/tokens/${tokenId}`, {
+      const res = await fetch(`/api/tokens/${tokenId}`, {
         method: "DELETE",
+        credentials: "include",
       });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to delete token");
+      }
 
       // Reload tokens list
       await loadTokens();

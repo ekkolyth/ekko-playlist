@@ -25,32 +25,48 @@ import {
   EmptyTitle,
   EmptyDescription,
 } from "@/components/ui/empty";
-import { getPlaylist, type Playlist } from "@/lib/api-client";
 import { Plus, Music, Trash2, Loader2 } from "lucide-react";
 import {
-  usePlaylists,
+  usePlaylist,
   createSlug,
   getYouTubeThumbnail,
 } from "@/hooks/use-playlist";
+import type { Playlist, PlaylistDetail } from "@/lib/api-types";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/app/playlists/")({
   component: PlaylistsPage,
 });
 
 function PlaylistsPage() {
-  const {
-    playlists,
-    isLoading,
-    error,
-    isCreateDialogOpen,
-    newPlaylistName,
-    setNewPlaylistName,
-    openCreateDialog,
-    closeCreateDialog,
-    createPlaylist,
-    deletePlaylist,
-    isCreating,
-  } = usePlaylists();
+  const playlist = usePlaylist();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+
+  const handleCreatePlaylist = () => {
+    if (!newPlaylistName.trim()) {
+      toast.error("Please enter a playlist name");
+      return;
+    }
+    playlist.create(newPlaylistName.trim());
+    setIsCreateDialogOpen(false);
+    setNewPlaylistName("");
+  };
+
+  const handleDeletePlaylist = (name: string) => {
+    const message = `Are you sure you want to delete "${name}"? This will remove all videos from the playlist.`;
+    if (!confirm(message)) {
+      return;
+    }
+    playlist.delete(name);
+  };
+
+  const openCreateDialog = () => setIsCreateDialogOpen(true);
+  const closeCreateDialog = () => {
+    setIsCreateDialogOpen(false);
+    setNewPlaylistName("");
+  };
 
   return (
     <div className="flex-1 p-6">
@@ -70,24 +86,24 @@ function PlaylistsPage() {
           </Button>
         </div>
 
-        {isLoading && (
+        {playlist.isLoading && (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         )}
 
-        {error && (
+        {playlist.error && (
           <div className="flex flex-col items-center justify-center py-12 space-y-2">
             <div className="text-destructive font-medium">
               Error loading playlists
             </div>
             <div className="text-muted-foreground text-sm text-center max-w-2xl">
-              {error.message}
+              {playlist.error.message}
             </div>
           </div>
         )}
 
-        {playlists.length === 0 && !isLoading && !error && (
+        {playlist.list.length === 0 && !playlist.isLoading && !playlist.error && (
           <Empty className="py-16">
             <EmptyHeader>
               <EmptyMedia variant="icon">
@@ -101,14 +117,14 @@ function PlaylistsPage() {
           </Empty>
         )}
 
-        {playlists.length > 0 && (
+        {playlist.list.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {playlists.map((playlist) => (
+            {playlist.list.map((p) => (
               <PlaylistCard
-                key={playlist.name}
-                playlist={playlist}
-                onDelete={deletePlaylist}
-                playlistName={playlist.name}
+                key={p.name}
+                playlist={p}
+                onDelete={handleDeletePlaylist}
+                playlistName={p.name}
               />
             ))}
           </div>
@@ -132,7 +148,7 @@ function PlaylistsPage() {
                   onChange={(e) => setNewPlaylistName(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      createPlaylist();
+                      handleCreatePlaylist();
                     }
                   }}
                 />
@@ -142,8 +158,8 @@ function PlaylistsPage() {
               <Button variant="outline" onClick={closeCreateDialog}>
                 Cancel
               </Button>
-              <Button onClick={createPlaylist} disabled={isCreating}>
-                {isCreating ? (
+              <Button onClick={handleCreatePlaylist} disabled={playlist.isCreating}>
+                {playlist.isCreating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Creating...
@@ -167,9 +183,10 @@ interface PlaylistCardProps {
 }
 
 function PlaylistCard({ playlist, onDelete, playlistName }: PlaylistCardProps) {
+  const playlistHook = usePlaylist();
   const { data: playlistDetail } = useQuery({
     queryKey: ["playlist", playlistName],
-    queryFn: () => getPlaylist(playlistName),
+    queryFn: () => playlistHook.get(playlistName),
     enabled: playlist.videoCount > 0,
   });
 

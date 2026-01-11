@@ -12,7 +12,6 @@ import {
   FieldError,
 } from '@/components/ui/field';
 import { authClient } from '@/lib/auth-client';
-import { apiRequest } from '@/lib/api-client';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 
 interface GenerateTokenCardProps {
@@ -64,16 +63,21 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
 
         // Save the token to the API with a name
         try {
-          await apiRequest('/api/tokens', {
+          const res = await fetch('/api/tokens', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
+            credentials: 'include',
             body: JSON.stringify({
               name: value.tokenName.trim(),
               token: token,
             }),
           });
+          if (!res.ok) {
+            const error = await res.json().catch(() => ({ message: res.statusText }));
+            throw new Error(error.message || 'Failed to create token');
+          }
 
           // Show the token once so user can copy it
           form.setFieldValue('tokenName', '');

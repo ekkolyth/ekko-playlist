@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth.server";
 
-const API_URL = process.env.API_URL || "http://localhost:1337";
-
 export const Route = createFileRoute("/api/videos/")({
   server: {
     handlers: {
@@ -27,7 +25,7 @@ export const Route = createFileRoute("/api/videos/")({
 
         // Forward request to Go API with query params
         const url = new URL(request.url);
-        const apiURL = `${API_URL}/api/videos${url.search}`;
+        const apiURL = `${process.env.API_URL}/api/videos${url.search}`;
 
         const response = await fetch(apiURL, {
           method: "GET",
@@ -64,7 +62,7 @@ export const Route = createFileRoute("/api/videos/")({
 
         // Forward request to Go API
         const body = await request.text();
-        const response = await fetch(`${API_URL}/api/videos`, {
+        const response = await fetch(`${process.env.API_URL}/api/videos`, {
           method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,

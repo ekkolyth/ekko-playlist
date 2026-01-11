@@ -20,12 +20,7 @@ import {
   FieldContent,
   FieldError,
 } from "@/components/ui/field";
-import {
-  getSmtpConfig,
-  updateSmtpConfig,
-  sendTestEmail,
-  type SmtpConfig,
-} from "@/lib/api-client";
+import type { SmtpConfig, SmtpConfigResponse, TestEmailResponse } from "@/lib/api-types";
 import { toast } from "sonner";
 import { Loader2, Mail } from "lucide-react";
 
@@ -63,8 +58,13 @@ function EmailPage() {
   // Fetch SMTP config
   const { data: config, isLoading: isLoadingConfig } = useQuery({
     queryKey: ["smtp-config"],
-    queryFn: async () => {
-      return getSmtpConfig();
+    queryFn: async (): Promise<SmtpConfig> => {
+      const res = await fetch("/api/config/smtp", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to fetch SMTP config");
+      }
+      return res.json();
     },
   });
 
@@ -94,7 +94,17 @@ function EmailPage() {
         updateData.from_name = formData.from_name.trim();
       }
 
-      return updateSmtpConfig(updateData);
+      const res = await fetch("/api/config/smtp", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(updateData),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to update SMTP config");
+      }
+      return res.json();
     },
     onSuccess: () => {
       toast.success("SMTP configuration saved successfully");
@@ -107,8 +117,18 @@ function EmailPage() {
 
   // Send test email mutation
   const testEmailMutation = useMutation({
-    mutationFn: async (email: string) => {
-      return sendTestEmail(email);
+    mutationFn: async (email: string): Promise<TestEmailResponse> => {
+      const res = await fetch("/api/config/smtp/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email }),
+      });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to send test email");
+      }
+      return res.json();
     },
     onSuccess: () => {
       toast.success("Test email sent successfully");

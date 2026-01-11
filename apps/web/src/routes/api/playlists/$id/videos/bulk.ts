@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { auth } from "@/lib/auth.server";
 
-const API_URL = process.env.API_URL || "http://localhost:1337";
-
 export const Route = createFileRoute("/api/playlists/$id/videos/bulk")({
   server: {
     handlers: {
@@ -34,7 +32,7 @@ export const Route = createFileRoute("/api/playlists/$id/videos/bulk")({
         // Forward request to Go API
         const body = await request.text();
         const response = await fetch(
-          `${API_URL}/api/playlists/${params.id}/videos/bulk`,
+          `${process.env.API_URL}/api/playlists/${params.id}/videos/bulk`,
           {
             method: "POST",
             headers: {

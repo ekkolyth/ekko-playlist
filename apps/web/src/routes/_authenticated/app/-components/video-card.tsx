@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Play, Link as LinkIcon, Plus, ListMusic, Trash2 } from "lucide-react";
-import type { Video, Playlist } from "@/lib/api-client";
+import type { Video, Playlist } from "@/lib/api-types";
 import { getYouTubeThumbnail } from "@/hooks/use-playlist";
 
 // Helper function to get YouTube channel profile photo URL

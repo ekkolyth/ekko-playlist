@@ -50,9 +50,11 @@ import {
   ListMusic,
   Plus,
 } from "lucide-react";
-import { type Video } from "@/lib/api-client";
+import { type Video } from "@/lib/api-types";
 import { VideoCard } from "./video-card";
-import { usePlaylistVideos } from "@/hooks/use-playlist";
+import { usePlaylist } from "@/hooks/use-playlist";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface VideoCollectionProps {
   videos: Video[];
@@ -81,31 +83,120 @@ export function VideoCollection({
 }: VideoCollectionProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState("");
+  const [selectedVideoId, setSelectedVideoId] = useState<number | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedVideoIds, setSelectedVideoIds] = useState<Set<number>>(
+    new Set(),
+  );
+  const [isBulkAddDialogOpen, setIsBulkAddDialogOpen] = useState(false);
 
-  const {
-    playlists,
-    isCreateDialogOpen,
-    newPlaylistName,
-    setNewPlaylistName,
-    openCreateDialog,
-    closeCreateDialog,
-    isSelectMode,
-    selectedVideoIds,
-    toggleVideoSelection,
-    deselectAll,
-    isBulkAddDialogOpen,
-    openBulkAddDialog,
-    closeBulkAddDialog,
-    createPlaylist,
-    addToPlaylist,
-    bulkAddToPlaylist,
-    deleteVideos,
-    copyLink,
-    isCreating,
-    isAddingToPlaylist,
-    isBulkAdding,
-    isDeleting,
-  } = usePlaylistVideos();
+  const playlist = usePlaylist();
+  const { data: playlistsData } = useQuery({
+    queryKey: ["playlists"],
+    queryFn: async () => {
+      const res = await fetch("/api/playlists", { credentials: "include" });
+      if (!res.ok) {
+        const error = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(error.message || "Failed to fetch playlists");
+      }
+      return res.json();
+    },
+  });
+
+  const playlists = playlistsData?.playlists || [];
+
+  const openCreateDialog = (videoId?: number) => {
+    if (videoId !== undefined) {
+      setSelectedVideoId(videoId);
+    }
+    setIsCreateDialogOpen(true);
+  };
+
+  const closeCreateDialog = () => {
+    setIsCreateDialogOpen(false);
+    setNewPlaylistName("");
+    setSelectedVideoId(null);
+  };
+
+  const handleCreatePlaylist = () => {
+    if (!newPlaylistName.trim()) {
+      toast.error("Please enter a playlist name");
+      return;
+    }
+    playlist.create(newPlaylistName.trim());
+    setIsCreateDialogOpen(false);
+    setNewPlaylistName("");
+
+    // If videos were selected in bulk mode, add them to the new playlist
+    if (isSelectMode && selectedVideoIds.size > 0) {
+      const videoIds = Array.from(selectedVideoIds);
+      playlist.bulkAddVideos(newPlaylistName.trim(), videoIds);
+      setIsSelectMode(false);
+      setSelectedVideoIds(new Set());
+      setIsBulkAddDialogOpen(false);
+    } else if (selectedVideoId !== null) {
+      // If a single video was selected, add it to the new playlist
+      playlist.addVideo(newPlaylistName.trim(), selectedVideoId);
+      setSelectedVideoId(null);
+    }
+  };
+
+  const addToPlaylist = (playlistName: string, videoId: number) => {
+    playlist.addVideo(playlistName, videoId);
+  };
+
+  const bulkAddToPlaylist = (playlistName: string) => {
+    const videoIds = Array.from(selectedVideoIds);
+    playlist.bulkAddVideos(playlistName, videoIds);
+    setIsSelectMode(false);
+    setSelectedVideoIds(new Set());
+    setIsBulkAddDialogOpen(false);
+  };
+
+  const toggleVideoSelection = (videoId: number, checked: boolean) => {
+    const newSelected = new Set(selectedVideoIds);
+    if (checked) {
+      newSelected.add(videoId);
+      setIsSelectMode(true);
+    } else {
+      newSelected.delete(videoId);
+      if (newSelected.size === 0) {
+        setIsSelectMode(false);
+      }
+    }
+    setSelectedVideoIds(newSelected);
+  };
+
+  const deselectAll = () => {
+    setSelectedVideoIds(new Set());
+    setIsSelectMode(false);
+  };
+
+  const deleteVideos = (videoIds?: number[]) => {
+    const idsToDelete = videoIds || Array.from(selectedVideoIds);
+    if (idsToDelete.length === 0) return;
+    if (
+      confirm(`Are you sure you want to delete ${idsToDelete.length} video(s)?`)
+    ) {
+      playlist.deleteVideos(idsToDelete);
+      setIsSelectMode(false);
+      setSelectedVideoIds(new Set());
+    }
+  };
+
+  const copyLink = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    } catch (err) {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const openBulkAddDialog = () => setIsBulkAddDialogOpen(true);
+  const closeBulkAddDialog = () => setIsBulkAddDialogOpen(false);
 
   // Calculate pagination
   const totalPages = Math.ceil(videos.length / itemsPerPage);
@@ -208,7 +299,7 @@ export function VideoCollection({
               <Button
                 variant="ghost"
                 onClick={openBulkAddDialog}
-                disabled={isBulkAdding}
+                disabled={playlist.isBulkAdding}
                 className="w-full justify-start font-normal"
               >
                 <ListMusic className="mr-2 h-4 w-4" />
@@ -241,7 +332,7 @@ export function VideoCollection({
                     deleteVideos();
                   }
                 }}
-                disabled={isDeleting}
+                disabled={playlist.isDeletingVideos}
                 className="w-full justify-start font-normal text-destructive hover:text-destructive"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -254,7 +345,7 @@ export function VideoCollection({
     );
     onSelectModeActionsChange(actions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelectMode, selectedVideoIds.size, isBulkAdding, isDeleting]);
+  }, [isSelectMode, selectedVideoIds.size, playlist.isBulkAdding, playlist.isDeletingVideos]);
 
   if (isLoading) {
     return (
@@ -348,7 +439,7 @@ export function VideoCollection({
               onAddToPlaylist={selectPlaylist}
               onCreatePlaylist={addToPlaylistClick}
               onDeleteVideo={deleteVideoClick}
-              isAddingToPlaylist={isAddingToPlaylist}
+              isAddingToPlaylist={playlist.isAddingVideo}
             />
           );
         })}
@@ -454,7 +545,7 @@ export function VideoCollection({
                 onChange={(e) => setNewPlaylistName(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") {
-                    createPlaylist();
+                    handleCreatePlaylist();
                   }
                 }}
               />
@@ -464,12 +555,12 @@ export function VideoCollection({
             <Button
               variant="outline"
               onClick={closeCreateDialog}
-              disabled={isCreating}
+              disabled={playlist.isCreating}
             >
               Cancel
             </Button>
-            <Button onClick={createPlaylist} disabled={isCreating}>
-              {isCreating ? (
+            <Button onClick={handleCreatePlaylist} disabled={playlist.isCreating}>
+                {playlist.isCreating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
@@ -502,7 +593,7 @@ export function VideoCollection({
                       variant="outline"
                       className="w-full justify-start"
                       onClick={() => bulkAddToPlaylist(playlist.name)}
-                      disabled={isBulkAdding}
+                      disabled={playlist.isBulkAdding}
                     >
                       {playlist.name}
                     </Button>
@@ -532,7 +623,7 @@ export function VideoCollection({
             <Button
               variant="outline"
               onClick={closeBulkAddDialog}
-              disabled={isBulkAdding}
+                disabled={playlist.isBulkAdding}
             >
               Cancel
             </Button>

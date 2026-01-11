@@ -21,7 +21,7 @@ import {
   FieldError,
 } from "@/components/ui/field";
 import type { UserProfile } from "@/lib/api-types";
-import { sendEmailVerification } from "@/lib/auth-client";
+import { sendEmailVerificationOTP, verifyEmailOTP } from "@/lib/auth-client";
 import { EmailVerificationDialog } from "@/components/email-verification-dialog";
 import { toast } from "sonner";
 import { Loader2, Upload, User } from "lucide-react";
@@ -182,12 +182,14 @@ function ProfilePage() {
       const emailChanged = profile && value.email !== profile.email;
       
       if (emailChanged) {
-        // Store pending email and trigger verification flow
+        // Check if email verification is required
+        // For now, always require verification - backend will handle EMAIL_VERIFICATION check
+        // TODO: Add API endpoint to check EMAIL_VERIFICATION setting
         setPendingEmail(value.email);
         
         try {
-          // Send verification email
-          await sendEmailVerification(value.email);
+          // Send verification OTP using Better Auth
+          await sendEmailVerificationOTP(value.email);
           // Open OTP dialog
           setOtpDialogOpen(true);
         } catch (error) {
@@ -214,17 +216,26 @@ function ProfilePage() {
     }
 
     try {
-      // Verify OTP and update email
-      const res = await fetch("/api/user/profile/verify-email", {
-        method: "POST",
+      // Verify OTP using Better Auth
+      await verifyEmailOTP(pendingEmail, code);
+      
+      // After verification, update the email in the profile
+      const res = await fetch("/api/user/profile", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ email: pendingEmail, code }),
+        body: JSON.stringify({ 
+          name: profile?.name,
+          email: pendingEmail,
+          image: profile?.image,
+        }),
       });
+      
       if (!res.ok) {
         const error = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(error.message || "Failed to verify email");
+        throw new Error(error.message || "Failed to update email");
       }
+      
       const updatedProfile = await res.json();
       
       // Update the form with the new email
@@ -253,7 +264,7 @@ function ProfilePage() {
       throw new Error("No pending email to resend");
     }
 
-    await sendEmailVerification(pendingEmail);
+    await sendEmailVerificationOTP(pendingEmail);
     toast.success("Verification code resent successfully");
   };
 

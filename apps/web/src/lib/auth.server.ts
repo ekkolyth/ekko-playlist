@@ -4,6 +4,7 @@ import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { oneTimeToken } from "better-auth/plugins/one-time-token";
 import { jwt } from "better-auth/plugins";
 import { bearer } from "better-auth/plugins";
+import { emailOTP } from "better-auth/plugins";
 import { db } from "./db.server";
 import { user, session, account, verification, jwks } from "./db/schema";
 
@@ -58,6 +59,7 @@ try {
     },
     emailAndPassword: {
       enabled: true,
+      requireEmailVerification: getEnvVar("EMAIL_VERIFICATION") === "true",
     },
     session: {
       expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -86,6 +88,32 @@ try {
       }),
       oneTimeToken({
         expiresIn: 90 * 24 * 60, // 90 days in minutes (keep for other uses)
+      }),
+      emailOTP({
+        overrideDefaultEmailVerification: true,
+        async sendVerificationOTP({ email, otp, type }) {
+          // Call Go API endpoint to send OTP email
+          const apiUrl = getEnvVar("API_URL", "http://localhost:1337");
+          const emailEndpoint = `${apiUrl}/api/email/send-otp`;
+          
+          try {
+            const emailResponse = await fetch(emailEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, otp, type }),
+            });
+            if (!emailResponse.ok) {
+              const errorText = await emailResponse.text();
+              console.error("[Better Auth] Failed to send OTP email:", errorText);
+            }
+          } catch (err) {
+            console.error("[Better Auth] Failed to send OTP email:", err);
+          }
+        },
+        otpLength: 6,
+        expiresIn: 600, // 10 minutes
+        allowedAttempts: 3,
+        sendVerificationOnSignUp: getEnvVar("EMAIL_VERIFICATION") === "true",
       }),
       // tanstackStartCookies must be the last plugin in the array
       tanstackStartCookies(),

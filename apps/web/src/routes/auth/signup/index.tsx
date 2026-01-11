@@ -19,7 +19,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { signUp } from "@/lib/auth-client";
+import { signUp, authClient } from "@/lib/auth-client";
 import Header from "@/components/nav/header";
 
 export const Route = createFileRoute("/auth/signup/")({
@@ -80,10 +80,30 @@ function SignUpPage() {
 
         // Bearer token is automatically stored by authClient's fetchOptions.onSuccess
 
-        navigate({ to: "/app/dashboard" });
+        // Check if email verification is required
+        // Better Auth will have sent OTP if sendVerificationOnSignUp is true
+        // Check user's emailVerified status after a short delay to allow session to update
+        setTimeout(async () => {
+          try {
+            const session = await authClient.getSession();
+            if (session.data?.user && !session.data.user.emailVerified) {
+              // Redirect to verification page if email is not verified
+              navigate({ to: "/auth/verify-email" });
+            } else {
+              // Email is verified or verification not required, go to dashboard
+              navigate({ to: "/app/dashboard" });
+            }
+          } catch {
+            // If we can't check, assume verification is required and redirect
+            navigate({ to: "/auth/verify-email" });
+          }
+          setLoading(false);
+        }, 500);
+        
+        // Don't set loading to false here - it will be set in the setTimeout callback
+        return;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Registration failed");
-      } finally {
         setLoading(false);
       }
     },

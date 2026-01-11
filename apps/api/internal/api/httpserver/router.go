@@ -66,6 +66,10 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	// Healthcheck (public, no auth required)
 	router.Get("/api/healthz", handlers.Health)
 
+	// Email routes (public - called from Better Auth callback)
+	emailHandler := handlers.NewEmailHandler(dbService)
+	router.Post("/api/email/send-otp", emailHandler.SendOTPEmail)
+
 	// Auth routes (public)
 	authHandler := handlers.NewAuthHandler(dbService)
 	router.Route("/api/auth", func(auth chi.Router) {
@@ -105,8 +109,6 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 		user.Route("/profile", func(profile chi.Router) {
 			profile.Get("/", authHandler.GetUserProfile)
 			profile.Put("/", authHandler.UpdateUserProfile)
-			profile.Post("/send-verification", authHandler.SendEmailVerification)
-			profile.Post("/verify-email", authHandler.VerifyEmailUpdate)
 		})
 	})
 

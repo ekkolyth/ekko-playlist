@@ -16,6 +16,7 @@ import { Route as ApiExtensionTokenRouteImport } from './routes/api/extension-to
 import { Route as ApiConfigRouteImport } from './routes/api/config'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
 import { Route as AuthenticatedAppRouteRouteImport } from './routes/_authenticated/app/route'
+import { Route as AuthVerifyEmailIndexRouteImport } from './routes/auth/verify-email/index'
 import { Route as AuthSignupIndexRouteImport } from './routes/auth/signup/index'
 import { Route as AuthSigninIndexRouteImport } from './routes/auth/signin/index'
 import { Route as ApiVideosIndexRouteImport } from './routes/api/videos/index'
@@ -40,9 +41,9 @@ import { Route as AuthenticatedSettingsEmailVerificationIndexRouteImport } from 
 import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
 import { Route as AuthenticatedAppPlaylistsIndexRouteImport } from './routes/_authenticated/app/playlists/index'
 import { Route as AuthenticatedAppDashboardIndexRouteImport } from './routes/_authenticated/app/dashboard/index'
-import { Route as ApiUserProfileVerifyEmailRouteImport } from './routes/api/user/profile/verify-email'
-import { Route as ApiUserProfileSendVerificationRouteImport } from './routes/api/user/profile/send-verification'
 import { Route as ApiConfigSmtpTestRouteImport } from './routes/api/config/smtp/test'
+import { Route as ApiAuthOtpSplatRouteImport } from './routes/api/auth/otp/$'
+import { Route as ApiAuthEmailOtpSplatRouteImport } from './routes/api/auth/email-otp/$'
 import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as ApiPlaylistsIdVideosIndexRouteImport } from './routes/api/playlists/$id/videos/index'
 import { Route as AuthenticatedAppPlaylistsNameIndexRouteImport } from './routes/_authenticated/app/playlists/$name/index'
@@ -83,6 +84,11 @@ const AuthenticatedAppRouteRoute = AuthenticatedAppRouteRouteImport.update({
   id: '/app',
   path: '/app',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthVerifyEmailIndexRoute = AuthVerifyEmailIndexRouteImport.update({
+  id: '/auth/verify-email/',
+  path: '/auth/verify-email/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthSignupIndexRoute = AuthSignupIndexRouteImport.update({
   id: '/auth/signup/',
@@ -214,22 +220,20 @@ const AuthenticatedAppDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => AuthenticatedAppRouteRoute,
   } as any)
-const ApiUserProfileVerifyEmailRoute =
-  ApiUserProfileVerifyEmailRouteImport.update({
-    id: '/api/user/profile/verify-email',
-    path: '/api/user/profile/verify-email',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiUserProfileSendVerificationRoute =
-  ApiUserProfileSendVerificationRouteImport.update({
-    id: '/api/user/profile/send-verification',
-    path: '/api/user/profile/send-verification',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiConfigSmtpTestRoute = ApiConfigSmtpTestRouteImport.update({
   id: '/smtp/test',
   path: '/smtp/test',
   getParentRoute: () => ApiConfigRoute,
+} as any)
+const ApiAuthOtpSplatRoute = ApiAuthOtpSplatRouteImport.update({
+  id: '/api/auth/otp/$',
+  path: '/api/auth/otp/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthEmailOtpSplatRoute = ApiAuthEmailOtpSplatRouteImport.update({
+  id: '/api/auth/email-otp/$',
+  path: '/api/auth/email-otp/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAppPlaylistsNameRouteRoute =
   AuthenticatedAppPlaylistsNameRouteRouteImport.update({
@@ -286,10 +290,11 @@ export interface FileRoutesByFullPath {
   '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
+  '/auth/verify-email': typeof AuthVerifyEmailIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
+  '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
-  '/api/user/profile/send-verification': typeof ApiUserProfileSendVerificationRoute
-  '/api/user/profile/verify-email': typeof ApiUserProfileVerifyEmailRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
@@ -325,9 +330,10 @@ export interface FileRoutesByTo {
   '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
+  '/auth/verify-email': typeof AuthVerifyEmailIndexRoute
+  '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
+  '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
-  '/api/user/profile/send-verification': typeof ApiUserProfileSendVerificationRoute
-  '/api/user/profile/verify-email': typeof ApiUserProfileVerifyEmailRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
@@ -366,10 +372,11 @@ export interface FileRoutesById {
   '/api/videos/': typeof ApiVideosIndexRoute
   '/auth/signin/': typeof AuthSigninIndexRoute
   '/auth/signup/': typeof AuthSignupIndexRoute
+  '/auth/verify-email/': typeof AuthVerifyEmailIndexRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
+  '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
-  '/api/user/profile/send-verification': typeof ApiUserProfileSendVerificationRoute
-  '/api/user/profile/verify-email': typeof ApiUserProfileVerifyEmailRoute
   '/_authenticated/app/dashboard/': typeof AuthenticatedAppDashboardIndexRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
@@ -408,10 +415,11 @@ export interface FileRouteTypes {
     | '/api/videos'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/verify-email'
     | '/app/playlists/$name'
+    | '/api/auth/email-otp/$'
+    | '/api/auth/otp/$'
     | '/api/config/smtp/test'
-    | '/api/user/profile/send-verification'
-    | '/api/user/profile/verify-email'
     | '/app/dashboard'
     | '/app/playlists/'
     | '/settings/api-keys'
@@ -447,9 +455,10 @@ export interface FileRouteTypes {
     | '/api/videos'
     | '/auth/signin'
     | '/auth/signup'
+    | '/auth/verify-email'
+    | '/api/auth/email-otp/$'
+    | '/api/auth/otp/$'
     | '/api/config/smtp/test'
-    | '/api/user/profile/send-verification'
-    | '/api/user/profile/verify-email'
     | '/app/dashboard'
     | '/app/playlists'
     | '/settings/api-keys'
@@ -487,10 +496,11 @@ export interface FileRouteTypes {
     | '/api/videos/'
     | '/auth/signin/'
     | '/auth/signup/'
+    | '/auth/verify-email/'
     | '/_authenticated/app/playlists/$name'
+    | '/api/auth/email-otp/$'
+    | '/api/auth/otp/$'
     | '/api/config/smtp/test'
-    | '/api/user/profile/send-verification'
-    | '/api/user/profile/verify-email'
     | '/_authenticated/app/dashboard/'
     | '/_authenticated/app/playlists/'
     | '/_authenticated/settings/api-keys/'
@@ -522,8 +532,9 @@ export interface RootRouteChildren {
   ApiVideosIndexRoute: typeof ApiVideosIndexRoute
   AuthSigninIndexRoute: typeof AuthSigninIndexRoute
   AuthSignupIndexRoute: typeof AuthSignupIndexRoute
-  ApiUserProfileSendVerificationRoute: typeof ApiUserProfileSendVerificationRoute
-  ApiUserProfileVerifyEmailRoute: typeof ApiUserProfileVerifyEmailRoute
+  AuthVerifyEmailIndexRoute: typeof AuthVerifyEmailIndexRoute
+  ApiAuthEmailOtpSplatRoute: typeof ApiAuthEmailOtpSplatRoute
+  ApiAuthOtpSplatRoute: typeof ApiAuthOtpSplatRoute
   ApiUserProfileIndexRoute: typeof ApiUserProfileIndexRoute
   ApiPlaylistsIdVideosVideoIdRoute: typeof ApiPlaylistsIdVideosVideoIdRoute
   ApiPlaylistsIdVideosBulkRoute: typeof ApiPlaylistsIdVideosBulkRoute
@@ -580,6 +591,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app'
       preLoaderRoute: typeof AuthenticatedAppRouteRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/auth/verify-email/': {
+      id: '/auth/verify-email/'
+      path: '/auth/verify-email'
+      fullPath: '/auth/verify-email'
+      preLoaderRoute: typeof AuthVerifyEmailIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/signup/': {
       id: '/auth/signup/'
@@ -749,26 +767,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
     }
-    '/api/user/profile/verify-email': {
-      id: '/api/user/profile/verify-email'
-      path: '/api/user/profile/verify-email'
-      fullPath: '/api/user/profile/verify-email'
-      preLoaderRoute: typeof ApiUserProfileVerifyEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/user/profile/send-verification': {
-      id: '/api/user/profile/send-verification'
-      path: '/api/user/profile/send-verification'
-      fullPath: '/api/user/profile/send-verification'
-      preLoaderRoute: typeof ApiUserProfileSendVerificationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/config/smtp/test': {
       id: '/api/config/smtp/test'
       path: '/smtp/test'
       fullPath: '/api/config/smtp/test'
       preLoaderRoute: typeof ApiConfigSmtpTestRouteImport
       parentRoute: typeof ApiConfigRoute
+    }
+    '/api/auth/otp/$': {
+      id: '/api/auth/otp/$'
+      path: '/api/auth/otp/$'
+      fullPath: '/api/auth/otp/$'
+      preLoaderRoute: typeof ApiAuthOtpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/email-otp/$': {
+      id: '/api/auth/email-otp/$'
+      path: '/api/auth/email-otp/$'
+      fullPath: '/api/auth/email-otp/$'
+      preLoaderRoute: typeof ApiAuthEmailOtpSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/app/playlists/$name': {
       id: '/_authenticated/app/playlists/$name'
@@ -933,8 +951,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVideosIndexRoute: ApiVideosIndexRoute,
   AuthSigninIndexRoute: AuthSigninIndexRoute,
   AuthSignupIndexRoute: AuthSignupIndexRoute,
-  ApiUserProfileSendVerificationRoute: ApiUserProfileSendVerificationRoute,
-  ApiUserProfileVerifyEmailRoute: ApiUserProfileVerifyEmailRoute,
+  AuthVerifyEmailIndexRoute: AuthVerifyEmailIndexRoute,
+  ApiAuthEmailOtpSplatRoute: ApiAuthEmailOtpSplatRoute,
+  ApiAuthOtpSplatRoute: ApiAuthOtpSplatRoute,
   ApiUserProfileIndexRoute: ApiUserProfileIndexRoute,
   ApiPlaylistsIdVideosVideoIdRoute: ApiPlaylistsIdVideosVideoIdRoute,
   ApiPlaylistsIdVideosBulkRoute: ApiPlaylistsIdVideosBulkRoute,

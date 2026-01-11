@@ -40,7 +40,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body className='dark bg-background text-foreground'>
+      <body className='dark bg-background text-foreground overflow-hidden'>
         <Providers>
           {children}
         </Providers>

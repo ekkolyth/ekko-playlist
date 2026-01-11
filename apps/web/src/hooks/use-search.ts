@@ -12,7 +12,7 @@ export function useSearch(
   debounceMs: number = 300
 ): [string, (value: string) => void, string] {
   const [immediateValue, setImmediateValue] = useState(initialValue);
-  const debouncedValue = useDebouncedValue(immediateValue, debounceMs);
+  const [debouncedValue] = useDebouncedValue(immediateValue, { wait: debounceMs });
 
   // Ensure debouncedValue is always a string
   const safeDebouncedValue = typeof debouncedValue === 'string' ? debouncedValue : (initialValue || '');

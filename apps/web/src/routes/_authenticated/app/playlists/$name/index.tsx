@@ -44,7 +44,7 @@ function PlaylistDetailPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [searchValue, setSearchValue] = useSearch('');
+  const [debouncedSearchValue, setSearchValue, searchValue] = useSearch('');
 
   const { data: playlistDetail, isLoading, error } = useQuery({
     queryKey: ["playlist", playlistName],
@@ -55,7 +55,7 @@ function PlaylistDetailPage() {
   // Filter videos client-side based on search
   const filteredVideos = useMemo(() => {
     if (!playlistDetail?.videos) return [];
-    const search = typeof searchValue === 'string' ? searchValue : '';
+    const search = typeof debouncedSearchValue === 'string' ? debouncedSearchValue : '';
     if (!search.trim()) return playlistDetail.videos;
     
     const searchLower = search.toLowerCase();
@@ -64,7 +64,7 @@ function PlaylistDetailPage() {
         video.title.toLowerCase().includes(searchLower) ||
         video.channel.toLowerCase().includes(searchLower)
     );
-  }, [playlistDetail?.videos, searchValue]);
+  }, [playlistDetail?.videos, debouncedSearchValue]);
 
   const startEdit = () => {
     if (playlistDetail) {
@@ -223,7 +223,7 @@ function PlaylistDetailPage() {
               <p className="text-muted-foreground mt-1">
                 {playlistDetail.videos.length}{" "}
                 {playlistDetail.videos.length === 1 ? "video" : "videos"}
-                {typeof searchValue === 'string' && searchValue.trim() && (
+                {typeof debouncedSearchValue === 'string' && debouncedSearchValue.trim() && (
                   <span className="ml-1">
                     ({filteredVideos.length} matching)
                   </span>
@@ -264,12 +264,12 @@ function PlaylistDetailPage() {
           isLoading={false}
           error={null}
           emptyTitle={
-            typeof searchValue === 'string' && searchValue.trim()
+            typeof debouncedSearchValue === 'string' && debouncedSearchValue.trim()
               ? "No videos match your search"
               : "No videos in this playlist"
           }
           emptyDescription={
-            typeof searchValue === 'string' && searchValue.trim()
+            typeof debouncedSearchValue === 'string' && debouncedSearchValue.trim()
               ? "Try adjusting your search terms."
               : "Add videos from the dashboard to get started."
           }

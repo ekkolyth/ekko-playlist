@@ -78,7 +78,7 @@ function DashboardPage() {
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [selectModeActions, setSelectModeActions] =
     useState<React.ReactNode>(null);
-  const [searchValue, setSearchValue] = useSearch('');
+  const [debouncedSearchValue, setSearchValue, searchValue] = useSearch('');
 
   // Fetch user profile for display name
   const { data: profile } = useQuery({
@@ -106,8 +106,8 @@ function DashboardPage() {
 
   // Fetch filtered videos
   const { data, isLoading, error } = useQuery({
-    queryKey: ["videos", selectedChannels, showUnassigned, selectedTagIds, searchValue],
-    queryFn: () => fetchVideos(selectedChannels, showUnassigned, selectedTagIds, searchValue),
+    queryKey: ["videos", selectedChannels, showUnassigned, selectedTagIds, debouncedSearchValue],
+    queryFn: () => fetchVideos(selectedChannels, showUnassigned, selectedTagIds, debouncedSearchValue),
   });
 
   return (
@@ -152,12 +152,12 @@ function DashboardPage() {
           isLoading={isLoading}
           error={error}
           emptyTitle={
-            selectedChannels.length > 0 || showUnassigned || selectedTagIds.length > 0 || (typeof searchValue === 'string' && searchValue.trim())
+            selectedChannels.length > 0 || showUnassigned || selectedTagIds.length > 0 || (typeof debouncedSearchValue === 'string' && debouncedSearchValue.trim())
               ? "No videos match your filters"
               : "No videos yet"
           }
           emptyDescription={
-            selectedChannels.length > 0 || showUnassigned || selectedTagIds.length > 0 || (typeof searchValue === 'string' && searchValue.trim())
+            selectedChannels.length > 0 || showUnassigned || selectedTagIds.length > 0 || (typeof debouncedSearchValue === 'string' && debouncedSearchValue.trim())
               ? "Try adjusting your filters to see more videos."
               : "Your playlist is empty. Start adding YouTube videos to build your collection!"
           }

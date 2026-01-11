@@ -25,7 +25,7 @@ export function ChannelFilter({
   onUnassignedChange,
 }: ChannelFilterProps) {
   const [open, setOpen] = useState(false);
-  const [searchValue, setSearchValue] = useSearch('', 200);
+  const [debouncedSearchValue, setSearchValue, searchValue] = useSearch('', 200);
 
   const handleToggleChannel = (channel: string, checked: boolean) => {
     if (checked) {
@@ -48,13 +48,13 @@ export function ChannelFilter({
 
   // Filter channels based on search
   const filteredChannels = useMemo(() => {
-    const search = typeof searchValue === 'string' ? searchValue : '';
+    const search = typeof debouncedSearchValue === 'string' ? debouncedSearchValue : '';
     if (!search.trim()) {
       return sortedChannels;
     }
     const searchLower = search.toLowerCase();
     return sortedChannels.filter((channel) => channel.toLowerCase().includes(searchLower));
-  }, [sortedChannels, searchValue]);
+  }, [sortedChannels, debouncedSearchValue]);
 
   return (
     <Popover

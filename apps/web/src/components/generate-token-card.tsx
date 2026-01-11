@@ -23,24 +23,26 @@ const tokenNameSchema = z.object({
   tokenName: z.string().min(1, 'Please enter a name for the token'),
 });
 
-type TokenNameFormValues = z.infer<typeof tokenNameSchema>;
-
 export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) {
   const [newToken, setNewToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const form = useForm<TokenNameFormValues>({
+  const form = useForm({
     defaultValues: {
       tokenName: '',
     },
     validationLogic: revalidateLogic(),
     validators: {
       onDynamic: ({ value }) => {
+        // Ensure value is an object with expected shape
+        if (!value || typeof value !== 'object' || !('tokenName' in value)) {
+          return undefined;
+        }
         const result = tokenNameSchema.safeParse(value);
-        if (!result.success) {
+        if (!result.success && result.error) {
           const errors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
+          result.error.issues.forEach((err) => {
             const path = err.path.join('.');
             errors[path] = err.message;
           });
@@ -54,7 +56,7 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
       try {
         // Generate a JWT token using Better Auth's JWT plugin
         const result = await authClient.token();
-        
+
         if (!result.data?.token) {
           throw new Error(result.error?.message || 'Failed to generate token');
         }
@@ -83,7 +85,7 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
           form.setFieldValue('tokenName', '');
           setNewToken(token);
           setError('');
-          
+
           // Notify parent to reload tokens list
           onTokenGenerated?.();
         } catch (saveErr) {
@@ -91,15 +93,19 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
           console.error('Error saving token to API:', saveErr);
           setNewToken(token);
           form.setFieldValue('tokenName', '');
-          setError(`Token generated but failed to save: ${saveErr instanceof Error ? saveErr.message : 'Unknown error'}. The token is shown below - copy it now.`);
+          setError(
+            `Token generated but failed to save: ${saveErr instanceof Error ? saveErr.message : 'Unknown error'}. The token is shown below - copy it now.`
+          );
         }
       } catch (err) {
         console.error('Error generating token:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to generate token';
-        
+
         // Provide more helpful error messages
         if (errorMessage.includes('JSON')) {
-          setError('Failed to communicate with the server. Please check your connection and try again.');
+          setError(
+            'Failed to communicate with the server. Please check your connection and try again.'
+          );
         } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
           setError('Your session has expired. Please refresh the page and try again.');
         } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
@@ -125,9 +131,7 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
     <div className='space-y-4 p-4 border rounded-lg'>
       <h3 className='font-semibold'>Generate New Token</h3>
       {error && (
-        <div className='p-3 text-sm text-destructive bg-destructive/10 rounded-md'>
-          {error}
-        </div>
+        <div className='p-3 text-sm text-destructive bg-destructive/10 rounded-md'>{error}</div>
       )}
       <form
         onSubmit={(e) => {
@@ -139,7 +143,7 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
         <FieldSet>
           <FieldGroup>
             <form.Field
-              name="tokenName"
+              name='tokenName'
               validators={{
                 onBlur: ({ value }) => {
                   if (!value || !value.trim()) {
@@ -149,53 +153,55 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
                 },
               }}
               children={(field) => (
-                <Field>
-                  <FieldLabel htmlFor={field.name}>Token Name</FieldLabel>
-                  <FieldContent>
-                    <Input
-                      id={field.name}
-                      type='text'
-                      placeholder='e.g., "My Extension Token"'
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !form.state.isSubmitting) {
-                          e.preventDefault();
-                          form.handleSubmit();
-                        }
-                      }}
-                      aria-invalid={!!field.state.meta.errors.length}
-                    />
-                    {field.state.meta.errors.length > 0 && (
-                      <FieldError>{field.state.meta.errors[0]}</FieldError>
+                <>
+                  <Field>
+                    <FieldLabel htmlFor={field.name}>Token Name</FieldLabel>
+                    <FieldContent>
+                      <Input
+                        id={field.name}
+                        type='text'
+                        placeholder='e.g., "My Extension Token"'
+                        value={field.state.value}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        onBlur={field.handleBlur}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !form.state.isSubmitting) {
+                            e.preventDefault();
+                            form.handleSubmit();
+                          }
+                        }}
+                        aria-invalid={!!field.state.meta.errors.length}
+                      />
+                      {field.state.meta.errors.length > 0 && (
+                        <FieldError>{field.state.meta.errors[0]}</FieldError>
+                      )}
+                      <p className='text-sm text-muted-foreground'>
+                        Give your token a name to identify it later
+                      </p>
+                    </FieldContent>
+                  </Field>
+                  <Button
+                    type='submit'
+                    disabled={form.state.isSubmitting || !field.state.value?.trim()}
+                    className='w-full mt-4'
+                  >
+                    {form.state.isSubmitting ? (
+                      <>
+                        <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className='mr-2 h-4 w-4' />
+                        Generate Token
+                      </>
                     )}
-                    <p className='text-sm text-muted-foreground'>
-                      Give your token a name to identify it later
-                    </p>
-                  </FieldContent>
-                </Field>
+                  </Button>
+                </>
               )}
             />
           </FieldGroup>
         </FieldSet>
-        <Button
-          type="submit"
-          disabled={form.state.isSubmitting || !form.state.values.tokenName.trim()}
-          className='w-full mt-4'
-        >
-          {form.state.isSubmitting ? (
-            <>
-              <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
-              Generating...
-            </>
-          ) : (
-            <>
-              <RefreshCw className='mr-2 h-4 w-4' />
-              Generate Token
-            </>
-          )}
-        </Button>
       </form>
 
       {/* Show new token once after generation */}

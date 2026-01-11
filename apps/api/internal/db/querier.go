@@ -16,12 +16,14 @@ type Querier interface {
 	AddVideoToPlaylistByName(ctx context.Context, arg *AddVideoToPlaylistByNameParams) error
 	CleanExpiredSessions(ctx context.Context) error
 	CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error)
+	CreateOIDCProvider(ctx context.Context, arg *CreateOIDCProviderParams) (*OidcProvider, error)
 	CreatePlaylist(ctx context.Context, arg *CreatePlaylistParams) (*Playlist, error)
 	CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error)
 	CreateTag(ctx context.Context, arg *CreateTagParams) (*Tag, error)
 	CreateVerification(ctx context.Context, arg *CreateVerificationParams) (*Verification, error)
 	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
 	DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams) error
+	DeleteOIDCProvider(ctx context.Context, id pgtype.UUID) error
 	DeletePlaylist(ctx context.Context, arg *DeletePlaylistParams) error
 	DeleteSession(ctx context.Context, token string) error
 	DeleteTag(ctx context.Context, arg *DeleteTagParams) error
@@ -30,12 +32,16 @@ type Querier interface {
 	DeleteVideo(ctx context.Context, arg *DeleteVideoParams) error
 	DeleteVideos(ctx context.Context, arg *DeleteVideosParams) error
 	FilterVideosByTags(ctx context.Context, arg *FilterVideosByTagsParams) ([]*Video, error)
+	FilterVideosByTagsAnd(ctx context.Context, arg *FilterVideosByTagsAndParams) ([]*Video, error)
 	GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error)
 	GetConfig(ctx context.Context, key string) (*Config, error)
+	GetOIDCProvider(ctx context.Context, id pgtype.UUID) (*OidcProvider, error)
+	GetOIDCProviderByProviderID(ctx context.Context, providerID string) (*OidcProvider, error)
 	GetPlaylistByName(ctx context.Context, arg *GetPlaylistByNameParams) (*Playlist, error)
 	GetPlaylistIDByName(ctx context.Context, arg *GetPlaylistIDByNameParams) (int64, error)
 	GetPlaylistVideoCount(ctx context.Context, arg *GetPlaylistVideoCountParams) (int64, error)
 	GetPlaylistVideos(ctx context.Context, arg *GetPlaylistVideosParams) ([]*GetPlaylistVideosRow, error)
+	GetPlaylistVideosWithSearch(ctx context.Context, arg *GetPlaylistVideosWithSearchParams) ([]*GetPlaylistVideosWithSearchRow, error)
 	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
 	GetTagByID(ctx context.Context, arg *GetTagByIDParams) (*Tag, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
@@ -49,19 +55,26 @@ type Querier interface {
 	GetVideoTags(ctx context.Context, videoID int64) ([]*Tag, error)
 	GetVideoTagsForVideos(ctx context.Context, dollar_1 []int64) ([]*GetVideoTagsForVideosRow, error)
 	ListAPITokensByUser(ctx context.Context, userID string) ([]*ListAPITokensByUserRow, error)
+	ListAllOIDCProviders(ctx context.Context) ([]*OidcProvider, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
+	ListEnabledOIDCProviders(ctx context.Context) ([]*OidcProvider, error)
 	ListPlaylistsByUser(ctx context.Context, userID string) ([]*Playlist, error)
 	ListRecentVerifications(ctx context.Context) ([]*Verification, error)
 	ListTags(ctx context.Context, userID string) ([]*Tag, error)
 	ListVideos(ctx context.Context, userID string) ([]*Video, error)
 	ListVideosFiltered(ctx context.Context, arg *ListVideosFilteredParams) ([]*Video, error)
+	ListVideosFilteredWithSearch(ctx context.Context, arg *ListVideosFilteredWithSearchParams) ([]*Video, error)
 	ListVideosUnassigned(ctx context.Context, userID string) ([]*Video, error)
 	ListVideosUnassignedFiltered(ctx context.Context, arg *ListVideosUnassignedFilteredParams) ([]*Video, error)
+	ListVideosUnassignedFilteredWithSearch(ctx context.Context, arg *ListVideosUnassignedFilteredWithSearchParams) ([]*Video, error)
+	ListVideosUnassignedWithSearch(ctx context.Context, arg *ListVideosUnassignedWithSearchParams) ([]*Video, error)
+	ListVideosWithSearch(ctx context.Context, arg *ListVideosWithSearchParams) ([]*Video, error)
 	ListVideosWithTags(ctx context.Context, userID string) ([]*ListVideosWithTagsRow, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg *RemoveVideoFromPlaylistParams) error
 	RemoveVideoTags(ctx context.Context, arg *RemoveVideoTagsParams) error
 	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
 	UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error
+	UpdateOIDCProvider(ctx context.Context, arg *UpdateOIDCProviderParams) (*OidcProvider, error)
 	UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error)
 	UpdateTag(ctx context.Context, arg *UpdateTagParams) (*Tag, error)
 	UpdateUserEmailVerified(ctx context.Context, id string) error

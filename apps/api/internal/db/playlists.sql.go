@@ -218,6 +218,66 @@ func (q *Queries) GetPlaylistVideos(ctx context.Context, arg *GetPlaylistVideosP
 	return items, nil
 }
 
+const GetPlaylistVideosWithSearch = `-- name: GetPlaylistVideosWithSearch :many
+select v.id, v.video_id, v.normalized_url, v.original_url, v.title, v.channel, v.user_id, v.created_at, pv.position, pv.created_at as added_at
+from playlist_videos pv
+join videos v on pv.video_id = v.id
+join playlists p on pv.playlist_id = p.id
+where p.user_id = $1 and p.name = $2
+  and (v.title ILIKE $3 OR v.channel ILIKE $3)
+order by pv.position, pv.created_at
+`
+
+type GetPlaylistVideosWithSearchParams struct {
+	UserID string `json:"user_id"`
+	Name   string `json:"name"`
+	Title  string `json:"title"`
+}
+
+type GetPlaylistVideosWithSearchRow struct {
+	ID            int64              `json:"id"`
+	VideoID       string             `json:"video_id"`
+	NormalizedUrl string             `json:"normalized_url"`
+	OriginalUrl   string             `json:"original_url"`
+	Title         string             `json:"title"`
+	Channel       string             `json:"channel"`
+	UserID        string             `json:"user_id"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	Position      int32              `json:"position"`
+	AddedAt       pgtype.Timestamptz `json:"added_at"`
+}
+
+func (q *Queries) GetPlaylistVideosWithSearch(ctx context.Context, arg *GetPlaylistVideosWithSearchParams) ([]*GetPlaylistVideosWithSearchRow, error) {
+	rows, err := q.db.Query(ctx, GetPlaylistVideosWithSearch, arg.UserID, arg.Name, arg.Title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*GetPlaylistVideosWithSearchRow{}
+	for rows.Next() {
+		var i GetPlaylistVideosWithSearchRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.Position,
+			&i.AddedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ListPlaylistsByUser = `-- name: ListPlaylistsByUser :many
 select id, user_id, name, created_at, updated_at
 from playlists

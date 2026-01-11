@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,8 +20,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { signIn } from "@/lib/auth-client";
+import { Separator } from "@/components/ui/separator";
+import { signIn, authClient } from "@/lib/auth-client";
 import Header from "@/components/nav/header";
+import { Shield } from "lucide-react";
 
 export const Route = createFileRoute("/auth/signin/")({
   component: SignInPage,
@@ -38,6 +41,40 @@ function SignInPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  // Fetch enabled OIDC providers
+  const { data: oidcProviders, isLoading: isLoadingProviders } = useQuery({
+    queryKey: ["oidc-providers"],
+    queryFn: async () => {
+      const res = await fetch("/api/oidc-providers");
+      if (!res.ok) {
+        return [];
+      }
+      return res.json();
+    },
+  });
+
+  const handleOIDCSignIn = async (providerId: string) => {
+    setError("");
+    setLoading(true);
+
+    try {
+      const result = await authClient.signIn.oauth2({
+        providerId,
+        callbackURL: "/app/dashboard",
+        errorCallbackURL: "/auth/signin?error=oauth_error",
+      });
+
+      if (!result.data && result.error) {
+        throw new Error(result.error.message || "OAuth sign-in failed");
+      }
+      // Redirect happens automatically
+    } catch (err) {
+      console.error("OAuth sign-in error:", err);
+      setError(err instanceof Error ? err.message : "OAuth sign-in failed");
+      setLoading(false);
+    }
+  };
 
   const form = useForm<SignInFormValues>({
     defaultValues: {
@@ -204,6 +241,34 @@ function SignInPage() {
                 </Link>
               </div>
             </form>
+
+            {!isLoadingProviders && oidcProviders && oidcProviders.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <div className="space-y-2">
+                  <p className="text-sm text-center text-muted-foreground">
+                    Or sign in with
+                  </p>
+                  <div className="space-y-2">
+                    {oidcProviders.map((provider: { provider_id: string; name: string; enabled: boolean }) => (
+                      provider.enabled && (
+                        <Button
+                          key={provider.provider_id}
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleOIDCSignIn(provider.provider_id)}
+                          disabled={loading}
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Sign in with {provider.name}
+                        </Button>
+                      )
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

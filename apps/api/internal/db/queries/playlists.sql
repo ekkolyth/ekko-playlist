@@ -63,3 +63,11 @@ join playlists p on pv.playlist_id = p.id
 where p.user_id = $1 and p.name = $2
 order by pv.position, pv.created_at;
 
+-- name: GetPlaylistVideosWithSearch :many
+select v.id, v.video_id, v.normalized_url, v.original_url, v.title, v.channel, v.user_id, v.created_at, pv.position, pv.created_at as added_at
+from playlist_videos pv
+join videos v on pv.video_id = v.id
+join playlists p on pv.playlist_id = p.id
+where p.user_id = $1 and p.name = $2
+  and (v.title ILIKE $3 OR v.channel ILIKE $3)
+order by pv.position, pv.created_at;

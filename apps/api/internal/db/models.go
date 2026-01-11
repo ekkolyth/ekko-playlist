@@ -47,6 +47,19 @@ type Jwk struct {
 	ExpiresAt  pgtype.Timestamp `json:"expires_at"`
 }
 
+type OidcProvider struct {
+	ID           pgtype.UUID        `json:"id"`
+	ProviderID   string             `json:"provider_id"`
+	Name         string             `json:"name"`
+	DiscoveryUrl string             `json:"discovery_url"`
+	ClientID     string             `json:"client_id"`
+	ClientSecret string             `json:"client_secret"`
+	Scopes       []string           `json:"scopes"`
+	Enabled      bool               `json:"enabled"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+}
+
 type Playlist struct {
 	ID        int64              `json:"id"`
 	UserID    string             `json:"user_id"`

@@ -112,6 +112,53 @@ func (q *Queries) FilterVideosByTags(ctx context.Context, arg *FilterVideosByTag
 	return items, nil
 }
 
+const FilterVideosByTagsAnd = `-- name: FilterVideosByTagsAnd :many
+select v.id, v.video_id, v.normalized_url, v.original_url, v.title, v.channel, v.user_id, v.created_at
+from videos v
+where v.user_id = $1
+  and (
+    select count(distinct vt.tag_id)
+    from video_tags vt
+    where vt.video_id = v.id
+      and vt.tag_id = ANY($2::bigint[])
+  ) = array_length($2::bigint[], 1)
+order by v.created_at desc
+`
+
+type FilterVideosByTagsAndParams struct {
+	UserID  string  `json:"user_id"`
+	Column2 []int64 `json:"column_2"`
+}
+
+func (q *Queries) FilterVideosByTagsAnd(ctx context.Context, arg *FilterVideosByTagsAndParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, FilterVideosByTagsAnd, arg.UserID, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const GetTagByID = `-- name: GetTagByID :one
 select id, user_id, name, color, created_at, updated_at
 from tags

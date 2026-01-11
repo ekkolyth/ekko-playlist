@@ -42,6 +42,38 @@ WHERE user_id = $1
   AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
 ORDER BY created_at DESC;
 
+-- name: ListVideosWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND (title ILIKE $2 OR channel ILIKE $2)
+ORDER BY created_at DESC;
+
+-- name: ListVideosFilteredWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+  AND (title ILIKE $3 OR channel ILIKE $3)
+ORDER BY created_at DESC;
+
+-- name: ListVideosUnassignedWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+  AND (title ILIKE $2 OR channel ILIKE $2)
+ORDER BY created_at DESC;
+
+-- name: ListVideosUnassignedFilteredWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+  AND (title ILIKE $3 OR channel ILIKE $3)
+ORDER BY created_at DESC;
+
 -- name: DeleteVideo :exec
 DELETE FROM videos
 WHERE id = $1 AND user_id = $2;

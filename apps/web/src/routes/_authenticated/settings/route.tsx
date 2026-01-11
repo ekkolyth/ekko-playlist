@@ -5,7 +5,7 @@ import {
   useMatchRoute,
 } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Puzzle, SlidersHorizontal, Key, Mail, BarChart3, Users } from "lucide-react";
+import { ArrowLeft, User, Puzzle, SlidersHorizontal, Key, Mail, BarChart3, Users, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsLayout,
@@ -26,6 +26,11 @@ const settingsNavItems = [
     title: "API Keys",
     href: "/settings/api-keys",
     icon: Key,
+  },
+  {
+    title: "OIDC Providers",
+    href: "/settings/oidc-providers",
+    icon: Shield,
   },
   {
     title: "Plugins",

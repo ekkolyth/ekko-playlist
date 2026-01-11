@@ -62,3 +62,15 @@ select vt.video_id, t.id as tag_id, t.name as tag_name, t.color as tag_color
 from video_tags vt
 join tags t on vt.tag_id = t.id
 where vt.video_id = ANY($1::bigint[]);
+
+-- name: FilterVideosByTagsAnd :many
+select v.id, v.video_id, v.normalized_url, v.original_url, v.title, v.channel, v.user_id, v.created_at
+from videos v
+where v.user_id = $1
+  and (
+    select count(distinct vt.tag_id)
+    from video_tags vt
+    where vt.video_id = v.id
+      and vt.tag_id = ANY($2::bigint[])
+  ) = array_length($2::bigint[], 1)
+order by v.created_at desc;

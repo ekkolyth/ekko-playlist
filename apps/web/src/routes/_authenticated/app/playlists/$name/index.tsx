@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +25,8 @@ import {
 } from "@/hooks/use-playlist";
 import { assertDefined } from "@/lib/assert";
 import { useQuery } from "@tanstack/react-query";
+import { useSearch } from "@/hooks/use-search";
+import { SearchInput } from "@/components/search/search-input";
 
 export const Route = createFileRoute("/_authenticated/app/playlists/$name/")({
   component: PlaylistDetailPage,
@@ -42,12 +44,27 @@ function PlaylistDetailPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [searchValue, setSearchValue] = useSearch('');
 
   const { data: playlistDetail, isLoading, error } = useQuery({
     queryKey: ["playlist", playlistName],
     queryFn: () => playlist.get(playlistName),
     enabled: !!playlistName,
   });
+
+  // Filter videos client-side based on search
+  const filteredVideos = useMemo(() => {
+    if (!playlistDetail?.videos) return [];
+    const search = typeof searchValue === 'string' ? searchValue : '';
+    if (!search.trim()) return playlistDetail.videos;
+    
+    const searchLower = search.toLowerCase();
+    return playlistDetail.videos.filter(
+      (video) =>
+        video.title.toLowerCase().includes(searchLower) ||
+        video.channel.toLowerCase().includes(searchLower)
+    );
+  }, [playlistDetail?.videos, searchValue]);
 
   const startEdit = () => {
     if (playlistDetail) {
@@ -206,6 +223,11 @@ function PlaylistDetailPage() {
               <p className="text-muted-foreground mt-1">
                 {playlistDetail.videos.length}{" "}
                 {playlistDetail.videos.length === 1 ? "video" : "videos"}
+                {typeof searchValue === 'string' && searchValue.trim() && (
+                  <span className="ml-1">
+                    ({filteredVideos.length} matching)
+                  </span>
+                )}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -226,14 +248,31 @@ function PlaylistDetailPage() {
               </Tooltip>
             </div>
           </div>
+          <div className="mt-4">
+            <SearchInput
+              value={searchValue}
+              onChange={setSearchValue}
+              placeholder="Search videos in this playlist..."
+              aria-label="Search playlist videos"
+              className="max-w-md"
+            />
+          </div>
         </div>
 
         <VideoCollection
-          videos={playlistDetail.videos}
+          videos={filteredVideos}
           isLoading={false}
           error={null}
-          emptyTitle="No videos in this playlist"
-          emptyDescription="Add videos from the dashboard to get started."
+          emptyTitle={
+            typeof searchValue === 'string' && searchValue.trim()
+              ? "No videos match your search"
+              : "No videos in this playlist"
+          }
+          emptyDescription={
+            typeof searchValue === 'string' && searchValue.trim()
+              ? "Try adjusting your search terms."
+              : "Add videos from the dashboard to get started."
+          }
           onVideoClick={videoClick}
           onRemoveVideo={removeVideo}
           onSelectModeActionsChange={setSelectModeActions}

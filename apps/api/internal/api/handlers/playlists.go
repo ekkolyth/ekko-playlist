@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -184,34 +185,73 @@ func (h *PlaylistsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get videos
-	videoRows, err := h.dbService.Queries.GetPlaylistVideos(ctx, &db.GetPlaylistVideosParams{
-		UserID: userID,
-		Name:   playlistName,
-	})
-	if err != nil {
-		logging.Info("Error getting playlist videos: %s", err.Error())
-		httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch playlist videos")
-		return
+	// Parse search query parameter
+	searchTerm := strings.TrimSpace(r.URL.Query().Get("search"))
+	searchPattern := ""
+	if searchTerm != "" {
+		// Format search term for ILIKE pattern matching
+		searchPattern = "%" + searchTerm + "%"
 	}
 
-	videos := make([]VideoResponse, 0, len(videoRows))
-	for _, videoRow := range videoRows {
-		createdAt := ""
-		if videoRow.CreatedAt.Valid {
-			createdAt = videoRow.CreatedAt.Time.Format(time.RFC3339)
-		}
-
-		videos = append(videos, VideoResponse{
-			ID:            videoRow.ID,
-			VideoID:       videoRow.VideoID,
-			NormalizedURL: videoRow.NormalizedUrl,
-			OriginalURL:   videoRow.OriginalUrl,
-			Title:         videoRow.Title,
-			Channel:       videoRow.Channel,
-			UserID:        videoRow.UserID,
-			CreatedAt:     createdAt,
+	// Get videos
+	var videos []VideoResponse
+	if searchPattern != "" {
+		videoRows, err := h.dbService.Queries.GetPlaylistVideosWithSearch(ctx, &db.GetPlaylistVideosWithSearchParams{
+			UserID: userID,
+			Name:   playlistName,
+			Title:  searchPattern,
 		})
+		if err != nil {
+			logging.Info("Error getting playlist videos: %s", err.Error())
+			httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch playlist videos")
+			return
+		}
+		videos = make([]VideoResponse, 0, len(videoRows))
+		for _, videoRow := range videoRows {
+			createdAt := ""
+			if videoRow.CreatedAt.Valid {
+				createdAt = videoRow.CreatedAt.Time.Format(time.RFC3339)
+			}
+
+			videos = append(videos, VideoResponse{
+				ID:            videoRow.ID,
+				VideoID:       videoRow.VideoID,
+				NormalizedURL: videoRow.NormalizedUrl,
+				OriginalURL:   videoRow.OriginalUrl,
+				Title:         videoRow.Title,
+				Channel:       videoRow.Channel,
+				UserID:        videoRow.UserID,
+				CreatedAt:     createdAt,
+			})
+		}
+	} else {
+		videoRows, err := h.dbService.Queries.GetPlaylistVideos(ctx, &db.GetPlaylistVideosParams{
+			UserID: userID,
+			Name:   playlistName,
+		})
+		if err != nil {
+			logging.Info("Error getting playlist videos: %s", err.Error())
+			httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch playlist videos")
+			return
+		}
+		videos = make([]VideoResponse, 0, len(videoRows))
+		for _, videoRow := range videoRows {
+			createdAt := ""
+			if videoRow.CreatedAt.Valid {
+				createdAt = videoRow.CreatedAt.Time.Format(time.RFC3339)
+			}
+
+			videos = append(videos, VideoResponse{
+				ID:            videoRow.ID,
+				VideoID:       videoRow.VideoID,
+				NormalizedURL: videoRow.NormalizedUrl,
+				OriginalURL:   videoRow.OriginalUrl,
+				Title:         videoRow.Title,
+				Channel:       videoRow.Channel,
+				UserID:        videoRow.UserID,
+				CreatedAt:     createdAt,
+			})
+		}
 	}
 
 	createdAt := ""

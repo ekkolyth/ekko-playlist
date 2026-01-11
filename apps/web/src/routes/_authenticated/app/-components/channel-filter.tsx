@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +6,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Field, FieldLabel } from '@/components/ui/field';
+import { useSearch } from '@/hooks/use-search';
+import { SearchInput } from '@/components/search/search-input';
 
 interface ChannelFilterProps {
   channels: string[];
@@ -23,6 +25,7 @@ export function ChannelFilter({
   onUnassignedChange,
 }: ChannelFilterProps) {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useSearch('', 200);
 
   const handleToggleChannel = (channel: string, checked: boolean) => {
     if (checked) {
@@ -42,6 +45,16 @@ export function ChannelFilter({
   };
 
   const sortedChannels = [...channels].sort();
+
+  // Filter channels based on search
+  const filteredChannels = useMemo(() => {
+    const search = typeof searchValue === 'string' ? searchValue : '';
+    if (!search.trim()) {
+      return sortedChannels;
+    }
+    const searchLower = search.toLowerCase();
+    return sortedChannels.filter((channel) => channel.toLowerCase().includes(searchLower));
+  }, [sortedChannels, searchValue]);
 
   return (
     <Popover
@@ -74,7 +87,7 @@ export function ChannelFilter({
           <div className='flex items-center justify-between'>
             <h4 className='text-sm font-semibold'>Filter Videos</h4>
             <div className='flex gap-2'>
-              {sortedChannels.length > 0 && (
+              {channels.length > 0 && (
                 <Button
                   variant='ghost'
                   size='sm'
@@ -108,6 +121,14 @@ export function ChannelFilter({
             </p>
           )}
         </div>
+        <div className='px-4 py-3 border-b shrink-0'>
+          <SearchInput
+            value={searchValue}
+            onChange={setSearchValue}
+            placeholder='Search channels...'
+            aria-label='Search channels'
+          />
+        </div>
         <ScrollArea className='h-75'>
           <div className='p-2'>
             <Field
@@ -127,13 +148,13 @@ export function ChannelFilter({
               </FieldLabel>
             </Field>
 
-            {sortedChannels.length > 0 && (
+            {filteredChannels.length > 0 && (
               <>
                 <div className='border-b my-2' />
                 <div className='px-2 py-1 text-xs font-semibold text-muted-foreground'>
                   Channels
                 </div>
-                {sortedChannels.map((channel) => (
+                {filteredChannels.map((channel) => (
                   <Field
                     key={channel}
                     orientation='horizontal'

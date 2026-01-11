@@ -1,6 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Play, Link as LinkIcon, Plus, ListMusic, Trash2 } from "lucide-react";
+import { Play, Link as LinkIcon, Plus, ListMusic, Trash2, Tags } from "lucide-react";
 import type { Video, Playlist } from "@/lib/api-types";
 import { getYouTubeThumbnail } from "@/hooks/use-playlist";
 import { TagBadge } from "@/components/tags/tag-badge";
@@ -36,6 +37,7 @@ interface VideoCardProps {
   onCreatePlaylist: (e: React.MouseEvent, videoId: number) => void;
   onDeleteVideo?: (e: React.MouseEvent, videoId: number, title: string) => void;
   isAddingToPlaylist?: boolean;
+  onTagDetailsClick?: (video: Video) => void;
 }
 
 export function VideoCard({
@@ -50,6 +52,7 @@ export function VideoCard({
   onCreatePlaylist,
   onDeleteVideo,
   isAddingToPlaylist = false,
+  onTagDetailsClick,
 }: VideoCardProps) {
   return (
     <Card
@@ -118,7 +121,7 @@ export function VideoCard({
                     variant="ghost"
                     className="bg-background border border-border shadow-md hover:bg-background hover:border-primary hover:text-primary"
                     onClick={(e) => e.stopPropagation()}
-                    aria-label="Add to playlist"
+                    aria-label="Video actions"
                   >
                     <ListMusic className="size-4" />
                   </Button>
@@ -152,6 +155,18 @@ export function VideoCard({
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Create New Playlist
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onTagDetailsClick) {
+                        onTagDetailsClick(video);
+                      }
+                    }}
+                  >
+                    <Tags className="mr-2 h-4 w-4" />
+                    Manage Tags
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -197,10 +212,34 @@ export function VideoCard({
           </span>
         </div>
         {"tags" in video && video.tags && video.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {video.tags.map((tag) => (
-              <TagBadge key={tag.id} tag={tag} />
-            ))}
+          <div className="flex flex-wrap gap-1 mt-2 items-center">
+            {(() => {
+              // Sort tags by name for consistent display
+              const sortedTags = [...video.tags].sort((a, b) => a.name.localeCompare(b.name));
+              const firstTag = sortedTags[0];
+              const remainingCount = sortedTags.length - 1;
+              
+              return (
+                <>
+                  <TagBadge tag={firstTag} />
+                  {remainingCount > 0 && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // This will be handled by the tag details dialog
+                        if (onTagDetailsClick) {
+                          onTagDetailsClick(video);
+                        }
+                      }}
+                    >
+                      +{remainingCount}
+                    </Badge>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </CardContent>

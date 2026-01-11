@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -100,31 +101,154 @@ func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 	unassignedParam := r.URL.Query().Get("unassigned")
 	showUnassigned := unassignedParam == "true"
 
+	// Parse tag IDs filter from query parameters
+	var tagIDs []int64
+	tagsParam := r.URL.Query().Get("tags")
+	if tagsParam != "" {
+		tagStrs := strings.Split(tagsParam, ",")
+		for _, tagStr := range tagStrs {
+			tagStr = strings.TrimSpace(tagStr)
+			if tagStr != "" {
+				tagID, err := strconv.ParseInt(tagStr, 10, 64)
+				if err == nil {
+					tagIDs = append(tagIDs, tagID)
+				}
+			}
+		}
+	}
+
+	// Parse search query parameter
+	searchTerm := strings.TrimSpace(r.URL.Query().Get("search"))
+	searchPattern := ""
+	if searchTerm != "" {
+		// Format search term for ILIKE pattern matching
+		searchPattern = "%" + searchTerm + "%"
+	}
+
 	var videos []*db.Video
 	var err error
 
-	// Use appropriate query based on filters
-	if showUnassigned {
+	// Tag filtering uses AND logic (videos must have ALL selected tags)
+	// If tags are specified, filter by tags first, then apply other filters
+	if len(tagIDs) > 0 {
+		// First filter by tags
+		videos, err = h.dbService.Queries.FilterVideosByTagsAnd(ctx, &db.FilterVideosByTagsAndParams{
+			UserID:  userID,
+			Column2: tagIDs,
+		})
+		if err != nil {
+			logging.Info("Error filtering videos by tags: %s", err.Error())
+			httpx.RespondError(w, http.StatusInternalServerError, "Failed to filter videos by tags")
+			return
+		}
+
+		// Then filter by channels if specified (in-memory filter)
 		if len(channels) > 0 {
-			// Unassigned videos with channel filter
-			videos, err = h.dbService.Queries.ListVideosUnassignedFiltered(ctx, &db.ListVideosUnassignedFilteredParams{
-				UserID:  userID,
-				Column2: channels,
-			})
+			filtered := videos[:0]
+			for _, video := range videos {
+				for _, channel := range channels {
+					if video.Channel == channel {
+						filtered = append(filtered, video)
+						break
+					}
+				}
+			}
+			videos = filtered
+		}
+
+		// Then filter by unassigned if specified (in-memory filter)
+		if showUnassigned {
+			allVideoIDs := make([]int64, len(videos))
+			for i, v := range videos {
+				allVideoIDs[i] = v.ID
+			}
+			// Get videos that are in playlists
+			var playlistVideoIDs []int64
+			if len(allVideoIDs) > 0 {
+				rows, err := h.dbService.DB.Pool.Query(ctx, "SELECT DISTINCT video_id FROM playlist_videos WHERE video_id = ANY($1)", allVideoIDs)
+				if err == nil {
+					defer rows.Close()
+					for rows.Next() {
+						var id int64
+						if err := rows.Scan(&id); err == nil {
+							playlistVideoIDs = append(playlistVideoIDs, id)
+						}
+					}
+				}
+			}
+			playlistVideoIDSet := make(map[int64]bool)
+			for _, id := range playlistVideoIDs {
+				playlistVideoIDSet[id] = true
+			}
+			filtered := videos[:0]
+			for _, video := range videos {
+				if !playlistVideoIDSet[video.ID] {
+					filtered = append(filtered, video)
+				}
+			}
+			videos = filtered
+		}
+
+		// Search is not supported with tag filtering for now
+		// (would require more complex SQL queries)
+	} else if searchPattern != "" {
+		// Use appropriate query based on filters
+		// Search-enabled queries
+		if showUnassigned {
+			if len(channels) > 0 {
+				// Unassigned videos with channel filter and search
+				videos, err = h.dbService.Queries.ListVideosUnassignedFilteredWithSearch(ctx, &db.ListVideosUnassignedFilteredWithSearchParams{
+					UserID:  userID,
+					Column2: channels,
+					Title:   searchPattern,
+				})
+			} else {
+				// Unassigned videos with search only
+				videos, err = h.dbService.Queries.ListVideosUnassignedWithSearch(ctx, &db.ListVideosUnassignedWithSearchParams{
+					UserID: userID,
+					Title:  searchPattern,
+				})
+			}
 		} else {
-			// Unassigned videos without channel filter
-			videos, err = h.dbService.Queries.ListVideosUnassigned(ctx, userID)
+			if len(channels) > 0 {
+				// Regular videos with channel filter and search
+				videos, err = h.dbService.Queries.ListVideosFilteredWithSearch(ctx, &db.ListVideosFilteredWithSearchParams{
+					UserID:  userID,
+					Column2: channels,
+					Title:   searchPattern,
+				})
+			} else {
+				// Regular videos with search only
+				videos, err = h.dbService.Queries.ListVideosWithSearch(ctx, &db.ListVideosWithSearchParams{
+					UserID: userID,
+					Title:  searchPattern,
+				})
+			}
 		}
 	} else {
-		if len(channels) > 0 {
-			// Regular videos with channel filter
-			videos, err = h.dbService.Queries.ListVideosFiltered(ctx, &db.ListVideosFilteredParams{
-				UserID:  userID,
-				Column2: channels,
-			})
+		// Non-search queries
+		if showUnassigned {
+			if len(channels) > 0 {
+				// Unassigned videos with channel filter
+				videos, err = h.dbService.Queries.ListVideosUnassignedFiltered(ctx, &db.ListVideosUnassignedFilteredParams{
+					UserID:  userID,
+					Column2: channels,
+				})
+			} else {
+				// Unassigned videos without channel filter
+				videos, err = h.dbService.Queries.ListVideosUnassigned(ctx, userID)
+			}
 		} else {
-			// Regular videos without channel filter
-			videos, err = h.dbService.Queries.ListVideos(ctx, userID)
+			if len(channels) > 0 {
+				// Regular videos with channel filter
+				videos, err = h.dbService.Queries.ListVideosFiltered(ctx, &db.ListVideosFilteredParams{
+					UserID:  userID,
+					Column2: channels,
+				})
+			} else {
+				// Regular videos without channel filter
+				videos, err = h.dbService.Queries.ListVideos(ctx, userID)
+			}
 		}
 	}
 

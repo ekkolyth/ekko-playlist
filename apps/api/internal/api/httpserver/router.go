@@ -70,6 +70,10 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	emailHandler := handlers.NewEmailHandler(dbService)
 	router.Post("/api/email/send-otp", emailHandler.SendOTPEmail)
 
+	// OIDC Provider routes (public for listing enabled providers)
+	oidcProviderHandler := handlers.NewOIDCProviderHandler(dbService)
+	router.Get("/api/oidc-providers", oidcProviderHandler.ListOIDCProviders)
+
 	// Auth routes (public)
 	authHandler := handlers.NewAuthHandler(dbService)
 	router.Route("/api/auth", func(auth chi.Router) {
@@ -101,6 +105,15 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 			smtp.Put("/", configHandler.UpdateSmtpConfig)
 			smtp.Post("/test", configHandler.SendTestEmail)
 		})
+	})
+
+	// OIDC Provider management routes - require authentication
+	router.Route("/api/oidc-providers", func(oidc chi.Router) {
+		oidc.Use(authMiddleware)
+		oidc.Get("/all", oidcProviderHandler.ListAllOIDCProviders)
+		oidc.Post("/", oidcProviderHandler.CreateOIDCProvider)
+		oidc.Put("/{id}", oidcProviderHandler.UpdateOIDCProvider)
+		oidc.Delete("/{id}", oidcProviderHandler.DeleteOIDCProvider)
 	})
 
 	// User profile routes - require authentication

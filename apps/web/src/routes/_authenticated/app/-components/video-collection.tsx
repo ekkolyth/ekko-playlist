@@ -56,6 +56,7 @@ import { VideoCard } from "./video-card";
 import { usePlaylist } from "@/hooks/use-playlist";
 import { useTags } from "@/hooks/use-tags";
 import { TagSelector } from "@/components/tags/tag-selector";
+import { TagDetailsDialog } from "@/components/tags/tag-details-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Playlist } from "@/lib/types";
@@ -97,6 +98,8 @@ export function VideoCollection({
   const [isBulkAddDialogOpen, setIsBulkAddDialogOpen] = useState(false);
   const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [tagDetailsVideo, setTagDetailsVideo] = useState<Video | null>(null);
+  const [isTagDetailsDialogOpen, setIsTagDetailsDialogOpen] = useState(false);
 
   const playlist = usePlaylist();
   const playlists = playlist.list;
@@ -427,6 +430,10 @@ export function VideoCollection({
               onCreatePlaylist={addToPlaylistClick}
               onDeleteVideo={deleteVideoClick}
               isAddingToPlaylist={playlist.isAddingVideo}
+              onTagDetailsClick={(video) => {
+                setTagDetailsVideo(video);
+                setIsTagDetailsDialogOpen(true);
+              }}
             />
           );
         })}
@@ -666,6 +673,12 @@ export function VideoCollection({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <TagDetailsDialog
+        video={tagDetailsVideo}
+        open={isTagDetailsDialogOpen}
+        onOpenChange={setIsTagDetailsDialogOpen}
+      />
     </>
   );
 }

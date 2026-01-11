@@ -5,6 +5,7 @@ import { oneTimeToken } from "better-auth/plugins/one-time-token";
 import { jwt } from "better-auth/plugins";
 import { bearer } from "better-auth/plugins";
 import { emailOTP } from "better-auth/plugins";
+import { genericOAuth } from "better-auth/plugins";
 import { db } from "./db.server";
 import { user, session, account, verification, jwks } from "./db/schema";
 
@@ -15,6 +16,48 @@ const getEnvVar = (key: string, fallback?: string): string => {
   // Vite automatically loads them, but only VITE_ prefixed ones go to import.meta.env
   return process.env[key] || import.meta.env[key] || fallback || "";
 };
+
+// OIDC Provider configuration from ENV
+interface OIDCProviderEnvEntry {
+  provider_id: string;
+  name: string;
+  discovery_url: string;
+  client_id: string;
+  client_secret: string;
+  scopes?: string; // Comma-separated
+  enabled?: boolean;
+}
+
+function loadOIDCProvidersFromEnv(): Array<{
+  providerId: string;
+  clientId: string;
+  clientSecret: string;
+  discoveryUrl: string;
+  scopes: string[];
+}> {
+  const providersJSON = getEnvVar("OIDC_PROVIDERS");
+  if (!providersJSON) {
+    return [];
+  }
+
+  try {
+    const providers: OIDCProviderEnvEntry[] = JSON.parse(providersJSON);
+    return providers
+      .filter((p) => p.enabled !== false) // Filter out disabled providers
+      .map((p) => ({
+        providerId: p.provider_id,
+        clientId: p.client_id,
+        clientSecret: p.client_secret,
+        discoveryUrl: p.discovery_url,
+        scopes: p.scopes
+          ? p.scopes.split(",").map((s) => s.trim()).filter(Boolean)
+          : ["openid", "profile", "email"],
+      }));
+  } catch (error) {
+    console.error("Error parsing OIDC_PROVIDERS from ENV:", error);
+    return [];
+  }
+}
 
 // Initialize better-auth
 let auth: ReturnType<typeof betterAuth>;
@@ -89,6 +132,14 @@ try {
       oneTimeToken({
         expiresIn: 90 * 24 * 60, // 90 days in minutes (keep for other uses)
       }),
+      // Load OIDC providers from ENV
+      ...(loadOIDCProvidersFromEnv().length > 0
+        ? [
+            genericOAuth({
+              config: loadOIDCProvidersFromEnv(),
+            }),
+          ]
+        : []),
       emailOTP({
         overrideDefaultEmailVerification: true,
         async sendVerificationOTP({ email, otp, type }) {

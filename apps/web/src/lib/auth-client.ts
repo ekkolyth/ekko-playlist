@@ -1,13 +1,14 @@
 import { createAuthClient } from 'better-auth/react';
 import { oneTimeTokenClient } from 'better-auth/client/plugins';
 import { jwtClient } from 'better-auth/client/plugins';
+import { genericOAuthClient } from 'better-auth/client/plugins';
 import { emailOTPClient } from 'better-auth/client/plugins';
 
 const BEARER_TOKEN_KEY = 'better_auth_bearer_token';
 
 export const authClient = createAuthClient({
   baseURL: typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000',
-  plugins: [jwtClient(), oneTimeTokenClient(), emailOTPClient()],
+  plugins: [jwtClient(), oneTimeTokenClient(), emailOTPClient(), genericOAuthClient()],
   fetchOptions: {
     onSuccess: async (ctx) => {
       // Store Bearer token from Better Auth response headers for API calls

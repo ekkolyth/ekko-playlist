@@ -200,6 +200,50 @@ func (q *Queries) ListVideosFiltered(ctx context.Context, arg *ListVideosFiltere
 	return items, nil
 }
 
+const ListVideosFilteredWithSearch = `-- name: ListVideosFilteredWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+  AND (title ILIKE $3 OR channel ILIKE $3)
+ORDER BY created_at DESC
+`
+
+type ListVideosFilteredWithSearchParams struct {
+	UserID  string   `json:"user_id"`
+	Column2 []string `json:"column_2"`
+	Title   string   `json:"title"`
+}
+
+func (q *Queries) ListVideosFilteredWithSearch(ctx context.Context, arg *ListVideosFilteredWithSearchParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosFilteredWithSearch, arg.UserID, arg.Column2, arg.Title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const ListVideosUnassigned = `-- name: ListVideosUnassigned :many
 SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
 FROM videos
@@ -253,6 +297,136 @@ type ListVideosUnassignedFilteredParams struct {
 
 func (q *Queries) ListVideosUnassignedFiltered(ctx context.Context, arg *ListVideosUnassignedFilteredParams) ([]*Video, error) {
 	rows, err := q.db.Query(ctx, ListVideosUnassignedFiltered, arg.UserID, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListVideosUnassignedFilteredWithSearch = `-- name: ListVideosUnassignedFilteredWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+  AND (title ILIKE $3 OR channel ILIKE $3)
+ORDER BY created_at DESC
+`
+
+type ListVideosUnassignedFilteredWithSearchParams struct {
+	UserID  string   `json:"user_id"`
+	Column2 []string `json:"column_2"`
+	Title   string   `json:"title"`
+}
+
+func (q *Queries) ListVideosUnassignedFilteredWithSearch(ctx context.Context, arg *ListVideosUnassignedFilteredWithSearchParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosUnassignedFilteredWithSearch, arg.UserID, arg.Column2, arg.Title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListVideosUnassignedWithSearch = `-- name: ListVideosUnassignedWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+  AND (title ILIKE $2 OR channel ILIKE $2)
+ORDER BY created_at DESC
+`
+
+type ListVideosUnassignedWithSearchParams struct {
+	UserID string `json:"user_id"`
+	Title  string `json:"title"`
+}
+
+func (q *Queries) ListVideosUnassignedWithSearch(ctx context.Context, arg *ListVideosUnassignedWithSearchParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosUnassignedWithSearch, arg.UserID, arg.Title)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListVideosWithSearch = `-- name: ListVideosWithSearch :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND (title ILIKE $2 OR channel ILIKE $2)
+ORDER BY created_at DESC
+`
+
+type ListVideosWithSearchParams struct {
+	UserID string `json:"user_id"`
+	Title  string `json:"title"`
+}
+
+func (q *Queries) ListVideosWithSearch(ctx context.Context, arg *ListVideosWithSearchParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosWithSearch, arg.UserID, arg.Title)
 	if err != nil {
 		return nil, err
 	}

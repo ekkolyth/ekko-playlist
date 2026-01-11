@@ -22,17 +22,21 @@ import { Route as AuthSigninIndexRouteImport } from './routes/auth/signin/index'
 import { Route as ApiVideosIndexRouteImport } from './routes/api/videos/index'
 import { Route as ApiTokensIndexRouteImport } from './routes/api/tokens/index'
 import { Route as ApiPlaylistsIndexRouteImport } from './routes/api/playlists/index'
+import { Route as ApiOidcProvidersIndexRouteImport } from './routes/api/oidc-providers/index'
 import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
 import { Route as ApiTokensSplatRouteImport } from './routes/api/tokens/$'
 import { Route as ApiProcessVideoRouteImport } from './routes/api/process/video'
 import { Route as ApiProcessPlaylistRouteImport } from './routes/api/process/playlist'
 import { Route as ApiPlaylistsSplatRouteImport } from './routes/api/playlists/$'
+import { Route as ApiOidcProvidersAllRouteImport } from './routes/api/oidc-providers/all'
+import { Route as ApiOidcProvidersIdRouteImport } from './routes/api/oidc-providers/$id'
 import { Route as ApiAuthMeRouteImport } from './routes/api/auth/me'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedAppKnucklesRouteImport } from './routes/_authenticated/app/knuckles'
 import { Route as AuthenticatedSettingsProfileRouteRouteImport } from './routes/_authenticated/settings/profile/route'
 import { Route as AuthenticatedSettingsPreferencesRouteRouteImport } from './routes/_authenticated/settings/preferences/route'
 import { Route as AuthenticatedSettingsPluginsRouteRouteImport } from './routes/_authenticated/settings/plugins/route'
+import { Route as AuthenticatedSettingsOidcProvidersRouteRouteImport } from './routes/_authenticated/settings/oidc-providers/route'
 import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_authenticated/app/playlists/route'
 import { Route as ApiUserProfileIndexRouteImport } from './routes/api/user/profile/index'
 import { Route as ApiConfigSmtpIndexRouteImport } from './routes/api/config/smtp/index'
@@ -117,6 +121,11 @@ const ApiPlaylistsIndexRoute = ApiPlaylistsIndexRouteImport.update({
   path: '/api/playlists/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOidcProvidersIndexRoute = ApiOidcProvidersIndexRouteImport.update({
+  id: '/api/oidc-providers/',
+  path: '/api/oidc-providers/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUploadsFilenameRoute = ApiUploadsFilenameRouteImport.update({
   id: '/api/uploads/$filename',
   path: '/api/uploads/$filename',
@@ -140,6 +149,16 @@ const ApiProcessPlaylistRoute = ApiProcessPlaylistRouteImport.update({
 const ApiPlaylistsSplatRoute = ApiPlaylistsSplatRouteImport.update({
   id: '/api/playlists/$',
   path: '/api/playlists/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOidcProvidersAllRoute = ApiOidcProvidersAllRouteImport.update({
+  id: '/api/oidc-providers/all',
+  path: '/api/oidc-providers/all',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOidcProvidersIdRoute = ApiOidcProvidersIdRouteImport.update({
+  id: '/api/oidc-providers/$id',
+  path: '/api/oidc-providers/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAuthMeRoute = ApiAuthMeRouteImport.update({
@@ -174,6 +193,12 @@ const AuthenticatedSettingsPluginsRouteRoute =
   AuthenticatedSettingsPluginsRouteRouteImport.update({
     id: '/plugins',
     path: '/plugins',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsOidcProvidersRouteRoute =
+  AuthenticatedSettingsOidcProvidersRouteRouteImport.update({
+    id: '/oidc-providers',
+    path: '/oidc-providers',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
 const AuthenticatedAppPlaylistsRouteRoute =
@@ -288,17 +313,21 @@ export interface FileRoutesByFullPath {
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
+  '/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRoute
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/oidc-providers/$id': typeof ApiOidcProvidersIdRoute
+  '/api/oidc-providers/all': typeof ApiOidcProvidersAllRoute
   '/api/playlists/$': typeof ApiPlaylistsSplatRoute
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
+  '/api/oidc-providers': typeof ApiOidcProvidersIndexRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
   '/api/tokens': typeof ApiTokensIndexRoute
   '/api/videos': typeof ApiVideosIndexRoute
@@ -330,17 +359,21 @@ export interface FileRoutesByTo {
   '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
+  '/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRoute
   '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/oidc-providers/$id': typeof ApiOidcProvidersIdRoute
+  '/api/oidc-providers/all': typeof ApiOidcProvidersAllRoute
   '/api/playlists/$': typeof ApiPlaylistsSplatRoute
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
+  '/api/oidc-providers': typeof ApiOidcProvidersIndexRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
   '/api/tokens': typeof ApiTokensIndexRoute
   '/api/videos': typeof ApiVideosIndexRoute
@@ -374,17 +407,21 @@ export interface FileRoutesById {
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/_authenticated/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
+  '/_authenticated/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRoute
   '/_authenticated/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
   '/_authenticated/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
   '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
   '/_authenticated/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/me': typeof ApiAuthMeRoute
+  '/api/oidc-providers/$id': typeof ApiOidcProvidersIdRoute
+  '/api/oidc-providers/all': typeof ApiOidcProvidersAllRoute
   '/api/playlists/$': typeof ApiPlaylistsSplatRoute
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
+  '/api/oidc-providers/': typeof ApiOidcProvidersIndexRoute
   '/api/playlists/': typeof ApiPlaylistsIndexRoute
   '/api/tokens/': typeof ApiTokensIndexRoute
   '/api/videos/': typeof ApiVideosIndexRoute
@@ -419,17 +456,21 @@ export interface FileRouteTypes {
     | '/api/extension-token'
     | '/api/verify-token'
     | '/app/playlists'
+    | '/settings/oidc-providers'
     | '/settings/plugins'
     | '/settings/preferences'
     | '/settings/profile'
     | '/app/knuckles'
     | '/api/auth/$'
     | '/api/auth/me'
+    | '/api/oidc-providers/$id'
+    | '/api/oidc-providers/all'
     | '/api/playlists/$'
     | '/api/process/playlist'
     | '/api/process/video'
     | '/api/tokens/$'
     | '/api/uploads/$filename'
+    | '/api/oidc-providers'
     | '/api/playlists'
     | '/api/tokens'
     | '/api/videos'
@@ -461,17 +502,21 @@ export interface FileRouteTypes {
     | '/api/config'
     | '/api/extension-token'
     | '/api/verify-token'
+    | '/settings/oidc-providers'
     | '/settings/plugins'
     | '/settings/preferences'
     | '/settings/profile'
     | '/app/knuckles'
     | '/api/auth/$'
     | '/api/auth/me'
+    | '/api/oidc-providers/$id'
+    | '/api/oidc-providers/all'
     | '/api/playlists/$'
     | '/api/process/playlist'
     | '/api/process/video'
     | '/api/tokens/$'
     | '/api/uploads/$filename'
+    | '/api/oidc-providers'
     | '/api/playlists'
     | '/api/tokens'
     | '/api/videos'
@@ -504,17 +549,21 @@ export interface FileRouteTypes {
     | '/api/extension-token'
     | '/api/verify-token'
     | '/_authenticated/app/playlists'
+    | '/_authenticated/settings/oidc-providers'
     | '/_authenticated/settings/plugins'
     | '/_authenticated/settings/preferences'
     | '/_authenticated/settings/profile'
     | '/_authenticated/app/knuckles'
     | '/api/auth/$'
     | '/api/auth/me'
+    | '/api/oidc-providers/$id'
+    | '/api/oidc-providers/all'
     | '/api/playlists/$'
     | '/api/process/playlist'
     | '/api/process/video'
     | '/api/tokens/$'
     | '/api/uploads/$filename'
+    | '/api/oidc-providers/'
     | '/api/playlists/'
     | '/api/tokens/'
     | '/api/videos/'
@@ -548,11 +597,14 @@ export interface RootRouteChildren {
   ApiVerifyTokenRoute: typeof ApiVerifyTokenRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
+  ApiOidcProvidersIdRoute: typeof ApiOidcProvidersIdRoute
+  ApiOidcProvidersAllRoute: typeof ApiOidcProvidersAllRoute
   ApiPlaylistsSplatRoute: typeof ApiPlaylistsSplatRoute
   ApiProcessPlaylistRoute: typeof ApiProcessPlaylistRoute
   ApiProcessVideoRoute: typeof ApiProcessVideoRoute
   ApiTokensSplatRoute: typeof ApiTokensSplatRoute
   ApiUploadsFilenameRoute: typeof ApiUploadsFilenameRoute
+  ApiOidcProvidersIndexRoute: typeof ApiOidcProvidersIndexRoute
   ApiPlaylistsIndexRoute: typeof ApiPlaylistsIndexRoute
   ApiTokensIndexRoute: typeof ApiTokensIndexRoute
   ApiVideosIndexRoute: typeof ApiVideosIndexRoute
@@ -660,6 +712,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlaylistsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oidc-providers/': {
+      id: '/api/oidc-providers/'
+      path: '/api/oidc-providers'
+      fullPath: '/api/oidc-providers'
+      preLoaderRoute: typeof ApiOidcProvidersIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/uploads/$filename': {
       id: '/api/uploads/$filename'
       path: '/api/uploads/$filename'
@@ -693,6 +752,20 @@ declare module '@tanstack/react-router' {
       path: '/api/playlists/$'
       fullPath: '/api/playlists/$'
       preLoaderRoute: typeof ApiPlaylistsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/oidc-providers/all': {
+      id: '/api/oidc-providers/all'
+      path: '/api/oidc-providers/all'
+      fullPath: '/api/oidc-providers/all'
+      preLoaderRoute: typeof ApiOidcProvidersAllRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/oidc-providers/$id': {
+      id: '/api/oidc-providers/$id'
+      path: '/api/oidc-providers/$id'
+      fullPath: '/api/oidc-providers/$id'
+      preLoaderRoute: typeof ApiOidcProvidersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/auth/me': {
@@ -735,6 +808,13 @@ declare module '@tanstack/react-router' {
       path: '/plugins'
       fullPath: '/settings/plugins'
       preLoaderRoute: typeof AuthenticatedSettingsPluginsRouteRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/oidc-providers': {
+      id: '/_authenticated/settings/oidc-providers'
+      path: '/oidc-providers'
+      fullPath: '/settings/oidc-providers'
+      preLoaderRoute: typeof AuthenticatedSettingsOidcProvidersRouteRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
     '/_authenticated/app/playlists': {
@@ -917,6 +997,7 @@ const AuthenticatedAppRouteRouteWithChildren =
   )
 
 interface AuthenticatedSettingsRouteRouteChildren {
+  AuthenticatedSettingsOidcProvidersRouteRoute: typeof AuthenticatedSettingsOidcProvidersRouteRoute
   AuthenticatedSettingsPluginsRouteRoute: typeof AuthenticatedSettingsPluginsRouteRoute
   AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
   AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRoute
@@ -929,6 +1010,8 @@ interface AuthenticatedSettingsRouteRouteChildren {
 
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
+    AuthenticatedSettingsOidcProvidersRouteRoute:
+      AuthenticatedSettingsOidcProvidersRouteRoute,
     AuthenticatedSettingsPluginsRouteRoute:
       AuthenticatedSettingsPluginsRouteRoute,
     AuthenticatedSettingsPreferencesRouteRoute:
@@ -987,11 +1070,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVerifyTokenRoute: ApiVerifyTokenRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
+  ApiOidcProvidersIdRoute: ApiOidcProvidersIdRoute,
+  ApiOidcProvidersAllRoute: ApiOidcProvidersAllRoute,
   ApiPlaylistsSplatRoute: ApiPlaylistsSplatRoute,
   ApiProcessPlaylistRoute: ApiProcessPlaylistRoute,
   ApiProcessVideoRoute: ApiProcessVideoRoute,
   ApiTokensSplatRoute: ApiTokensSplatRoute,
   ApiUploadsFilenameRoute: ApiUploadsFilenameRoute,
+  ApiOidcProvidersIndexRoute: ApiOidcProvidersIndexRoute,
   ApiPlaylistsIndexRoute: ApiPlaylistsIndexRoute,
   ApiTokensIndexRoute: ApiTokensIndexRoute,
   ApiVideosIndexRoute: ApiVideosIndexRoute,

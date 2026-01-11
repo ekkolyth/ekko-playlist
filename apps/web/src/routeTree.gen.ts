@@ -39,6 +39,8 @@ import { Route as AuthenticatedSettingsEmailIndexRouteImport } from './routes/_a
 import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
 import { Route as AuthenticatedAppPlaylistsIndexRouteImport } from './routes/_authenticated/app/playlists/index'
 import { Route as AuthenticatedAppDashboardIndexRouteImport } from './routes/_authenticated/app/dashboard/index'
+import { Route as ApiUserProfileVerifyEmailRouteImport } from './routes/api/user/profile/verify-email'
+import { Route as ApiUserProfileSendVerificationRouteImport } from './routes/api/user/profile/send-verification'
 import { Route as ApiConfigSmtpTestRouteImport } from './routes/api/config/smtp/test'
 import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as ApiPlaylistsIdVideosIndexRouteImport } from './routes/api/playlists/$id/videos/index'
@@ -205,6 +207,18 @@ const AuthenticatedAppDashboardIndexRoute =
     path: '/dashboard/',
     getParentRoute: () => AuthenticatedAppRouteRoute,
   } as any)
+const ApiUserProfileVerifyEmailRoute =
+  ApiUserProfileVerifyEmailRouteImport.update({
+    id: '/api/user/profile/verify-email',
+    path: '/api/user/profile/verify-email',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiUserProfileSendVerificationRoute =
+  ApiUserProfileSendVerificationRouteImport.update({
+    id: '/api/user/profile/send-verification',
+    path: '/api/user/profile/send-verification',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiConfigSmtpTestRoute = ApiConfigSmtpTestRouteImport.update({
   id: '/smtp/test',
   path: '/smtp/test',
@@ -267,6 +281,8 @@ export interface FileRoutesByFullPath {
   '/auth/signup': typeof AuthSignupIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
+  '/api/user/profile/send-verification': typeof ApiUserProfileSendVerificationRoute
+  '/api/user/profile/verify-email': typeof ApiUserProfileVerifyEmailRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
@@ -302,6 +318,8 @@ export interface FileRoutesByTo {
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
+  '/api/user/profile/send-verification': typeof ApiUserProfileSendVerificationRoute
+  '/api/user/profile/verify-email': typeof ApiUserProfileVerifyEmailRoute
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
@@ -341,6 +359,8 @@ export interface FileRoutesById {
   '/auth/signup/': typeof AuthSignupIndexRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
+  '/api/user/profile/send-verification': typeof ApiUserProfileSendVerificationRoute
+  '/api/user/profile/verify-email': typeof ApiUserProfileVerifyEmailRoute
   '/_authenticated/app/dashboard/': typeof AuthenticatedAppDashboardIndexRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
@@ -380,6 +400,8 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/app/playlists/$name'
     | '/api/config/smtp/test'
+    | '/api/user/profile/send-verification'
+    | '/api/user/profile/verify-email'
     | '/app/dashboard'
     | '/app/playlists/'
     | '/settings/api-keys'
@@ -415,6 +437,8 @@ export interface FileRouteTypes {
     | '/auth/signin'
     | '/auth/signup'
     | '/api/config/smtp/test'
+    | '/api/user/profile/send-verification'
+    | '/api/user/profile/verify-email'
     | '/app/dashboard'
     | '/app/playlists'
     | '/settings/api-keys'
@@ -453,6 +477,8 @@ export interface FileRouteTypes {
     | '/auth/signup/'
     | '/_authenticated/app/playlists/$name'
     | '/api/config/smtp/test'
+    | '/api/user/profile/send-verification'
+    | '/api/user/profile/verify-email'
     | '/_authenticated/app/dashboard/'
     | '/_authenticated/app/playlists/'
     | '/_authenticated/settings/api-keys/'
@@ -483,6 +509,8 @@ export interface RootRouteChildren {
   ApiVideosIndexRoute: typeof ApiVideosIndexRoute
   AuthSigninIndexRoute: typeof AuthSigninIndexRoute
   AuthSignupIndexRoute: typeof AuthSignupIndexRoute
+  ApiUserProfileSendVerificationRoute: typeof ApiUserProfileSendVerificationRoute
+  ApiUserProfileVerifyEmailRoute: typeof ApiUserProfileVerifyEmailRoute
   ApiUserProfileIndexRoute: typeof ApiUserProfileIndexRoute
   ApiPlaylistsIdVideosVideoIdRoute: typeof ApiPlaylistsIdVideosVideoIdRoute
   ApiPlaylistsIdVideosBulkRoute: typeof ApiPlaylistsIdVideosBulkRoute
@@ -701,6 +729,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppDashboardIndexRouteImport
       parentRoute: typeof AuthenticatedAppRouteRoute
     }
+    '/api/user/profile/verify-email': {
+      id: '/api/user/profile/verify-email'
+      path: '/api/user/profile/verify-email'
+      fullPath: '/api/user/profile/verify-email'
+      preLoaderRoute: typeof ApiUserProfileVerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/user/profile/send-verification': {
+      id: '/api/user/profile/send-verification'
+      path: '/api/user/profile/send-verification'
+      fullPath: '/api/user/profile/send-verification'
+      preLoaderRoute: typeof ApiUserProfileSendVerificationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/config/smtp/test': {
       id: '/api/config/smtp/test'
       path: '/smtp/test'
@@ -868,6 +910,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVideosIndexRoute: ApiVideosIndexRoute,
   AuthSigninIndexRoute: AuthSigninIndexRoute,
   AuthSignupIndexRoute: AuthSignupIndexRoute,
+  ApiUserProfileSendVerificationRoute: ApiUserProfileSendVerificationRoute,
+  ApiUserProfileVerifyEmailRoute: ApiUserProfileVerifyEmailRoute,
   ApiUserProfileIndexRoute: ApiUserProfileIndexRoute,
   ApiPlaylistsIdVideosVideoIdRoute: ApiPlaylistsIdVideosVideoIdRoute,
   ApiPlaylistsIdVideosBulkRoute: ApiPlaylistsIdVideosBulkRoute,

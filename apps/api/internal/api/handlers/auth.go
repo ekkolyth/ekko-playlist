@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -17,16 +18,26 @@ import (
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/httpx"
 	"github.com/ekkolyth/ekko-playlist/api/internal/api/upload"
 	"github.com/ekkolyth/ekko-playlist/api/internal/db"
+	"github.com/ekkolyth/ekko-playlist/api/internal/email"
 	"github.com/ekkolyth/ekko-playlist/api/internal/logging"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type AuthHandler struct {
-	dbService *db.Service
+	dbService   *db.Service
+	emailService *email.Service
 }
 
 func NewAuthHandler(dbService *db.Service) *AuthHandler {
+	// Initialize email service from environment variables
+	emailService, err := email.NewService()
+	if err != nil {
+		logging.Info("Warning: Email service not available: %v", err)
+		// Continue without email service - handlers will check for nil
+	}
 	return &AuthHandler{
-		dbService: dbService,
+		dbService:   dbService,
+		emailService: emailService,
 	}
 }
 
@@ -464,6 +475,208 @@ func (h *AuthHandler) UpdateUserProfile(w http.ResponseWriter, r *http.Request) 
 	}
 
 	logging.Info("User profile updated successfully for user %s", userID)
+	httpx.RespondJSON(w, http.StatusOK, UserProfileResponse{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+		Image: user.Image,
+	})
+}
+
+type SendEmailVerificationRequest struct {
+	Email string `json:"email"`
+}
+
+type VerifyEmailUpdateRequest struct {
+	Email string `json:"email"`
+	Code  string `json:"code"`
+}
+
+// SendEmailVerification handles POST /api/user/profile/send-verification
+// Sends a 6-digit OTP code to the specified email address
+func (h *AuthHandler) SendEmailVerification(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(ctx)
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	var req SendEmailVerificationRequest
+	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+		httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// Validate email format
+	if req.Email == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "email is required")
+		return
+	}
+
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(req.Email) {
+		httpx.RespondError(w, http.StatusBadRequest, "invalid email format")
+		return
+	}
+
+	// Check if email service is available
+	if h.emailService == nil {
+		httpx.RespondError(w, http.StatusInternalServerError, "email service not configured")
+		return
+	}
+
+	// Check if user already has an unexpired verification code (rate limiting)
+	// Use email as identifier for email change verification
+	existingVerification, err := h.dbService.Queries.GetVerificationByIdentifier(ctx, req.Email)
+	if err == nil && existingVerification != nil {
+		// Check if it's still valid (not expired)
+		if existingVerification.ExpiresAt.Valid && existingVerification.ExpiresAt.Time.After(time.Now()) {
+			logging.Info("Verification code already sent recently for %s", req.Email)
+			httpx.RespondError(w, http.StatusTooManyRequests, "verification code already sent. please check your email or wait before requesting another")
+			return
+		}
+	}
+
+	// Generate 6-digit OTP code using crypto/rand for security
+	// Read 3 bytes and convert to a number between 0 and 999999
+	otpBytes := make([]byte, 3)
+	if _, err := rand.Read(otpBytes); err != nil {
+		logging.Info("Error generating OTP code: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to generate verification code")
+		return
+	}
+	// Combine bytes into a number and ensure it's in the 0-999999 range
+	otpNum := (int(otpBytes[0])<<16 | int(otpBytes[1])<<8 | int(otpBytes[2])) % 1000000
+	otpCode := fmt.Sprintf("%06d", otpNum)
+
+	// Set expiration to 10 minutes from now
+	expiresAt := time.Now().Add(10 * time.Minute)
+	expiresAtPg := pgtype.Timestamptz{
+		Time:  expiresAt,
+		Valid: true,
+	}
+
+	// Create verification record in Better Auth's verification table
+	// identifier = email address (for email change verification)
+	_, err = h.dbService.Queries.CreateVerification(ctx, &db.CreateVerificationParams{
+		Identifier: req.Email,
+		Value:      otpCode,
+		ExpiresAt:  expiresAtPg,
+	})
+	if err != nil {
+		logging.Info("Error creating verification record: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to create verification record")
+		return
+	}
+
+	// Send OTP email
+	if err := h.emailService.SendOTPEmail(req.Email, otpCode); err != nil {
+		logging.Info("Error sending OTP email: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to send verification email")
+		return
+	}
+
+	logging.Info("OTP verification email sent to %s for user %s", req.Email, userID)
+	httpx.RespondJSON(w, http.StatusOK, map[string]string{
+		"message": "verification code sent successfully",
+	})
+}
+
+// VerifyEmailUpdate handles POST /api/user/profile/verify-email
+// Verifies the OTP code and updates the user's email address
+func (h *AuthHandler) VerifyEmailUpdate(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get user ID from context (set by auth middleware)
+	userID, ok := auth.GetUserID(ctx)
+	if !ok {
+		httpx.RespondError(w, http.StatusUnauthorized, "User ID not found in context")
+		return
+	}
+
+	var req VerifyEmailUpdateRequest
+	if err := httpx.DecodeJSON(w, r, &req, 1<<20); err != nil {
+		httpx.RespondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if req.Email == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "email is required")
+		return
+	}
+
+	if req.Code == "" {
+		httpx.RespondError(w, http.StatusBadRequest, "code is required")
+		return
+	}
+
+	// Validate email format
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`)
+	if !emailRegex.MatchString(req.Email) {
+		httpx.RespondError(w, http.StatusBadRequest, "invalid email format")
+		return
+	}
+
+	// Validate OTP code format (6 digits)
+	if len(req.Code) != 6 {
+		httpx.RespondError(w, http.StatusBadRequest, "code must be 6 digits")
+		return
+	}
+
+	// Get verification record by identifier (email) and value (OTP code)
+	verification, err := h.dbService.Queries.GetVerificationByIdentifier(ctx, req.Email)
+	if err != nil || verification == nil {
+		logging.Info("Invalid or expired verification code for email %s", req.Email)
+		httpx.RespondError(w, http.StatusBadRequest, "invalid or expired verification code")
+		return
+	}
+
+	// Verify the OTP code matches
+	if verification.Value != req.Code {
+		logging.Info("Invalid OTP code for email %s", req.Email)
+		httpx.RespondError(w, http.StatusBadRequest, "invalid verification code")
+		return
+	}
+
+	// Get current user
+	currentUser, err := h.dbService.Queries.GetUserByID(ctx, userID)
+	if err != nil {
+		logging.Info("Error fetching user: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to fetch user")
+		return
+	}
+
+	// Update user's email address
+	err = h.dbService.Queries.UpdateUserProfile(ctx, &db.UpdateUserProfileParams{
+		Name:  currentUser.Name,
+		Email: req.Email,
+		Image: currentUser.Image,
+		ID:    userID,
+	})
+	if err != nil {
+		logging.Info("Error updating user email: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to update email")
+		return
+	}
+
+	// Delete verification code after successful verification
+	if err := h.dbService.Queries.DeleteVerification(ctx, req.Code); err != nil {
+		logging.Info("Error deleting verification code: %v", err)
+		// Don't fail the request if deletion fails - verification was successful
+	}
+
+	// Fetch updated user to return
+	user, err := h.dbService.Queries.GetUserByID(ctx, userID)
+	if err != nil {
+		logging.Info("Error fetching updated user profile: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "Email updated but failed to fetch updated data")
+		return
+	}
+
+	logging.Info("Email updated successfully for user %s to %s", userID, req.Email)
 	httpx.RespondJSON(w, http.StatusOK, UserProfileResponse{
 		ID:    user.ID,
 		Name:  user.Name,

@@ -23,8 +23,11 @@ import {
 import {
   getUserProfile,
   updateUserProfile,
+  verifyEmailUpdate,
   type UserProfile,
 } from "@/lib/api-client";
+import { sendEmailVerification } from "@/lib/auth-client";
+import { EmailVerificationDialog } from "@/components/email-verification-dialog";
 import { toast } from "sonner";
 import { Loader2, Upload, User } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -48,6 +51,8 @@ function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   // Fetch user profile
   const { data: profile, isLoading: isLoadingProfile } = useQuery({
@@ -155,11 +160,75 @@ function ProfilePage() {
       },
     },
     onSubmit: async ({ value }) => {
+      // Check if email has changed
+      const emailChanged = profile && value.email !== profile.email;
+      
+      if (emailChanged) {
+        // Store pending email and trigger verification flow
+        setPendingEmail(value.email);
+        
+        try {
+          // Send verification email
+          await sendEmailVerification(value.email);
+          // Open OTP dialog
+          setOtpDialogOpen(true);
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Failed to send verification email"
+          );
+        }
+        // Don't update profile yet - wait for OTP verification
+        return;
+      }
+      
+      // If email hasn't changed, proceed with normal update
       updateMutation.mutate(value);
     },
   });
 
   // Handle image file upload - uploads immediately
+  // Handle OTP verification
+  const handleVerifyOTP = async (code: string) => {
+    if (!pendingEmail) {
+      throw new Error("No pending email to verify");
+    }
+
+    try {
+      // Verify OTP and update email
+      const updatedProfile = await verifyEmailUpdate(pendingEmail, code);
+      
+      // Update the form with the new email
+      form.setFieldValue("email", updatedProfile.email);
+      
+      // Update query cache
+      queryClient.setQueryData(["user-profile"], updatedProfile);
+      await queryClient.invalidateQueries({ 
+        queryKey: ["user-profile"],
+        refetchType: "active",
+      });
+      
+      // Close dialog and reset state
+      setOtpDialogOpen(false);
+      setPendingEmail(null);
+      
+      toast.success("Email verified and updated successfully");
+    } catch (error) {
+      throw error; // Re-throw to let dialog handle the error
+    }
+  };
+
+  // Handle resend verification email
+  const handleResendOTP = async () => {
+    if (!pendingEmail) {
+      throw new Error("No pending email to resend");
+    }
+
+    await sendEmailVerification(pendingEmail);
+    toast.success("Verification code resent successfully");
+  };
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -363,6 +432,17 @@ function ProfilePage() {
             </form>
           </CardContent>
         </Card>
+
+        {/* Email Verification OTP Dialog */}
+        {pendingEmail && (
+          <EmailVerificationDialog
+            open={otpDialogOpen}
+            onOpenChange={setOtpDialogOpen}
+            email={pendingEmail}
+            onVerify={handleVerifyOTP}
+            onResend={handleResendOTP}
+          />
+        )}
       </div>
     </div>
   );

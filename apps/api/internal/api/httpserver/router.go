@@ -105,6 +105,8 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 		user.Route("/profile", func(profile chi.Router) {
 			profile.Get("/", authHandler.GetUserProfile)
 			profile.Put("/", authHandler.UpdateUserProfile)
+			profile.Post("/send-verification", authHandler.SendEmailVerification)
+			profile.Post("/verify-email", authHandler.VerifyEmailUpdate)
 		})
 	})
 

@@ -53,3 +53,44 @@ export function getBearerToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(BEARER_TOKEN_KEY);
 }
+
+/**
+ * Send email verification OTP code to the specified email address
+ * @param email - The email address to send the verification code to
+ */
+export async function sendEmailVerification(email: string): Promise<void> {
+  const response = await fetch('/api/user/profile/send-verification', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to send verification email' }));
+    throw new Error(error.message || 'Failed to send verification email');
+  }
+}
+
+/**
+ * Verify email OTP code
+ * @param email - The email address being verified
+ * @param code - The 6-digit OTP code
+ */
+export async function verifyEmailCode(email: string, code: string): Promise<void> {
+  const response = await fetch('/api/user/profile/verify-email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email, code }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Failed to verify email code' }));
+    throw new Error(error.message || 'Failed to verify email code');
+  }
+}

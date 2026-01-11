@@ -207,3 +207,60 @@ This verification link will expire in 24 hours.
 	return nil
 }
 
+// SendOTPEmail sends an OTP verification code email to the specified address
+func (s *Service) SendOTPEmail(email, otpCode string) error {
+	m := gomail.NewMessage()
+	m.SetHeader("From", m.FormatAddress(s.fromEmail, s.fromName))
+	m.SetHeader("To", email)
+	m.SetHeader("Subject", "Your email verification code")
+
+	// HTML email body with OTP code
+	htmlBody := fmt.Sprintf(`
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Email Verification Code</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+	<div style="background-color: #ffffff; border-radius: 8px; padding: 40px 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+		<h1 style="color: #000000; margin-top: 0;">Email Verification Code</h1>
+		<p>You requested to change your email address. Please use the following verification code to complete the process:</p>
+		<div style="text-align: center; margin: 30px 0;">
+			<div style="background-color: #f5f5f5; border: 2px solid #000000; border-radius: 8px; padding: 20px; display: inline-block;">
+				<div style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #000000; font-family: monospace;">%s</div>
+			</div>
+		</div>
+		<p style="color: #666; font-size: 14px;">Enter this code in the verification dialog to verify your new email address.</p>
+		<p style="color: #999; font-size: 12px; margin-top: 30px; border-top: 1px solid #eee; padding-top: 20px;">This code will expire in 10 minutes. If you didn't request this change, please ignore this email.</p>
+	</div>
+</body>
+</html>
+`, otpCode)
+
+	// Plain text fallback
+	textBody := fmt.Sprintf(`
+Email Verification Code
+
+You requested to change your email address. Please use the following verification code to complete the process:
+
+%s
+
+Enter this code in the verification dialog to verify your new email address.
+
+This code will expire in 10 minutes. If you didn't request this change, please ignore this email.
+`, otpCode)
+
+	m.SetBody("text/plain", textBody)
+	m.AddAlternative("text/html", htmlBody)
+
+	if err := s.dialer.DialAndSend(m); err != nil {
+		logging.Error(fmt.Sprintf("Failed to send OTP email: %v", err))
+		return fmt.Errorf("failed to send OTP email: %w", err)
+	}
+
+	logging.Info("OTP email sent successfully to %s", email)
+	return nil
+}
+

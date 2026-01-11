@@ -342,3 +342,26 @@ export async function updateUserProfile(
     body: JSON.stringify(profile),
   });
 }
+
+export interface VerifyEmailUpdateRequest {
+  email: string;
+  code: string;
+}
+
+/**
+ * Verify email update with OTP code
+ * @param email - The new email address to verify
+ * @param code - The 6-digit OTP code
+ */
+export async function verifyEmailUpdate(
+  email: string,
+  code: string,
+): Promise<UserProfile> {
+  return apiRequest<UserProfile>("/api/user/profile/verify-email", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, code }),
+  });
+}

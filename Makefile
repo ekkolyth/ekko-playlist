@@ -1,4 +1,4 @@
-.PHONY: build build/api build/ext build/web dev install install/go db/up db/down db/migrate db/status db/reset db/create db/drop docker/build docker/tag docker/push
+.PHONY: build build/api build/ext build/web dev install install/go db/up db/down db/migrate db/status db/reset db/create db/drop db/gen docker/build docker/tag docker/push
 
 # Docker configuration
 IMAGE_NAME ?= ekkolyth/ekko-playlist
@@ -148,6 +148,13 @@ db/drop: check-db-url
 	else \
 		echo "Cancelled."; \
 	fi
+
+# Generate Go code from SQL queries using sqlc
+db/gen:
+	@which sqlc > /dev/null || (echo "❌ sqlc is not installed. Run 'make install/go' to install all Go dependencies and tools." && exit 1)
+	@echo "Generating Go code from SQL queries..."
+	@cd apps/api/internal/db && sqlc generate
+	@echo "✅ Go code generated successfully"
 
 # ==========================================================
 # Docker

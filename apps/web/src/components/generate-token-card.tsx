@@ -12,6 +12,7 @@ import {
   FieldError,
 } from '@/components/ui/field';
 import { authClient } from '@/lib/auth-client';
+import { useTokens } from '@/hooks/use-tokens';
 import { Copy, Check, RefreshCw } from 'lucide-react';
 
 interface GenerateTokenCardProps {
@@ -27,6 +28,7 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
   const [newToken, setNewToken] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { createMutation } = useTokens();
 
   const form = useForm({
     defaultValues: {
@@ -63,40 +65,33 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
 
         const token = result.data.token;
 
-        // Save the token to the API with a name
-        try {
-          const res = await fetch('/api/tokens', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
+        // Save the token to the API with a name using mutation
+        createMutation.mutate(
+          {
+            name: value.tokenName.trim(),
+            token: token,
+          },
+          {
+            onSuccess: () => {
+              // Show the token once so user can copy it
+              form.setFieldValue('tokenName', '');
+              setNewToken(token);
+              setError('');
+              // Notify parent (if callback provided, though query invalidation handles refresh)
+              onTokenGenerated?.();
             },
-            credentials: 'include',
-            body: JSON.stringify({
-              name: value.tokenName.trim(),
-              token: token,
-            }),
-          });
-          if (!res.ok) {
-            const error = await res.json().catch(() => ({ message: res.statusText }));
-            throw new Error(error.message || 'Failed to create token');
+            onError: (err) => {
+              // If saving fails, still show the token so user can copy it
+              console.error('Error saving token to API:', err);
+              setNewToken(token);
+              form.setFieldValue('tokenName', '');
+              setError(
+                `Token generated but failed to save: ${err instanceof Error ? err.message : 'Unknown error'}. The token is shown below - copy it now.`
+              );
+              // Error toast is also handled by the mutation's onError in useTokens
+            },
           }
-
-          // Show the token once so user can copy it
-          form.setFieldValue('tokenName', '');
-          setNewToken(token);
-          setError('');
-
-          // Notify parent to reload tokens list
-          onTokenGenerated?.();
-        } catch (saveErr) {
-          // If saving fails, still show the token so user can copy it
-          console.error('Error saving token to API:', saveErr);
-          setNewToken(token);
-          form.setFieldValue('tokenName', '');
-          setError(
-            `Token generated but failed to save: ${saveErr instanceof Error ? saveErr.message : 'Unknown error'}. The token is shown below - copy it now.`
-          );
-        }
+        );
       } catch (err) {
         console.error('Error generating token:', err);
         const errorMessage = err instanceof Error ? err.message : 'Failed to generate token';
@@ -182,10 +177,14 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
                   </Field>
                   <Button
                     type='submit'
-                    disabled={form.state.isSubmitting || !field.state.value?.trim()}
+                    disabled={
+                      form.state.isSubmitting ||
+                      createMutation.isPending ||
+                      !field.state.value?.trim()
+                    }
                     className='w-full mt-4'
                   >
-                    {form.state.isSubmitting ? (
+                    {form.state.isSubmitting || createMutation.isPending ? (
                       <>
                         <RefreshCw className='mr-2 h-4 w-4 animate-spin' />
                         Generating...

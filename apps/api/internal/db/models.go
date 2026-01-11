@@ -73,6 +73,15 @@ type Session struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type Tag struct {
+	ID        int64              `json:"id"`
+	UserID    string             `json:"user_id"`
+	Name      string             `json:"name"`
+	Color     string             `json:"color"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type User struct {
 	ID            string             `json:"id"`
 	Name          *string            `json:"name"`
@@ -81,6 +90,13 @@ type User struct {
 	Image         *string            `json:"image"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+}
+
+type UserPreference struct {
+	UserID       string             `json:"user_id"`
+	PrimaryColor string             `json:"primary_color"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Verification struct {
@@ -101,4 +117,10 @@ type Video struct {
 	Channel       string             `json:"channel"`
 	UserID        string             `json:"user_id"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
+type VideoTag struct {
+	VideoID   int64              `json:"video_id"`
+	TagID     int64              `json:"tag_id"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
 }

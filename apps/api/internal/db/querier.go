@@ -11,21 +11,25 @@ import (
 )
 
 type Querier interface {
+	AddVideoTags(ctx context.Context, arg *AddVideoTagsParams) error
 	AddVideoToPlaylist(ctx context.Context, arg *AddVideoToPlaylistParams) (*PlaylistVideo, error)
 	AddVideoToPlaylistByName(ctx context.Context, arg *AddVideoToPlaylistByNameParams) error
 	CleanExpiredSessions(ctx context.Context) error
 	CreateAPIToken(ctx context.Context, arg *CreateAPITokenParams) (*ApiToken, error)
 	CreatePlaylist(ctx context.Context, arg *CreatePlaylistParams) (*Playlist, error)
 	CreateSession(ctx context.Context, arg *CreateSessionParams) (*Session, error)
+	CreateTag(ctx context.Context, arg *CreateTagParams) (*Tag, error)
 	CreateVerification(ctx context.Context, arg *CreateVerificationParams) (*Verification, error)
 	CreateVideo(ctx context.Context, arg *CreateVideoParams) (*Video, error)
 	DeleteAPIToken(ctx context.Context, arg *DeleteAPITokenParams) error
 	DeletePlaylist(ctx context.Context, arg *DeletePlaylistParams) error
 	DeleteSession(ctx context.Context, token string) error
+	DeleteTag(ctx context.Context, arg *DeleteTagParams) error
 	DeleteUserSessions(ctx context.Context, userID string) error
 	DeleteVerification(ctx context.Context, value string) error
 	DeleteVideo(ctx context.Context, arg *DeleteVideoParams) error
 	DeleteVideos(ctx context.Context, arg *DeleteVideosParams) error
+	FilterVideosByTags(ctx context.Context, arg *FilterVideosByTagsParams) ([]*Video, error)
 	GetAPITokenByHash(ctx context.Context, tokenHash string) (*GetAPITokenByHashRow, error)
 	GetConfig(ctx context.Context, key string) (*Config, error)
 	GetPlaylistByName(ctx context.Context, arg *GetPlaylistByNameParams) (*Playlist, error)
@@ -33,26 +37,37 @@ type Querier interface {
 	GetPlaylistVideoCount(ctx context.Context, arg *GetPlaylistVideoCountParams) (int64, error)
 	GetPlaylistVideos(ctx context.Context, arg *GetPlaylistVideosParams) ([]*GetPlaylistVideosRow, error)
 	GetSessionByToken(ctx context.Context, token string) (*GetSessionByTokenRow, error)
+	GetTagByID(ctx context.Context, arg *GetTagByIDParams) (*Tag, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	GetUserByID(ctx context.Context, id string) (*User, error)
 	GetUserByVerificationToken(ctx context.Context, value string) (*User, error)
+	GetUserPreferences(ctx context.Context, userID string) (*UserPreference, error)
 	GetVerificationByIdentifier(ctx context.Context, identifier string) (*Verification, error)
 	GetVerificationByValue(ctx context.Context, value string) (*Verification, error)
 	GetVideoByID(ctx context.Context, id int64) (*Video, error)
 	GetVideoByURL(ctx context.Context, normalizedUrl string) (*Video, error)
+	GetVideoTags(ctx context.Context, videoID int64) ([]*Tag, error)
+	GetVideoTagsForVideos(ctx context.Context, dollar_1 []int64) ([]*GetVideoTagsForVideosRow, error)
 	ListAPITokensByUser(ctx context.Context, userID string) ([]*ListAPITokensByUserRow, error)
 	ListConfigs(ctx context.Context) ([]*Config, error)
 	ListPlaylistsByUser(ctx context.Context, userID string) ([]*Playlist, error)
 	ListRecentVerifications(ctx context.Context) ([]*Verification, error)
+	ListTags(ctx context.Context, userID string) ([]*Tag, error)
 	ListVideos(ctx context.Context, userID string) ([]*Video, error)
 	ListVideosFiltered(ctx context.Context, arg *ListVideosFilteredParams) ([]*Video, error)
+	ListVideosUnassigned(ctx context.Context, userID string) ([]*Video, error)
+	ListVideosUnassignedFiltered(ctx context.Context, arg *ListVideosUnassignedFilteredParams) ([]*Video, error)
+	ListVideosWithTags(ctx context.Context, userID string) ([]*ListVideosWithTagsRow, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg *RemoveVideoFromPlaylistParams) error
+	RemoveVideoTags(ctx context.Context, arg *RemoveVideoTagsParams) error
 	UpdateAPITokenLastUsed(ctx context.Context, id pgtype.UUID) error
 	UpdateAPITokenName(ctx context.Context, arg *UpdateAPITokenNameParams) error
 	UpdatePlaylistByName(ctx context.Context, arg *UpdatePlaylistByNameParams) (*Playlist, error)
+	UpdateTag(ctx context.Context, arg *UpdateTagParams) (*Tag, error)
 	UpdateUserEmailVerified(ctx context.Context, id string) error
 	UpdateUserProfile(ctx context.Context, arg *UpdateUserProfileParams) error
 	UpsertConfig(ctx context.Context, arg *UpsertConfigParams) (*Config, error)
+	UpsertUserPreferences(ctx context.Context, arg *UpsertUserPreferencesParams) (*UserPreference, error)
 }
 
 var _ Querier = (*Queries)(nil)

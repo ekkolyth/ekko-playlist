@@ -22,15 +22,22 @@ func NewVideosHandler(dbService *db.Service) *VideosHandler {
 	}
 }
 
+type TagInfo struct {
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Color string `json:"color"`
+}
+
 type VideoResponse struct {
-	ID            int64  `json:"id"`
-	VideoID       string `json:"videoId"`
-	NormalizedURL string `json:"normalizedUrl"`
-	OriginalURL   string `json:"originalUrl"`
-	Title         string `json:"title"`
-	Channel       string `json:"channel"`
-	UserID        string `json:"userId"`
-	CreatedAt     string `json:"createdAt"`
+	ID            int64     `json:"id"`
+	VideoID       string    `json:"videoId"`
+	NormalizedURL string    `json:"normalizedUrl"`
+	OriginalURL   string    `json:"originalUrl"`
+	Title         string    `json:"title"`
+	Channel       string    `json:"channel"`
+	UserID        string    `json:"userId"`
+	CreatedAt     string    `json:"createdAt"`
+	Tags          []TagInfo `json:"tags"`
 }
 
 type ListVideosResponse struct {
@@ -40,6 +47,7 @@ type ListVideosResponse struct {
 // List handles GET /api/videos
 // Returns a list of videos for the authenticated user
 // Supports optional "channels" query parameter for filtering (comma-separated or array format)
+// Supports optional "unassigned" query parameter to filter videos not in any playlist
 func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
@@ -88,23 +96,64 @@ func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Parse unassigned filter from query parameters
+	unassignedParam := r.URL.Query().Get("unassigned")
+	showUnassigned := unassignedParam == "true"
+
 	var videos []*db.Video
 	var err error
 
-	// Use filtered query if channels are provided, otherwise use regular query
-	if len(channels) > 0 {
-		videos, err = h.dbService.Queries.ListVideosFiltered(ctx, &db.ListVideosFilteredParams{
-			UserID:  userID,
-			Column2: channels,
-		})
+	// Use appropriate query based on filters
+	if showUnassigned {
+		if len(channels) > 0 {
+			// Unassigned videos with channel filter
+			videos, err = h.dbService.Queries.ListVideosUnassignedFiltered(ctx, &db.ListVideosUnassignedFilteredParams{
+				UserID:  userID,
+				Column2: channels,
+			})
+		} else {
+			// Unassigned videos without channel filter
+			videos, err = h.dbService.Queries.ListVideosUnassigned(ctx, userID)
+		}
 	} else {
-		videos, err = h.dbService.Queries.ListVideos(ctx, userID)
+		if len(channels) > 0 {
+			// Regular videos with channel filter
+			videos, err = h.dbService.Queries.ListVideosFiltered(ctx, &db.ListVideosFilteredParams{
+				UserID:  userID,
+				Column2: channels,
+			})
+		} else {
+			// Regular videos without channel filter
+			videos, err = h.dbService.Queries.ListVideos(ctx, userID)
+		}
 	}
 
 	if err != nil {
 		logging.Info("Error listing videos: %s", err.Error())
 		httpx.RespondError(w, http.StatusInternalServerError, "Failed to fetch videos")
 		return
+	}
+
+	// Get video IDs
+	videoIDs := make([]int64, len(videos))
+	for i, video := range videos {
+		videoIDs[i] = video.ID
+	}
+
+	// Fetch tags for all videos
+	var videoTags []*db.GetVideoTagsForVideosRow
+	if len(videoIDs) > 0 {
+		videoTags, _ = h.dbService.Queries.GetVideoTagsForVideos(ctx, videoIDs)
+	}
+
+	// Group tags by video_id
+	tagsByVideoID := make(map[int64][]TagInfo)
+	for _, vt := range videoTags {
+		tagsByVideoID[vt.VideoID] = append(tagsByVideoID[vt.VideoID], TagInfo{
+			ID:    vt.TagID,
+			Name:  vt.TagName,
+			Color: vt.TagColor,
+		})
 	}
 
 	response := ListVideosResponse{
@@ -117,6 +166,11 @@ func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 			createdAt = video.CreatedAt.Time.Format(time.RFC3339)
 		}
 
+		tags := tagsByVideoID[video.ID]
+		if tags == nil {
+			tags = []TagInfo{}
+		}
+
 		response.Videos = append(response.Videos, VideoResponse{
 			ID:            video.ID,
 			VideoID:       video.VideoID,
@@ -126,6 +180,7 @@ func (h *VideosHandler) List(w http.ResponseWriter, r *http.Request) {
 			Channel:       video.Channel,
 			UserID:        video.UserID,
 			CreatedAt:     createdAt,
+			Tags:          tags,
 		})
 	}
 

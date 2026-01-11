@@ -155,6 +155,26 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 			playlistVideos.Post("/", playlistVideosHandler.AddVideo)
 			playlistVideos.Delete("/{videoId}", playlistVideosHandler.RemoveVideo)
 		})
+
+		// Tags routes - require authentication
+		tagsHandler := handlers.NewTagsHandler(dbService)
+		api.Route("/tags", func(tags chi.Router) {
+			tags.Use(authMiddleware)
+			tags.Post("/", tagsHandler.Create)
+			tags.Get("/", tagsHandler.List)
+			tags.Patch("/{id}", tagsHandler.Update)
+			tags.Delete("/{id}", tagsHandler.Delete)
+			tags.Post("/assign", tagsHandler.AssignTags)
+			tags.Delete("/unassign", tagsHandler.UnassignTags)
+		})
+
+		// Preferences routes - require authentication
+		preferencesHandler := handlers.NewUserPreferencesHandler(dbService)
+		api.Route("/preferences", func(preferences chi.Router) {
+			preferences.Use(authMiddleware)
+			preferences.Get("/", preferencesHandler.Get)
+			preferences.Patch("/", preferencesHandler.Update)
+		})
 	})
 
 	return router

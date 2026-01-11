@@ -8,12 +8,25 @@ import { VideoCollection } from "../-components/video-collection";
 
 async function fetchVideos(
   selectedChannels?: string[],
+  showUnassigned?: boolean,
 ): Promise<VideosResponse> {
   let url = "/api/videos";
+  const params = new URLSearchParams();
+  
   if (selectedChannels && selectedChannels.length > 0) {
     const channelsParam = selectedChannels.map(encodeURIComponent).join(",");
-    url += `?channels=${channelsParam}`;
+    params.append("channels", channelsParam);
   }
+  
+  if (showUnassigned) {
+    params.append("unassigned", "true");
+  }
+  
+  const queryString = params.toString();
+  if (queryString) {
+    url += `?${queryString}`;
+  }
+  
   const res = await fetch(url, { credentials: "include" });
   if (!res.ok) {
     const error = await res.json().catch(() => ({ message: res.statusText }));
@@ -47,6 +60,7 @@ export const Route = createFileRoute("/_authenticated/app/dashboard/")({
 function DashboardPage() {
   const { user } = useAuth();
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+  const [showUnassigned, setShowUnassigned] = useState<boolean>(false);
   const [selectModeActions, setSelectModeActions] =
     useState<React.ReactNode>(null);
 
@@ -76,8 +90,8 @@ function DashboardPage() {
 
   // Fetch filtered videos
   const { data, isLoading, error } = useQuery({
-    queryKey: ["videos", selectedChannels],
-    queryFn: () => fetchVideos(selectedChannels),
+    queryKey: ["videos", selectedChannels, showUnassigned],
+    queryFn: () => fetchVideos(selectedChannels, showUnassigned),
   });
 
   return (
@@ -93,13 +107,13 @@ function DashboardPage() {
             </div>
             <div className="flex items-center gap-2">
               {selectModeActions}
-              {availableChannels.length > 0 && (
-                <ChannelFilter
-                  channels={availableChannels}
-                  selectedChannels={selectedChannels}
-                  onSelectionChange={setSelectedChannels}
-                />
-              )}
+              <ChannelFilter
+                channels={availableChannels}
+                selectedChannels={selectedChannels}
+                onSelectionChange={setSelectedChannels}
+                showUnassigned={showUnassigned}
+                onUnassignedChange={setShowUnassigned}
+              />
             </div>
           </div>
         </div>
@@ -109,13 +123,13 @@ function DashboardPage() {
           isLoading={isLoading}
           error={error}
           emptyTitle={
-            selectedChannels.length > 0
+            selectedChannels.length > 0 || showUnassigned
               ? "No videos match your filters"
               : "No videos yet"
           }
           emptyDescription={
-            selectedChannels.length > 0
-              ? "Try adjusting your channel filters to see more videos."
+            selectedChannels.length > 0 || showUnassigned
+              ? "Try adjusting your filters to see more videos."
               : "Your playlist is empty. Start adding YouTube videos to build your collection!"
           }
           showChannelFilter={false}

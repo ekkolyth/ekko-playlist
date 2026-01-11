@@ -199,3 +199,83 @@ func (q *Queries) ListVideosFiltered(ctx context.Context, arg *ListVideosFiltere
 	}
 	return items, nil
 }
+
+const ListVideosUnassigned = `-- name: ListVideosUnassigned :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListVideosUnassigned(ctx context.Context, userID string) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosUnassigned, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const ListVideosUnassignedFiltered = `-- name: ListVideosUnassignedFiltered :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+ORDER BY created_at DESC
+`
+
+type ListVideosUnassignedFilteredParams struct {
+	UserID  string   `json:"user_id"`
+	Column2 []string `json:"column_2"`
+}
+
+func (q *Queries) ListVideosUnassignedFiltered(ctx context.Context, arg *ListVideosUnassignedFilteredParams) ([]*Video, error) {
+	rows, err := q.db.Query(ctx, ListVideosUnassignedFiltered, arg.UserID, arg.Column2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*Video{}
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.VideoID,
+			&i.NormalizedUrl,
+			&i.OriginalUrl,
+			&i.Title,
+			&i.Channel,
+			&i.UserID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

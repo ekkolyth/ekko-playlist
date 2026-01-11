@@ -20,6 +20,7 @@ export interface Video {
   channel: string;
   userId: string;
   createdAt: string;
+  tags?: TagInfo[];
 }
 
 export interface VideosResponse {
@@ -67,4 +68,57 @@ export interface UpdateUserProfileRequest {
 export interface VerifyEmailUpdateRequest {
   email: string;
   code: string;
+}
+
+// Tag types
+export interface Tag {
+  id: number;
+  userId: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ListTagsResponse {
+  tags: Tag[];
+}
+
+export interface CreateTagRequest {
+  name: string;
+  color: string;
+}
+
+export interface UpdateTagRequest {
+  name?: string;
+  color?: string;
+}
+
+export interface AssignTagsRequest {
+  videoIds: number[];
+  tagIds: number[];
+}
+
+export interface UnassignTagsRequest {
+  videoId: number;
+  tagIds: number[];
+}
+
+// User Preferences types
+export interface UserPreferences {
+  userId: string;
+  primaryColor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpdateUserPreferencesRequest {
+  primaryColor: string;
+}
+
+// Tag info for video responses
+export interface TagInfo {
+  id: number;
+  name: string;
+  color: string;
 }

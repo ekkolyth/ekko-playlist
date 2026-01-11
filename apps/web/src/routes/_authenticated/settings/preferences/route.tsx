@@ -1,12 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Card, CardContent } from "@/components/ui/card";
-import { SlidersHorizontal } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ColorPicker } from "@/components/ui/color-picker";
+import { TagManager } from "@/components/tags/tag-manager";
+import { usePreferences } from "@/hooks/use-preferences";
+import type { ThemeColor } from "@/lib/theme-color";
 
 export const Route = createFileRoute("/_authenticated/settings/preferences")({
   component: PreferencesPage,
 });
 
 function PreferencesPage() {
+  const preferences = usePreferences();
+
+  const handleColorChange = (color: ThemeColor) => {
+    preferences.updatePreferences({ primaryColor: color });
+  };
+
   return (
     <div className="flex-1 p-6">
       <div className="container mx-auto max-w-4xl">
@@ -17,17 +26,39 @@ function PreferencesPage() {
           <p className="text-muted-foreground">Customize your experience</p>
         </div>
 
-        <Card>
-          <CardContent className="py-12">
-            <div className="text-center">
-              <SlidersHorizontal className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="font-medium mb-1">Coming Soon</h3>
-              <p className="text-sm text-muted-foreground">
-                Preference settings will be available in a future update
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          {/* Primary Color */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Primary Color</CardTitle>
+              <CardDescription>
+                Choose your preferred primary color for the interface
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ColorPicker
+                value={
+                  (preferences.preferences?.primaryColor as ThemeColor) ||
+                  "blue"
+                }
+                onValueChange={handleColorChange}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Tag Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Tag Management</CardTitle>
+              <CardDescription>
+                Create, edit, and delete tags for organizing your videos
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <TagManager />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

@@ -49,10 +49,13 @@ import {
   X,
   ListMusic,
   Plus,
+  Tags,
 } from "lucide-react";
 import { type Video } from "@/lib/api-types";
 import { VideoCard } from "./video-card";
 import { usePlaylist } from "@/hooks/use-playlist";
+import { useTags } from "@/hooks/use-tags";
+import { TagSelector } from "@/components/tags/tag-selector";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Playlist } from "@/lib/types";
@@ -92,9 +95,12 @@ export function VideoCollection({
     new Set(),
   );
   const [isBulkAddDialogOpen, setIsBulkAddDialogOpen] = useState(false);
+  const [isBulkTagDialogOpen, setIsBulkTagDialogOpen] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
 
   const playlist = usePlaylist();
   const playlists = playlist.list;
+  const tags = useTags();
 
   const openCreateDialog = (videoId?: number) => {
     if (videoId !== undefined) {
@@ -186,6 +192,22 @@ export function VideoCollection({
 
   const openBulkAddDialog = () => setIsBulkAddDialogOpen(true);
   const closeBulkAddDialog = () => setIsBulkAddDialogOpen(false);
+  const openBulkTagDialog = () => {
+    setSelectedTagIds([]);
+    setIsBulkTagDialogOpen(true);
+  };
+  const closeBulkTagDialog = () => setIsBulkTagDialogOpen(false);
+
+  const handleBulkTagAssign = () => {
+    if (selectedTagIds.length === 0) {
+      toast.error("Please select at least one tag");
+      return;
+    }
+    const videoIds = Array.from(selectedVideoIds);
+    tags.assignTags({ videoIds, tagIds: selectedTagIds });
+    setIsBulkTagDialogOpen(false);
+    setSelectedTagIds([]);
+  };
 
   // Calculate pagination
   const totalPages = Math.ceil(videos.length / itemsPerPage);
@@ -298,6 +320,17 @@ export function VideoCollection({
             <DropdownMenuItem asChild>
               <Button
                 variant="ghost"
+                onClick={openBulkTagDialog}
+                disabled={tags.isAssigning}
+                className="w-full justify-start font-normal"
+              >
+                <Tags className="mr-2 h-4 w-4" />
+                Assign Tags
+              </Button>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Button
+                variant="ghost"
                 onClick={() => {
                   if (onRemoveVideo) {
                     // Remove from playlist mode
@@ -339,6 +372,7 @@ export function VideoCollection({
     selectedVideoIds.size,
     playlist.isBulkAdding,
     playlist.isDeletingVideos,
+    tags.isAssigning,
   ]);
 
   if (isLoading) {
@@ -585,6 +619,49 @@ export function VideoCollection({
               disabled={playlist.isBulkAdding}
             >
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBulkTagDialogOpen} onOpenChange={closeBulkTagDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Tags to Videos</DialogTitle>
+            <DialogDescription>
+              Assign tags to {selectedVideoIds.size} video
+              {selectedVideoIds.size !== 1 ? "s" : ""}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Select Tags</Label>
+              <TagSelector
+                selectedTagIds={selectedTagIds}
+                onSelectionChange={setSelectedTagIds}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={closeBulkTagDialog}
+              disabled={tags.isAssigning}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleBulkTagAssign}
+              disabled={selectedTagIds.length === 0 || tags.isAssigning}
+            >
+              {tags.isAssigning ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Assigning...
+                </>
+              ) : (
+                "Assign Tags"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

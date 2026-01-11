@@ -27,6 +27,21 @@ WHERE user_id = $1
   AND channel = ANY($2::text[])
 ORDER BY created_at DESC;
 
+-- name: ListVideosUnassigned :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+ORDER BY created_at DESC;
+
+-- name: ListVideosUnassignedFiltered :many
+SELECT id, video_id, normalized_url, original_url, title, channel, user_id, created_at
+FROM videos
+WHERE user_id = $1
+  AND channel = ANY($2::text[])
+  AND id NOT IN (SELECT DISTINCT video_id FROM playlist_videos)
+ORDER BY created_at DESC;
+
 -- name: DeleteVideo :exec
 DELETE FROM videos
 WHERE id = $1 AND user_id = $2;

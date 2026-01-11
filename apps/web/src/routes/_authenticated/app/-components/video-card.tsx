@@ -13,6 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Play, Link as LinkIcon, Plus, ListMusic, Trash2 } from "lucide-react";
 import type { Video, Playlist } from "@/lib/api-types";
 import { getYouTubeThumbnail } from "@/hooks/use-playlist";
+import { TagBadge } from "@/components/tags/tag-badge";
 
 // Helper function to get YouTube channel profile photo URL
 function getChannelProfilePhoto(channel: string): string {
@@ -176,7 +177,7 @@ export function VideoCard({
         <h3 className="font-medium text-sm line-clamp-2 mb-3 group-hover:text-primary transition-colors">
           {video.title}
         </h3>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 mb-2">
           <Avatar className="size-6">
             <AvatarImage
               src={getChannelProfilePhoto(video.channel)}
@@ -195,6 +196,13 @@ export function VideoCard({
             {video.channel}
           </span>
         </div>
+        {"tags" in video && video.tags && video.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            {video.tags.map((tag) => (
+              <TagBadge key={tag.id} tag={tag} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

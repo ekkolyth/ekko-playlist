@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signUp, authClient } from "@/lib/auth-client";
+import { isEmailVerificationRequired } from "@/lib/config.server";
 import Header from "@/components/nav/header";
 
 export const Route = createFileRoute("/auth/signup/")({
@@ -81,27 +82,15 @@ function SignUpPage() {
         // Bearer token is automatically stored by authClient's fetchOptions.onSuccess
 
         // Check if email verification is required
-        // Better Auth will have sent OTP if sendVerificationOnSignUp is true
-        // Check user's emailVerified status after a short delay to allow session to update
-        setTimeout(async () => {
-          try {
-            const session = await authClient.getSession();
-            if (session.data?.user && !session.data.user.emailVerified) {
-              // Redirect to verification page if email is not verified
-              navigate({ to: "/auth/verify-email" });
-            } else {
-              // Email is verified or verification not required, go to dashboard
-              navigate({ to: "/app/dashboard" });
-            }
-          } catch {
-            // If we can't check, assume verification is required and redirect
-            navigate({ to: "/auth/verify-email" });
-          }
-          setLoading(false);
-        }, 500);
-        
-        // Don't set loading to false here - it will be set in the setTimeout callback
-        return;
+        if (isEmailVerificationRequired()) {
+          // If email verification is required, redirect to the verification page
+          // Better Auth will have sent OTP if sendVerificationOnSignUp is true
+          navigate({ to: "/auth/verify-email" });
+        } else {
+          // Otherwise, go directly to the dashboard
+          navigate({ to: "/app/dashboard" });
+        }
+        setLoading(false);
       } catch (err) {
         setError(err instanceof Error ? err.message : "Registration failed");
         setLoading(false);
@@ -206,11 +195,12 @@ function SignUpPage() {
                   <form.Field
                     name="confirmPassword"
                     validators={{
-                      onBlur: ({ value, formApi }) => {
+                      onBlur: ({ value }) => {
                         if (!value || !value.trim()) {
                           return "Please confirm your password";
                         }
-                        const password = formApi.getFieldValue("password");
+                        // Access password field value through form state
+                        const password = form.state.values.password ?? "";
                         if (value !== password) {
                           return "Passwords do not match";
                         }

@@ -57,70 +57,71 @@ export function ChannelFilter({
           <span className="sr-only">Filter by channel</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex flex-col">
-          <div className="border-b px-4 py-3">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-semibold">Filter by Channel</h4>
-              <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={handleSelectAll}
-                >
-                  Select All
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs"
-                  onClick={handleClearAll}
-                >
-                  Clear
-                </Button>
-              </div>
+      <PopoverContent
+        className="w-80 p-0 bg-background flex flex-col"
+        align="end"
+      >
+        <div className="border-b px-4 py-3 shrink-0">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Filter by Channel</h4>
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={handleSelectAll}
+              >
+                Select All
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={handleClearAll}
+              >
+                Clear
+              </Button>
             </div>
-            {selectedChannels.length > 0 && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {selectedChannels.length} channel
-                {selectedChannels.length !== 1 ? "s" : ""} selected
-              </p>
+          </div>
+          {selectedChannels.length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {selectedChannels.length} channel
+              {selectedChannels.length !== 1 ? "s" : ""} selected
+            </p>
+          )}
+        </div>
+        <ScrollArea className="h-75">
+          <div className="p-2">
+            {sortedChannels.length === 0 ? (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No channels available
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {sortedChannels.map((channel) => (
+                  <div
+                    key={channel}
+                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                  >
+                    <Checkbox
+                      id={`channel-${channel}`}
+                      checked={selectedChannels.includes(channel)}
+                      onCheckedChange={(checked) =>
+                        handleToggleChannel(channel, checked === true)
+                      }
+                    />
+                    <label
+                      htmlFor={`channel-${channel}`}
+                      className="flex-1 cursor-pointer text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {channel}
+                    </label>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          <ScrollArea className="max-h-75">
-            <div className="p-2">
-              {sortedChannels.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  No channels available
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {sortedChannels.map((channel) => (
-                    <div
-                      key={channel}
-                      className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
-                    >
-                      <Checkbox
-                        id={`channel-${channel}`}
-                        checked={selectedChannels.includes(channel)}
-                        onCheckedChange={(checked) =>
-                          handleToggleChannel(channel, checked === true)
-                        }
-                      />
-                      <label
-                        htmlFor={`channel-${channel}`}
-                        className="flex-1 cursor-pointer text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        {channel}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-        </div>
+        </ScrollArea>
       </PopoverContent>
     </Popover>
   );

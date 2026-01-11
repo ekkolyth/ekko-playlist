@@ -1,6 +1,6 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -9,15 +9,7 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedLayout() {
   const { isAuthenticated, loading, user } = useAuth();
   const navigate = useNavigate();
-  const [emailVerificationRequired, setEmailVerificationRequired] = useState<boolean | null>(null);
-
-  // Check if email verification is required
-  useEffect(() => {
-    // Check EMAIL_VERIFICATION setting via API
-    // For now, we'll check user.emailVerified and let backend handle the rest
-    // TODO: Add API endpoint to check EMAIL_VERIFICATION setting
-    setEmailVerificationRequired(true); // Assume required for now, backend will handle
-  }, []);
+  const location = useLocation();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -25,23 +17,26 @@ function AuthenticatedLayout() {
       return;
     }
 
-    // Check email verification if required
+    // Check email verification status
+    // Better Auth sets emailVerified based on EMAIL_VERIFICATION env var:
+    // - If EMAIL_VERIFICATION=false: emailVerified=true automatically
+    // - If EMAIL_VERIFICATION=true: emailVerified=false until verified
+    // So we just check the user's actual status, which reflects server config
     if (
       !loading &&
       isAuthenticated &&
       user &&
-      emailVerificationRequired &&
       !user.emailVerified
     ) {
       // Allow access to verification page itself
-      const currentPath = window.location.pathname;
-      if (currentPath !== "/auth/verify-email") {
+      const currentPath = location.pathname;
+      if (currentPath !== "/auth/verify-email" && !currentPath.startsWith("/auth/signout")) {
         navigate({ to: "/auth/verify-email" });
       }
     }
-  }, [loading, isAuthenticated, user, emailVerificationRequired, navigate]);
+  }, [loading, isAuthenticated, user, navigate, location.pathname]);
 
-  if (loading || emailVerificationRequired === null) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-muted-foreground">Loading...</div>

@@ -20,7 +20,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signUp, authClient } from "@/lib/auth-client";
-import { isEmailVerificationRequired } from "@/lib/config.server";
 import Header from "@/components/nav/header";
 
 export const Route = createFileRoute("/auth/signup/")({
@@ -81,16 +80,33 @@ function SignUpPage() {
 
         // Bearer token is automatically stored by authClient's fetchOptions.onSuccess
 
-        // Check if email verification is required
-        if (isEmailVerificationRequired()) {
-          // If email verification is required, redirect to the verification page
-          // Better Auth will have sent OTP if sendVerificationOnSignUp is true
+        // Wait for session to be available, then check emailVerified status
+        // Better Auth may need a moment to create the session after signup
+        const checkSession = async (retries = 3) => {
+          for (let i = 0; i < retries; i++) {
+            const session = await authClient.getSession();
+            if (session.data?.user) {
+              // Navigate based on actual emailVerified status
+              // This reflects the server's EMAIL_VERIFICATION configuration
+              if (!session.data.user.emailVerified) {
+                navigate({ to: "/auth/verify-email" });
+              } else {
+                navigate({ to: "/app/dashboard" });
+              }
+              setLoading(false);
+              return;
+            }
+            // Wait 200ms before retrying
+            if (i < retries - 1) {
+              await new Promise((resolve) => setTimeout(resolve, 200));
+            }
+          }
+          // Fallback: if session not available after retries, assume verification needed
           navigate({ to: "/auth/verify-email" });
-        } else {
-          // Otherwise, go directly to the dashboard
-          navigate({ to: "/app/dashboard" });
-        }
-        setLoading(false);
+          setLoading(false);
+        };
+
+        await checkSession();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Registration failed");
         setLoading(false);

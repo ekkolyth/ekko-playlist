@@ -44,6 +44,8 @@ import { Route as AuthenticatedAppDashboardIndexRouteImport } from './routes/_au
 import { Route as ApiConfigSmtpTestRouteImport } from './routes/api/config/smtp/test'
 import { Route as ApiAuthOtpSplatRouteImport } from './routes/api/auth/otp/$'
 import { Route as ApiAuthEmailOtpSplatRouteImport } from './routes/api/auth/email-otp/$'
+import { Route as AuthenticatedSettingsAdminUsersRouteRouteImport } from './routes/_authenticated/settings/admin/users/route'
+import { Route as AuthenticatedSettingsAdminOverviewRouteRouteImport } from './routes/_authenticated/settings/admin/overview/route'
 import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as ApiPlaylistsIdVideosIndexRouteImport } from './routes/api/playlists/$id/videos/index'
 import { Route as AuthenticatedAppPlaylistsNameIndexRouteImport } from './routes/_authenticated/app/playlists/$name/index'
@@ -235,6 +237,18 @@ const ApiAuthEmailOtpSplatRoute = ApiAuthEmailOtpSplatRouteImport.update({
   path: '/api/auth/email-otp/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedSettingsAdminUsersRouteRoute =
+  AuthenticatedSettingsAdminUsersRouteRouteImport.update({
+    id: '/admin/users',
+    path: '/admin/users',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedSettingsAdminOverviewRouteRoute =
+  AuthenticatedSettingsAdminOverviewRouteRouteImport.update({
+    id: '/admin/overview',
+    path: '/admin/overview',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedAppPlaylistsNameRouteRoute =
   AuthenticatedAppPlaylistsNameRouteRouteImport.update({
     id: '/$name',
@@ -292,6 +306,8 @@ export interface FileRoutesByFullPath {
   '/auth/signup': typeof AuthSignupIndexRoute
   '/auth/verify-email': typeof AuthVerifyEmailIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRoute
+  '/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRoute
   '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
   '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
@@ -331,6 +347,8 @@ export interface FileRoutesByTo {
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
   '/auth/verify-email': typeof AuthVerifyEmailIndexRoute
+  '/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRoute
+  '/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRoute
   '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
   '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
@@ -374,6 +392,8 @@ export interface FileRoutesById {
   '/auth/signup/': typeof AuthSignupIndexRoute
   '/auth/verify-email/': typeof AuthVerifyEmailIndexRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
+  '/_authenticated/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRoute
+  '/_authenticated/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRoute
   '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
   '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
@@ -417,6 +437,8 @@ export interface FileRouteTypes {
     | '/auth/signup'
     | '/auth/verify-email'
     | '/app/playlists/$name'
+    | '/settings/admin/overview'
+    | '/settings/admin/users'
     | '/api/auth/email-otp/$'
     | '/api/auth/otp/$'
     | '/api/config/smtp/test'
@@ -456,6 +478,8 @@ export interface FileRouteTypes {
     | '/auth/signin'
     | '/auth/signup'
     | '/auth/verify-email'
+    | '/settings/admin/overview'
+    | '/settings/admin/users'
     | '/api/auth/email-otp/$'
     | '/api/auth/otp/$'
     | '/api/config/smtp/test'
@@ -498,6 +522,8 @@ export interface FileRouteTypes {
     | '/auth/signup/'
     | '/auth/verify-email/'
     | '/_authenticated/app/playlists/$name'
+    | '/_authenticated/settings/admin/overview'
+    | '/_authenticated/settings/admin/users'
     | '/api/auth/email-otp/$'
     | '/api/auth/otp/$'
     | '/api/config/smtp/test'
@@ -788,6 +814,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthEmailOtpSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/admin/users': {
+      id: '/_authenticated/settings/admin/users'
+      path: '/admin/users'
+      fullPath: '/settings/admin/users'
+      preLoaderRoute: typeof AuthenticatedSettingsAdminUsersRouteRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/settings/admin/overview': {
+      id: '/_authenticated/settings/admin/overview'
+      path: '/admin/overview'
+      fullPath: '/settings/admin/overview'
+      preLoaderRoute: typeof AuthenticatedSettingsAdminOverviewRouteRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/app/playlists/$name': {
       id: '/_authenticated/app/playlists/$name'
       path: '/$name'
@@ -880,6 +920,8 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsPluginsRouteRoute: typeof AuthenticatedSettingsPluginsRouteRoute
   AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
   AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRoute
+  AuthenticatedSettingsAdminOverviewRouteRoute: typeof AuthenticatedSettingsAdminOverviewRouteRoute
+  AuthenticatedSettingsAdminUsersRouteRoute: typeof AuthenticatedSettingsAdminUsersRouteRoute
   AuthenticatedSettingsApiKeysIndexRoute: typeof AuthenticatedSettingsApiKeysIndexRoute
   AuthenticatedSettingsEmailVerificationIndexRoute: typeof AuthenticatedSettingsEmailVerificationIndexRoute
   AuthenticatedSettingsEmailIndexRoute: typeof AuthenticatedSettingsEmailIndexRoute
@@ -893,6 +935,10 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
       AuthenticatedSettingsPreferencesRouteRoute,
     AuthenticatedSettingsProfileRouteRoute:
       AuthenticatedSettingsProfileRouteRoute,
+    AuthenticatedSettingsAdminOverviewRouteRoute:
+      AuthenticatedSettingsAdminOverviewRouteRoute,
+    AuthenticatedSettingsAdminUsersRouteRoute:
+      AuthenticatedSettingsAdminUsersRouteRoute,
     AuthenticatedSettingsApiKeysIndexRoute:
       AuthenticatedSettingsApiKeysIndexRoute,
     AuthenticatedSettingsEmailVerificationIndexRoute:

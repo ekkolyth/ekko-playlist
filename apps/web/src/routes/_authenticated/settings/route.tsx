@@ -5,7 +5,7 @@ import {
   useMatchRoute,
 } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, User, Puzzle, SlidersHorizontal, Key, Mail } from "lucide-react";
+import { ArrowLeft, User, Puzzle, SlidersHorizontal, Key, Mail, BarChart3, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsLayout,
@@ -39,6 +39,19 @@ const settingsNavItems = [
   },
 ];
 
+const adminNavItems = [
+  {
+    title: "Overview",
+    href: "/settings/admin/overview",
+    icon: BarChart3,
+  },
+  {
+    title: "Users",
+    href: "/settings/admin/users",
+    icon: Users,
+  },
+];
+
 function SettingsLayout() {
   const matchRoute = useMatchRoute();
 
@@ -66,6 +79,31 @@ function SettingsLayout() {
                 </h2>
               </div>
               {settingsNavItems.map((item) => {
+                const isActive = matchRoute({ to: item.href });
+                const Icon = item.icon;
+
+                return (
+                  <Button
+                    key={item.href}
+                    variant={isActive ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    asChild
+                  >
+                    <Link to={item.href}>
+                      <Icon className="mr-2 h-4 w-4" />
+                      {item.title}
+                    </Link>
+                  </Button>
+                );
+              })}
+              
+              {/* Admin Section */}
+              <div className="px-3 py-2 mt-6">
+                <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
+                  Admin
+                </h2>
+              </div>
+              {adminNavItems.map((item) => {
                 const isActive = matchRoute({ to: item.href });
                 const Icon = item.icon;
 

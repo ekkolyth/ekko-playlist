@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Field, FieldLabel } from "@/components/ui/field";
 
 interface ChannelFilterProps {
   channels: string[];
@@ -97,11 +98,12 @@ export function ChannelFilter({
                 No channels available
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="">
                 {sortedChannels.map((channel) => (
-                  <div
+                  <Field
                     key={channel}
-                    className="flex items-center space-x-2 rounded-sm px-2 py-1.5 hover:bg-accent"
+                    orientation="horizontal"
+                    className="cursor-pointer w-auto space-x-2 rounded-sm px-2 py-2 hover:bg-accent"
                   >
                     <Checkbox
                       id={`channel-${channel}`}
@@ -110,13 +112,13 @@ export function ChannelFilter({
                         handleToggleChannel(channel, checked === true)
                       }
                     />
-                    <label
+                    <FieldLabel
                       htmlFor={`channel-${channel}`}
-                      className="flex-1 cursor-pointer text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                      className="flex text-sm cursor-pointer font-normal text-nowrap text-ellipsis leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                       {channel}
-                    </label>
-                  </div>
+                    </FieldLabel>
+                  </Field>
                 ))}
               </div>
             )}

@@ -36,6 +36,7 @@ import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_au
 import { Route as ApiUserProfileIndexRouteImport } from './routes/api/user/profile/index'
 import { Route as ApiConfigSmtpIndexRouteImport } from './routes/api/config/smtp/index'
 import { Route as AuthenticatedSettingsEmailIndexRouteImport } from './routes/_authenticated/settings/email/index'
+import { Route as AuthenticatedSettingsEmailVerificationIndexRouteImport } from './routes/_authenticated/settings/email-verification/index'
 import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
 import { Route as AuthenticatedAppPlaylistsIndexRouteImport } from './routes/_authenticated/app/playlists/index'
 import { Route as AuthenticatedAppDashboardIndexRouteImport } from './routes/_authenticated/app/dashboard/index'
@@ -189,6 +190,12 @@ const AuthenticatedSettingsEmailIndexRoute =
     path: '/email/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSettingsEmailVerificationIndexRoute =
+  AuthenticatedSettingsEmailVerificationIndexRouteImport.update({
+    id: '/email-verification/',
+    path: '/email-verification/',
+    getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
 const AuthenticatedSettingsApiKeysIndexRoute =
   AuthenticatedSettingsApiKeysIndexRouteImport.update({
     id: '/api-keys/',
@@ -286,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/settings/email-verification': typeof AuthenticatedSettingsEmailVerificationIndexRoute
   '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
   '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
   '/api/user/profile': typeof ApiUserProfileIndexRoute
@@ -323,6 +331,7 @@ export interface FileRoutesByTo {
   '/app/dashboard': typeof AuthenticatedAppDashboardIndexRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsIndexRoute
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/settings/email-verification': typeof AuthenticatedSettingsEmailVerificationIndexRoute
   '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
   '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
   '/api/user/profile': typeof ApiUserProfileIndexRoute
@@ -364,6 +373,7 @@ export interface FileRoutesById {
   '/_authenticated/app/dashboard/': typeof AuthenticatedAppDashboardIndexRoute
   '/_authenticated/app/playlists/': typeof AuthenticatedAppPlaylistsIndexRoute
   '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
+  '/_authenticated/settings/email-verification/': typeof AuthenticatedSettingsEmailVerificationIndexRoute
   '/_authenticated/settings/email/': typeof AuthenticatedSettingsEmailIndexRoute
   '/api/config/smtp/': typeof ApiConfigSmtpIndexRoute
   '/api/user/profile/': typeof ApiUserProfileIndexRoute
@@ -405,6 +415,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/playlists/'
     | '/settings/api-keys'
+    | '/settings/email-verification'
     | '/settings/email'
     | '/api/config/smtp'
     | '/api/user/profile'
@@ -442,6 +453,7 @@ export interface FileRouteTypes {
     | '/app/dashboard'
     | '/app/playlists'
     | '/settings/api-keys'
+    | '/settings/email-verification'
     | '/settings/email'
     | '/api/config/smtp'
     | '/api/user/profile'
@@ -482,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app/dashboard/'
     | '/_authenticated/app/playlists/'
     | '/_authenticated/settings/api-keys/'
+    | '/_authenticated/settings/email-verification/'
     | '/_authenticated/settings/email/'
     | '/api/config/smtp/'
     | '/api/user/profile/'
@@ -708,6 +721,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsEmailIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/settings/email-verification/': {
+      id: '/_authenticated/settings/email-verification/'
+      path: '/email-verification'
+      fullPath: '/settings/email-verification'
+      preLoaderRoute: typeof AuthenticatedSettingsEmailVerificationIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
     '/_authenticated/settings/api-keys/': {
       id: '/_authenticated/settings/api-keys/'
       path: '/api-keys'
@@ -843,6 +863,7 @@ interface AuthenticatedSettingsRouteRouteChildren {
   AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
   AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRoute
   AuthenticatedSettingsApiKeysIndexRoute: typeof AuthenticatedSettingsApiKeysIndexRoute
+  AuthenticatedSettingsEmailVerificationIndexRoute: typeof AuthenticatedSettingsEmailVerificationIndexRoute
   AuthenticatedSettingsEmailIndexRoute: typeof AuthenticatedSettingsEmailIndexRoute
 }
 
@@ -856,6 +877,8 @@ const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteCh
       AuthenticatedSettingsProfileRouteRoute,
     AuthenticatedSettingsApiKeysIndexRoute:
       AuthenticatedSettingsApiKeysIndexRoute,
+    AuthenticatedSettingsEmailVerificationIndexRoute:
+      AuthenticatedSettingsEmailVerificationIndexRoute,
     AuthenticatedSettingsEmailIndexRoute: AuthenticatedSettingsEmailIndexRoute,
   }
 

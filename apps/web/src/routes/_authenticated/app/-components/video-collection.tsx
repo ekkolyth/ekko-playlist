@@ -35,11 +35,11 @@ import {
 import {
   Pagination,
   PaginationContent,
-  PaginationEllipsis,
   PaginationItem,
-  PaginationLink,
   PaginationNext,
   PaginationPrevious,
+  PaginationFirst,
+  PaginationLast,
 } from "@/components/ui/pagination";
 import {
   Video as VideoIcon,
@@ -55,6 +55,7 @@ import { VideoCard } from "./video-card";
 import { usePlaylist } from "@/hooks/use-playlist";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Playlist } from "@/lib/types";
 
 interface VideoCollectionProps {
   videos: Video[];
@@ -93,19 +94,7 @@ export function VideoCollection({
   const [isBulkAddDialogOpen, setIsBulkAddDialogOpen] = useState(false);
 
   const playlist = usePlaylist();
-  const { data: playlistsData } = useQuery({
-    queryKey: ["playlists"],
-    queryFn: async () => {
-      const res = await fetch("/api/playlists", { credentials: "include" });
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(error.message || "Failed to fetch playlists");
-      }
-      return res.json();
-    },
-  });
-
-  const playlists = playlistsData?.playlists || [];
+  const playlists = playlist.list;
 
   const openCreateDialog = (videoId?: number) => {
     if (videoId !== undefined) {
@@ -345,7 +334,12 @@ export function VideoCollection({
     );
     onSelectModeActionsChange(actions);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSelectMode, selectedVideoIds.size, playlist.isBulkAdding, playlist.isDeletingVideos]);
+  }, [
+    isSelectMode,
+    selectedVideoIds.size,
+    playlist.isBulkAdding,
+    playlist.isDeletingVideos,
+  ]);
 
   if (isLoading) {
     return (
@@ -380,47 +374,6 @@ export function VideoCollection({
     );
   }
 
-  // Generate page numbers for pagination
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisiblePages = 7;
-
-    if (totalPages <= maxVisiblePages) {
-      // Show all pages if total pages is less than max visible
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Always show first page
-      pages.push(1);
-
-      if (currentPage <= 3) {
-        // Near the start
-        for (let i = 2; i <= 4; i++) {
-          pages.push(i);
-        }
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        // Near the end
-        pages.push("ellipsis");
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        // In the middle
-        pages.push("ellipsis");
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push("ellipsis");
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
-
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -445,15 +398,20 @@ export function VideoCollection({
         })}
       </div>
 
+      <span className="text-sm text-muted-foreground text-nowrap flex mt-6">
+        {videos.length} result{videos.length !== 1 ? "s" : ""}
+      </span>
       {totalPages > 1 && (
         <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page:</span>
+            <span className="text-sm text-muted-foreground text-nowrap">
+              Rows per page:
+            </span>
             <Select
               value={itemsPerPage.toString()}
               onValueChange={(value) => setItemsPerPage(Number(value))}
             >
-              <SelectTrigger className="w-[80px]">
+              <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -466,62 +424,60 @@ export function VideoCollection({
           </div>
 
           <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage((prev) => Math.max(1, prev - 1));
-                  }}
-                  className={
-                    currentPage === 1
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                  href="#"
-                />
-              </PaginationItem>
+            <PaginationContent className="w-full">
+              {currentPage > 1 && (
+                <PaginationItem>
+                  <PaginationFirst
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(1);
+                    }}
+                    className="cursor-pointer"
+                    href="#"
+                  />
+                </PaginationItem>
+              )}
 
-              {getPageNumbers().map((page, index) => {
-                if (page === "ellipsis") {
-                  return (
-                    <PaginationItem key={`ellipsis-${index}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  );
-                }
+              {currentPage > 1 && (
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage((prev) => Math.max(1, prev - 1));
+                    }}
+                    className="cursor-pointer"
+                    href="#"
+                  />
+                </PaginationItem>
+              )}
 
-                return (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setCurrentPage(page as number);
-                      }}
-                      isActive={currentPage === page}
-                      className="cursor-pointer"
-                      href="#"
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
+              <div className="flex grow w-full" />
 
-              <PaginationItem>
-                <PaginationNext
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-                  }}
-                  className={
-                    currentPage === totalPages
-                      ? "pointer-events-none opacity-50"
-                      : "cursor-pointer"
-                  }
-                  href="#"
-                />
-              </PaginationItem>
+              {currentPage < totalPages && (
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage((prev) => Math.min(totalPages, prev + 1));
+                    }}
+                    className="cursor-pointer"
+                    href="#"
+                  />
+                </PaginationItem>
+              )}
+
+              {currentPage < totalPages && (
+                <PaginationItem>
+                  <PaginationLast
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setCurrentPage(totalPages);
+                    }}
+                    className="cursor-pointer"
+                    href="#"
+                  />
+                </PaginationItem>
+              )}
             </PaginationContent>
           </Pagination>
         </div>
@@ -559,8 +515,11 @@ export function VideoCollection({
             >
               Cancel
             </Button>
-            <Button onClick={handleCreatePlaylist} disabled={playlist.isCreating}>
-                {playlist.isCreating ? (
+            <Button
+              onClick={handleCreatePlaylist}
+              disabled={playlist.isCreating}
+            >
+              {playlist.isCreating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Creating...
@@ -623,7 +582,7 @@ export function VideoCollection({
             <Button
               variant="outline"
               onClick={closeBulkAddDialog}
-                disabled={playlist.isBulkAdding}
+              disabled={playlist.isBulkAdding}
             >
               Cancel
             </Button>

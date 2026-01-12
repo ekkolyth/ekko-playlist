@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch as useRouterSearch } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +25,6 @@ import {
 } from "@/hooks/use-playlist";
 import { assertDefined } from "@/lib/assert";
 import { useQuery } from "@tanstack/react-query";
-import { useSearch } from "@/hooks/use-search";
-import { SearchInput } from "@/components/search/search-input";
 
 export const Route = createFileRoute("/_authenticated/app/playlists/$name/")({
   component: PlaylistDetailPage,
@@ -44,7 +42,9 @@ function PlaylistDetailPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [debouncedSearchValue, setSearchValue, searchValue] = useSearch('');
+  // Read search value from URL (set by HeaderSearch component)
+  const searchParams = useRouterSearch({ strict: false }) as { search?: string };
+  const debouncedSearchValue = searchParams.search || '';
 
   const { data: playlistDetail, isLoading, error } = useQuery({
     queryKey: ["playlist", playlistName],
@@ -247,15 +247,6 @@ function PlaylistDetailPage() {
                 </TooltipContent>
               </Tooltip>
             </div>
-          </div>
-          <div className="mt-4">
-            <SearchInput
-              value={searchValue}
-              onChange={setSearchValue}
-              placeholder="Search videos in this playlist..."
-              aria-label="Search playlist videos"
-              className="max-w-md"
-            />
           </div>
         </div>
 

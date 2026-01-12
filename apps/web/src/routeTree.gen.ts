@@ -21,10 +21,15 @@ import { Route as AuthSignupIndexRouteImport } from './routes/auth/signup/index'
 import { Route as AuthSigninIndexRouteImport } from './routes/auth/signin/index'
 import { Route as ApiVideosIndexRouteImport } from './routes/api/videos/index'
 import { Route as ApiTokensIndexRouteImport } from './routes/api/tokens/index'
+import { Route as ApiTagsIndexRouteImport } from './routes/api/tags/index'
+import { Route as ApiPreferencesIndexRouteImport } from './routes/api/preferences/index'
 import { Route as ApiPlaylistsIndexRouteImport } from './routes/api/playlists/index'
 import { Route as ApiOidcProvidersIndexRouteImport } from './routes/api/oidc-providers/index'
 import { Route as ApiUploadsFilenameRouteImport } from './routes/api/uploads/$filename'
 import { Route as ApiTokensSplatRouteImport } from './routes/api/tokens/$'
+import { Route as ApiTagsUnassignRouteImport } from './routes/api/tags/unassign'
+import { Route as ApiTagsAssignRouteImport } from './routes/api/tags/assign'
+import { Route as ApiTagsIdRouteImport } from './routes/api/tags/$id'
 import { Route as ApiProcessVideoRouteImport } from './routes/api/process/video'
 import { Route as ApiProcessPlaylistRouteImport } from './routes/api/process/playlist'
 import { Route as ApiPlaylistsSplatRouteImport } from './routes/api/playlists/$'
@@ -116,6 +121,16 @@ const ApiTokensIndexRoute = ApiTokensIndexRouteImport.update({
   path: '/api/tokens/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTagsIndexRoute = ApiTagsIndexRouteImport.update({
+  id: '/api/tags/',
+  path: '/api/tags/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPreferencesIndexRoute = ApiPreferencesIndexRouteImport.update({
+  id: '/api/preferences/',
+  path: '/api/preferences/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPlaylistsIndexRoute = ApiPlaylistsIndexRouteImport.update({
   id: '/api/playlists/',
   path: '/api/playlists/',
@@ -134,6 +149,21 @@ const ApiUploadsFilenameRoute = ApiUploadsFilenameRouteImport.update({
 const ApiTokensSplatRoute = ApiTokensSplatRouteImport.update({
   id: '/api/tokens/$',
   path: '/api/tokens/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTagsUnassignRoute = ApiTagsUnassignRouteImport.update({
+  id: '/api/tags/unassign',
+  path: '/api/tags/unassign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTagsAssignRoute = ApiTagsAssignRouteImport.update({
+  id: '/api/tags/assign',
+  path: '/api/tags/assign',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTagsIdRoute = ApiTagsIdRouteImport.update({
+  id: '/api/tags/$id',
+  path: '/api/tags/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiProcessVideoRoute = ApiProcessVideoRouteImport.update({
@@ -325,10 +355,15 @@ export interface FileRoutesByFullPath {
   '/api/playlists/$': typeof ApiPlaylistsSplatRoute
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
+  '/api/tags/$id': typeof ApiTagsIdRoute
+  '/api/tags/assign': typeof ApiTagsAssignRoute
+  '/api/tags/unassign': typeof ApiTagsUnassignRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
   '/api/oidc-providers': typeof ApiOidcProvidersIndexRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
+  '/api/preferences': typeof ApiPreferencesIndexRoute
+  '/api/tags': typeof ApiTagsIndexRoute
   '/api/tokens': typeof ApiTokensIndexRoute
   '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
@@ -371,10 +406,15 @@ export interface FileRoutesByTo {
   '/api/playlists/$': typeof ApiPlaylistsSplatRoute
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
+  '/api/tags/$id': typeof ApiTagsIdRoute
+  '/api/tags/assign': typeof ApiTagsAssignRoute
+  '/api/tags/unassign': typeof ApiTagsUnassignRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
   '/api/oidc-providers': typeof ApiOidcProvidersIndexRoute
   '/api/playlists': typeof ApiPlaylistsIndexRoute
+  '/api/preferences': typeof ApiPreferencesIndexRoute
+  '/api/tags': typeof ApiTagsIndexRoute
   '/api/tokens': typeof ApiTokensIndexRoute
   '/api/videos': typeof ApiVideosIndexRoute
   '/auth/signin': typeof AuthSigninIndexRoute
@@ -419,10 +459,15 @@ export interface FileRoutesById {
   '/api/playlists/$': typeof ApiPlaylistsSplatRoute
   '/api/process/playlist': typeof ApiProcessPlaylistRoute
   '/api/process/video': typeof ApiProcessVideoRoute
+  '/api/tags/$id': typeof ApiTagsIdRoute
+  '/api/tags/assign': typeof ApiTagsAssignRoute
+  '/api/tags/unassign': typeof ApiTagsUnassignRoute
   '/api/tokens/$': typeof ApiTokensSplatRoute
   '/api/uploads/$filename': typeof ApiUploadsFilenameRoute
   '/api/oidc-providers/': typeof ApiOidcProvidersIndexRoute
   '/api/playlists/': typeof ApiPlaylistsIndexRoute
+  '/api/preferences/': typeof ApiPreferencesIndexRoute
+  '/api/tags/': typeof ApiTagsIndexRoute
   '/api/tokens/': typeof ApiTokensIndexRoute
   '/api/videos/': typeof ApiVideosIndexRoute
   '/auth/signin/': typeof AuthSigninIndexRoute
@@ -468,10 +513,15 @@ export interface FileRouteTypes {
     | '/api/playlists/$'
     | '/api/process/playlist'
     | '/api/process/video'
+    | '/api/tags/$id'
+    | '/api/tags/assign'
+    | '/api/tags/unassign'
     | '/api/tokens/$'
     | '/api/uploads/$filename'
     | '/api/oidc-providers'
     | '/api/playlists'
+    | '/api/preferences'
+    | '/api/tags'
     | '/api/tokens'
     | '/api/videos'
     | '/auth/signin'
@@ -514,10 +564,15 @@ export interface FileRouteTypes {
     | '/api/playlists/$'
     | '/api/process/playlist'
     | '/api/process/video'
+    | '/api/tags/$id'
+    | '/api/tags/assign'
+    | '/api/tags/unassign'
     | '/api/tokens/$'
     | '/api/uploads/$filename'
     | '/api/oidc-providers'
     | '/api/playlists'
+    | '/api/preferences'
+    | '/api/tags'
     | '/api/tokens'
     | '/api/videos'
     | '/auth/signin'
@@ -561,10 +616,15 @@ export interface FileRouteTypes {
     | '/api/playlists/$'
     | '/api/process/playlist'
     | '/api/process/video'
+    | '/api/tags/$id'
+    | '/api/tags/assign'
+    | '/api/tags/unassign'
     | '/api/tokens/$'
     | '/api/uploads/$filename'
     | '/api/oidc-providers/'
     | '/api/playlists/'
+    | '/api/preferences/'
+    | '/api/tags/'
     | '/api/tokens/'
     | '/api/videos/'
     | '/auth/signin/'
@@ -602,10 +662,15 @@ export interface RootRouteChildren {
   ApiPlaylistsSplatRoute: typeof ApiPlaylistsSplatRoute
   ApiProcessPlaylistRoute: typeof ApiProcessPlaylistRoute
   ApiProcessVideoRoute: typeof ApiProcessVideoRoute
+  ApiTagsIdRoute: typeof ApiTagsIdRoute
+  ApiTagsAssignRoute: typeof ApiTagsAssignRoute
+  ApiTagsUnassignRoute: typeof ApiTagsUnassignRoute
   ApiTokensSplatRoute: typeof ApiTokensSplatRoute
   ApiUploadsFilenameRoute: typeof ApiUploadsFilenameRoute
   ApiOidcProvidersIndexRoute: typeof ApiOidcProvidersIndexRoute
   ApiPlaylistsIndexRoute: typeof ApiPlaylistsIndexRoute
+  ApiPreferencesIndexRoute: typeof ApiPreferencesIndexRoute
+  ApiTagsIndexRoute: typeof ApiTagsIndexRoute
   ApiTokensIndexRoute: typeof ApiTokensIndexRoute
   ApiVideosIndexRoute: typeof ApiVideosIndexRoute
   AuthSigninIndexRoute: typeof AuthSigninIndexRoute
@@ -705,6 +770,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTokensIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/tags/': {
+      id: '/api/tags/'
+      path: '/api/tags'
+      fullPath: '/api/tags'
+      preLoaderRoute: typeof ApiTagsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/preferences/': {
+      id: '/api/preferences/'
+      path: '/api/preferences'
+      fullPath: '/api/preferences'
+      preLoaderRoute: typeof ApiPreferencesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/playlists/': {
       id: '/api/playlists/'
       path: '/api/playlists'
@@ -731,6 +810,27 @@ declare module '@tanstack/react-router' {
       path: '/api/tokens/$'
       fullPath: '/api/tokens/$'
       preLoaderRoute: typeof ApiTokensSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tags/unassign': {
+      id: '/api/tags/unassign'
+      path: '/api/tags/unassign'
+      fullPath: '/api/tags/unassign'
+      preLoaderRoute: typeof ApiTagsUnassignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tags/assign': {
+      id: '/api/tags/assign'
+      path: '/api/tags/assign'
+      fullPath: '/api/tags/assign'
+      preLoaderRoute: typeof ApiTagsAssignRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tags/$id': {
+      id: '/api/tags/$id'
+      path: '/api/tags/$id'
+      fullPath: '/api/tags/$id'
+      preLoaderRoute: typeof ApiTagsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/process/video': {
@@ -1075,10 +1175,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPlaylistsSplatRoute: ApiPlaylistsSplatRoute,
   ApiProcessPlaylistRoute: ApiProcessPlaylistRoute,
   ApiProcessVideoRoute: ApiProcessVideoRoute,
+  ApiTagsIdRoute: ApiTagsIdRoute,
+  ApiTagsAssignRoute: ApiTagsAssignRoute,
+  ApiTagsUnassignRoute: ApiTagsUnassignRoute,
   ApiTokensSplatRoute: ApiTokensSplatRoute,
   ApiUploadsFilenameRoute: ApiUploadsFilenameRoute,
   ApiOidcProvidersIndexRoute: ApiOidcProvidersIndexRoute,
   ApiPlaylistsIndexRoute: ApiPlaylistsIndexRoute,
+  ApiPreferencesIndexRoute: ApiPreferencesIndexRoute,
+  ApiTagsIndexRoute: ApiTagsIndexRoute,
   ApiTokensIndexRoute: ApiTokensIndexRoute,
   ApiVideosIndexRoute: ApiVideosIndexRoute,
   AuthSigninIndexRoute: AuthSigninIndexRoute,

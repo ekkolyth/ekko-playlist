@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useSearch as useRouterSearch } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
@@ -6,8 +6,6 @@ import type { VideosResponse, UserProfile } from "@/lib/api-types";
 import { ChannelFilter } from "../-components/channel-filter";
 import { TagFilter } from "../-components/tag-filter";
 import { VideoCollection } from "../-components/video-collection";
-import { useSearch } from "@/hooks/use-search";
-import { SearchInput } from "@/components/search/search-input";
 
 async function fetchVideos(
   selectedChannels?: string[],
@@ -78,7 +76,9 @@ function DashboardPage() {
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [selectModeActions, setSelectModeActions] =
     useState<React.ReactNode>(null);
-  const [debouncedSearchValue, setSearchValue, searchValue] = useSearch('');
+  // Read search value from URL (set by HeaderSearch component)
+  const searchParams = useRouterSearch({ strict: false }) as { search?: string };
+  const debouncedSearchValue = searchParams.search || '';
 
   // Fetch user profile for display name
   const { data: profile } = useQuery({
@@ -135,15 +135,6 @@ function DashboardPage() {
                 onSelectionChange={setSelectedTagIds}
               />
             </div>
-          </div>
-          <div className="mb-4">
-            <SearchInput
-              value={searchValue}
-              onChange={setSearchValue}
-              placeholder="Search videos by title or channel..."
-              aria-label="Search videos"
-              className="max-w-md"
-            />
           </div>
         </div>
 

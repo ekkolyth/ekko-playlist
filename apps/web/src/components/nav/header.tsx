@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { LogIn, LogOut, LayoutDashboard } from "lucide-react";
@@ -11,10 +11,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { UserProfileAvatar } from "@/components/user-profile-avatar";
+import { HeaderSearch } from "@/components/search/header-search";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
   const navigate = useNavigate();
+  const router = useRouterState();
+  
+  // Show search on dashboard and playlist pages
+  const pathname = router.location.pathname;
+  const showSearch = isAuthenticated && (
+    pathname.startsWith('/app/dashboard') || 
+    pathname.startsWith('/app/playlists/')
+  );
 
   const handleLogout = async () => {
     await logout();
@@ -25,17 +34,24 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/95">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4 gap-4">
         {/* Logo */}
         <Link
           to="/"
-          className="flex items-center gap-2 font-semibold text-lg tracking-tight hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 font-semibold text-lg tracking-tight hover:opacity-80 transition-opacity shrink-0"
         >
           Ekko Playlist
         </Link>
 
+        {/* Search bar - centered */}
+        {showSearch && (
+          <div className="flex-1 max-w-2xl">
+            <HeaderSearch />
+          </div>
+        )}
+
         {/* Right side navigation */}
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-2 shrink-0">
           {isAuthenticated ? (
             <>
               <Button variant="ghost" size="sm" asChild>

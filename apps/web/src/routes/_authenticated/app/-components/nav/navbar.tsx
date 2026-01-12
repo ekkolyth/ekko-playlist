@@ -12,7 +12,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -31,31 +30,27 @@ export function Navbar() {
   const router = useRouterState();
   const currentPath = router.location.pathname;
   const { state } = useSidebar();
-  const isCollapsed = state === "collapsed";
   const { user, isAuthenticated, logout } = useAuth();
 
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
-        <div className="flex items-center justify-between gap-2">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild size="lg">
-                <Link to="/app/dashboard">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    <Play className="size-4 fill-white" />
-                  </div>
-                  <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">
-                      Ekko Playlist
-                    </span>
-                  </div>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-          {!isCollapsed && <SidebarTrigger />}
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild size="lg">
+              <Link to="/app/dashboard">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                  <Play className="size-4 fill-white" />
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">
+                    Ekko Playlist
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
         {sidebarSections.map((section) => (
@@ -83,11 +78,6 @@ export function Navbar() {
         ))}
       </SidebarContent>
       <SidebarFooter>
-        {isCollapsed && (
-          <div className="flex items-center justify-center px-2 pb-2">
-            <SidebarTrigger />
-          </div>
-        )}
         {isAuthenticated && user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -95,7 +85,7 @@ export function Navbar() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              side={isCollapsed ? "right" : "top"}
+              side={state === "collapsed" ? "right" : "top"}
               className="w-56"
             >
               <DropdownMenuLabel>

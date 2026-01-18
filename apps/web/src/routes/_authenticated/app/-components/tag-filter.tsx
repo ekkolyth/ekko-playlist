@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Filter } from 'lucide-react';
+import { Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -50,7 +50,7 @@ export function TagFilter({
           size='icon'
           className='relative'
         >
-          <Filter className='h-4 w-4' />
+          <Tag className='h-4 w-4' />
           {selectedTagIds.length > 0 && (
             <Badge
               variant='default'

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { UserProfileAvatar } from "@/components/user-profile-avatar";
 import { HeaderSearch } from "@/components/search/header-search";
+import { ColorPicker } from "@/components/color-picker";
 
 export default function Header() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -76,25 +77,30 @@ export default function Header() {
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-64 p-0 !bg-background">
+                  <div className="px-4 py-3 border-b">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
                         {user?.email}
                       </p>
                     </div>
-                  </DropdownMenuLabel>
+                  </div>
+                  <div className="p-2">
+                    <ColorPicker />
+                  </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={handleLogout}
-                      className="w-full justify-start font-normal text-destructive hover:text-destructive cursor-pointer"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </Button>
-                  </DropdownMenuItem>
+                  <div className="p-1">
+                    <DropdownMenuItem asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={handleLogout}
+                        className="w-full justify-start font-normal text-destructive hover:text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/20 cursor-pointer"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign Out
+                      </Button>
+                    </DropdownMenuItem>
+                  </div>
                 </DropdownMenuContent>
               </DropdownMenu>
             </>

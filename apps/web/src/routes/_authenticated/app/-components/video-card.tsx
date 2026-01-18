@@ -11,14 +11,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Play, Link as LinkIcon, Plus, ListMusic, Trash2, Tags } from "lucide-react";
+import {
+  Play,
+  Link as LinkIcon,
+  Plus,
+  ListMusic,
+  Trash2,
+  Tags,
+} from "lucide-react";
 import type { Video, Playlist } from "@/lib/api-types";
 import { getYouTubeThumbnail } from "@/hooks/use-playlist";
 import { TagBadge } from "@/components/tags/tag-badge";
+import { useTheme } from "@/contexts/theme-context";
+import { themeColorToCSS } from "@/lib/theme-color";
 
 // Helper function to get YouTube channel profile photo URL
-function getChannelProfilePhoto(channel: string): string {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(channel)}&background=e11d48&color=fff&size=128&bold=true`;
+function getChannelProfilePhoto(
+  channel: string,
+  primaryColorHex: string,
+): string {
+  // Remove the # from hex color for URL parameter
+  const colorWithoutHash = primaryColorHex.replace("#", "");
+  return `https://ui-avatars.com/api/?name=${encodeURIComponent(channel)}&background=${colorWithoutHash}&color=fff&size=128&bold=true`;
 }
 
 interface VideoCardProps {
@@ -54,6 +68,9 @@ export function VideoCard({
   isAddingToPlaylist = false,
   onTagDetailsClick,
 }: VideoCardProps) {
+  const { primaryColor } = useTheme();
+  const primaryColorHex = themeColorToCSS[primaryColor];
+
   return (
     <Card
       key={video.id}
@@ -195,7 +212,7 @@ export function VideoCard({
         <div className="flex items-center gap-2 mb-2">
           <Avatar className="size-6">
             <AvatarImage
-              src={getChannelProfilePhoto(video.channel)}
+              src={getChannelProfilePhoto(video.channel, primaryColorHex)}
               alt={video.channel}
             />
             <AvatarFallback className="bg-primary text-primary-foreground text-[10px]">
@@ -215,10 +232,12 @@ export function VideoCard({
           <div className="flex flex-wrap gap-1 mt-2 items-center">
             {(() => {
               // Sort tags by name for consistent display
-              const sortedTags = [...video.tags].sort((a, b) => a.name.localeCompare(b.name));
+              const sortedTags = [...video.tags].sort((a, b) =>
+                a.name.localeCompare(b.name),
+              );
               const firstTag = sortedTags[0];
               const remainingCount = sortedTags.length - 1;
-              
+
               return (
                 <>
                   <TagBadge tag={firstTag} />

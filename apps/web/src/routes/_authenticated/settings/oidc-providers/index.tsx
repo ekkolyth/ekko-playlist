@@ -27,7 +27,7 @@ function OIDCProvidersPage() {
     error,
     envConfigured,
     delete: deleteProvider,
-  } = useOIDCProviders();
+  } = useOIDCProviders({ fetchAll: true });
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 

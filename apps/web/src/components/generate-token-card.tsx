@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm, revalidateLogic } from '@tanstack/react-form';
+import { useForm } from '@tanstack/react-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,24 +34,8 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
     defaultValues: {
       tokenName: '',
     },
-    validationLogic: revalidateLogic(),
     validators: {
-      onDynamic: ({ value }) => {
-        // Ensure value is an object with expected shape
-        if (!value || typeof value !== 'object' || !('tokenName' in value)) {
-          return undefined;
-        }
-        const result = tokenNameSchema.safeParse(value);
-        if (!result.success && result.error) {
-          const errors: Record<string, string> = {};
-          result.error.issues.forEach((err) => {
-            const path = err.path.join('.');
-            errors[path] = err.message;
-          });
-          return errors;
-        }
-        return undefined;
-      },
+      onChangeAsync: tokenNameSchema,
     },
     onSubmit: async ({ value }) => {
       setError('');
@@ -139,14 +123,6 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
           <FieldGroup>
             <form.Field
               name='tokenName'
-              validators={{
-                onBlur: ({ value }) => {
-                  if (!value || !value.trim()) {
-                    return 'Please enter a name for the token';
-                  }
-                  return undefined;
-                },
-              }}
               children={(field) => (
                 <>
                   <Field>
@@ -168,7 +144,11 @@ export function GenerateTokenCard({ onTokenGenerated }: GenerateTokenCardProps) 
                         aria-invalid={!!field.state.meta.errors.length}
                       />
                       {field.state.meta.errors.length > 0 && (
-                        <FieldError>{field.state.meta.errors[0]}</FieldError>
+                        <FieldError>
+                          {typeof field.state.meta.errors[0] === 'string'
+                            ? field.state.meta.errors[0]
+                            : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                        </FieldError>
                       )}
                       <p className='text-sm text-muted-foreground'>
                         Give your token a name to identify it later

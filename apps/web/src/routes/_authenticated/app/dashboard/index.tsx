@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import type { VideosResponse, UserProfile } from "@/lib/api-types";
 import { ChannelFilter } from "../-components/channel-filter";
 import { TagFilter } from "../-components/tag-filter";
+import { AddVideoDialog } from "../-components/add-video-dialog";
 import { VideoCollection } from "../-components/video-collection";
 
 async function fetchVideos(
@@ -134,6 +135,7 @@ function DashboardPage() {
                 selectedTagIds={selectedTagIds}
                 onSelectionChange={setSelectedTagIds}
               />
+              <AddVideoDialog availableChannels={availableChannels} />
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,20 +50,8 @@ function SignUpPage() {
       password: "",
       confirmPassword: "",
     },
-    validationLogic: revalidateLogic(),
     validators: {
-      onDynamic: ({ value }) => {
-        const result = signUpSchema.safeParse(value);
-        if (!result.success) {
-          const errors: Record<string, string> = {};
-          result.error.issues.forEach((err) => {
-            const path = err.path.join(".");
-            errors[path] = err.message;
-          });
-          return errors;
-        }
-        return undefined;
-      },
+      onChangeAsync: signUpSchema,
     },
     onSubmit: async ({ value }) => {
       setError("");
@@ -139,18 +127,6 @@ function SignUpPage() {
 
                   <form.Field
                     name="email"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        if (!value || !value.trim()) {
-                          return "Email is required";
-                        }
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(value)) {
-                          return "Invalid email format";
-                        }
-                        return undefined;
-                      },
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>Email</FieldLabel>
@@ -166,7 +142,9 @@ function SignUpPage() {
                           />
                           {field.state.meta.errors.length > 0 && (
                             <FieldError>
-                              {field.state.meta.errors[0]}
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
                             </FieldError>
                           )}
                         </FieldContent>
@@ -176,17 +154,6 @@ function SignUpPage() {
 
                   <form.Field
                     name="password"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        if (!value || !value.trim()) {
-                          return "Password is required";
-                        }
-                        if (value.length < 8) {
-                          return "Password must be at least 8 characters";
-                        }
-                        return undefined;
-                      },
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>Password</FieldLabel>
@@ -202,7 +169,9 @@ function SignUpPage() {
                           />
                           {field.state.meta.errors.length > 0 && (
                             <FieldError>
-                              {field.state.meta.errors[0]}
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
                             </FieldError>
                           )}
                         </FieldContent>
@@ -212,19 +181,6 @@ function SignUpPage() {
 
                   <form.Field
                     name="confirmPassword"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        if (!value || !value.trim()) {
-                          return "Please confirm your password";
-                        }
-                        // Access password field value through form state
-                        const password = form.state.values.password ?? "";
-                        if (value !== password) {
-                          return "Passwords do not match";
-                        }
-                        return undefined;
-                      },
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>
@@ -242,7 +198,9 @@ function SignUpPage() {
                           />
                           {field.state.meta.errors.length > 0 && (
                             <FieldError>
-                              {field.state.meta.errors[0]}
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
                             </FieldError>
                           )}
                         </FieldContent>

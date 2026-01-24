@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "@ekkolyth/ui": "^0.0.2"
+    "@ekkolyth/ui": "^0.0.2",
+    "@tanstack/zod-form-adapter": "^0.42.1"
   }
 }

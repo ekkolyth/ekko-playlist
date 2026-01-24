@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useRef } from "react";
-import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,20 +162,8 @@ function ProfilePage() {
         setImagePreview(profile.image || null);
       }
     },
-    validationLogic: revalidateLogic(),
     validators: {
-      onDynamic: ({ value }) => {
-        const result = profileSchema.safeParse(value);
-        if (!result.success) {
-          const errors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
-            const path = err.path.join(".");
-            errors[path] = err.message;
-          });
-          return errors;
-        }
-        return undefined;
-      },
+      onChangeAsync: profileSchema,
     },
     onSubmit: async ({ value }) => {
       // Check if email has changed
@@ -383,9 +371,6 @@ function ProfilePage() {
                   {/* Display Name */}
                   <form.Field
                     name="name"
-                    validators={{
-                      onBlur: () => undefined, // Name is optional
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>Display Name</FieldLabel>
@@ -402,7 +387,11 @@ function ProfilePage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>
@@ -412,19 +401,6 @@ function ProfilePage() {
                   {/* Email */}
                   <form.Field
                     name="email"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        if (!value || !value.trim()) {
-                          return "Email is required";
-                        }
-                        const emailRegex =
-                          /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(value)) {
-                          return "Invalid email format";
-                        }
-                        return undefined;
-                      },
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>Email</FieldLabel>
@@ -439,7 +415,11 @@ function ProfilePage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>

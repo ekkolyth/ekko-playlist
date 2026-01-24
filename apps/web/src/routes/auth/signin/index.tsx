@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -80,20 +80,8 @@ function SignInPage() {
       email: "",
       password: "",
     },
-    validationLogic: revalidateLogic(),
     validators: {
-      onDynamic: ({ value }) => {
-        const result = signInSchema.safeParse(value);
-        if (!result.success) {
-          const errors: Record<string, string> = {};
-          result.error.issues.forEach((err) => {
-            const path = err.path.join(".");
-            errors[path] = err.message;
-          });
-          return errors;
-        }
-        return undefined;
-      },
+      onChangeAsync: signInSchema,
     },
     onSubmit: async ({ value }) => {
       setError("");
@@ -156,18 +144,6 @@ function SignInPage() {
 
                   <form.Field
                     name="email"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        if (!value || !value.trim()) {
-                          return "Email is required";
-                        }
-                        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                        if (!emailRegex.test(value)) {
-                          return "Invalid email format";
-                        }
-                        return undefined;
-                      },
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>Email</FieldLabel>
@@ -183,7 +159,9 @@ function SignInPage() {
                           />
                           {field.state.meta.errors.length > 0 && (
                             <FieldError>
-                              {field.state.meta.errors[0]}
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
                             </FieldError>
                           )}
                         </FieldContent>
@@ -193,14 +171,6 @@ function SignInPage() {
 
                   <form.Field
                     name="password"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        if (!value || !value.trim()) {
-                          return "Password is required";
-                        }
-                        return undefined;
-                      },
-                    }}
                     children={(field) => (
                       <Field>
                         <FieldLabel htmlFor={field.name}>Password</FieldLabel>
@@ -216,7 +186,9 @@ function SignInPage() {
                           />
                           {field.state.meta.errors.length > 0 && (
                             <FieldError>
-                              {field.state.meta.errors[0]}
+                              {typeof field.state.meta.errors[0] === 'string'
+                                ? field.state.meta.errors[0]
+                                : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
                             </FieldError>
                           )}
                         </FieldContent>

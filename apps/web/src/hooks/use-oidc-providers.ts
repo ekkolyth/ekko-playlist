@@ -32,6 +32,11 @@ export interface CreateOIDCProviderRequest {
   enabled: boolean;
 }
 
+export interface UseOIDCProvidersOptions {
+  /** Whether to fetch all providers (requires authentication). Defaults to false. */
+  fetchAll?: boolean;
+}
+
 // Modern fetch helper with proper error handling
 async function apiFetch<T>(
   url: string,
@@ -51,7 +56,8 @@ async function apiFetch<T>(
   return res.json();
 }
 
-export function useOIDCProviders() {
+export function useOIDCProviders(options: UseOIDCProvidersOptions = {}) {
+  const { fetchAll = false } = options;
   const queryClient = useQueryClient();
 
   // List enabled providers (public)
@@ -63,13 +69,15 @@ export function useOIDCProviders() {
     },
   });
 
-  // List all providers (admin)
+  // List all providers (admin) - only runs when explicitly enabled
   const listAllQuery = useQuery({
     queryKey: ["oidc-providers", "all"],
     queryFn: async () => {
       const data = await apiFetch<OIDCProviderConfig[]>("/api/oidc-providers/all");
       return data;
     },
+    enabled: fetchAll,
+    retry: false, // Don't retry 401 errors
   });
 
   // Create mutation

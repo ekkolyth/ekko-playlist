@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useForm, revalidateLogic } from "@tanstack/react-form";
+import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -161,20 +161,8 @@ function EmailPage() {
         formApi.setFieldValue("from_name", config.from_name || "");
       }
     },
-    validationLogic: revalidateLogic(),
     validators: {
-      onDynamic: ({ value }) => {
-        const result = smtpConfigSchema.safeParse(value);
-        if (!result.success) {
-          const errors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
-            const path = err.path.join(".");
-            errors[path] = err.message;
-          });
-          return errors;
-        }
-        return undefined;
-      },
+      onChangeAsync: smtpConfigSchema,
     },
     onSubmit: async ({ value }) => {
       // Check if password is required (only if no existing config)
@@ -251,14 +239,6 @@ function EmailPage() {
                   <FieldGroup>
                     <form.Field
                       name="host"
-                      validators={{
-                        onBlur: ({ value }) => {
-                          if (!value || !value.trim()) {
-                            return "SMTP host is required";
-                          }
-                          return undefined;
-                        },
-                      }}
                       children={(field) => (
                         <Field>
                           <FieldLabel htmlFor={field.name}>SMTP Host</FieldLabel>
@@ -274,7 +254,11 @@ function EmailPage() {
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
-                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                              <FieldError>
+                                {typeof field.state.meta.errors[0] === 'string'
+                                  ? field.state.meta.errors[0]
+                                  : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                              </FieldError>
                             )}
                           </FieldContent>
                         </Field>
@@ -283,18 +267,6 @@ function EmailPage() {
 
                     <form.Field
                       name="port"
-                      validators={{
-                        onBlur: ({ value }) => {
-                          if (!value || !value.trim()) {
-                            return "SMTP port is required";
-                          }
-                          const num = parseInt(value, 10);
-                          if (isNaN(num) || num < 1 || num > 65535) {
-                            return "Port must be a number between 1 and 65535";
-                          }
-                          return undefined;
-                        },
-                      }}
                       children={(field) => (
                         <Field>
                           <FieldLabel htmlFor={field.name}>SMTP Port</FieldLabel>
@@ -312,7 +284,11 @@ function EmailPage() {
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
-                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                              <FieldError>
+                                {typeof field.state.meta.errors[0] === 'string'
+                                  ? field.state.meta.errors[0]
+                                  : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                              </FieldError>
                             )}
                           </FieldContent>
                         </Field>
@@ -321,14 +297,6 @@ function EmailPage() {
 
                     <form.Field
                       name="username"
-                      validators={{
-                        onBlur: ({ value }) => {
-                          if (!value || !value.trim()) {
-                            return "SMTP username is required";
-                          }
-                          return undefined;
-                        },
-                      }}
                       children={(field) => (
                         <Field>
                           <FieldLabel htmlFor={field.name}>SMTP Username</FieldLabel>
@@ -344,7 +312,11 @@ function EmailPage() {
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
-                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                              <FieldError>
+                                {typeof field.state.meta.errors[0] === 'string'
+                                  ? field.state.meta.errors[0]
+                                  : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                              </FieldError>
                             )}
                           </FieldContent>
                         </Field>
@@ -353,17 +325,6 @@ function EmailPage() {
 
                     <form.Field
                       name="password"
-                      validators={{
-                        onBlur: ({ value }) => {
-                          // Password is optional - only required if no existing config
-                          if (!value || !value.trim()) {
-                            if (!config) {
-                              return "SMTP password is required";
-                            }
-                          }
-                          return undefined;
-                        },
-                      }}
                       children={(field) => (
                         <Field>
                           <FieldLabel htmlFor={field.name}>SMTP Password</FieldLabel>
@@ -383,7 +344,11 @@ function EmailPage() {
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
-                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                              <FieldError>
+                                {typeof field.state.meta.errors[0] === 'string'
+                                  ? field.state.meta.errors[0]
+                                  : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                              </FieldError>
                             )}
                           </FieldContent>
                         </Field>
@@ -392,18 +357,6 @@ function EmailPage() {
 
                     <form.Field
                       name="from_email"
-                      validators={{
-                        onBlur: ({ value }) => {
-                          if (!value || !value.trim()) {
-                            return "From email is required";
-                          }
-                          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                          if (!emailRegex.test(value)) {
-                            return "Invalid email format";
-                          }
-                          return undefined;
-                        },
-                      }}
                       children={(field) => (
                         <Field>
                           <FieldLabel htmlFor={field.name}>From Email</FieldLabel>
@@ -419,7 +372,11 @@ function EmailPage() {
                               aria-invalid={!!field.state.meta.errors.length}
                             />
                             {field.state.meta.errors.length > 0 && (
-                              <FieldError>{field.state.meta.errors[0]}</FieldError>
+                              <FieldError>
+                                {typeof field.state.meta.errors[0] === 'string'
+                                  ? field.state.meta.errors[0]
+                                  : field.state.meta.errors[0]?.message || String(field.state.meta.errors[0])}
+                              </FieldError>
                             )}
                           </FieldContent>
                         </Field>

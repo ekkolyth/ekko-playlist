@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { signIn, authClient } from "@/lib/auth-client";
-import Header from "@/components/nav/header";
 import { Shield } from "lucide-react";
 
 export const Route = createFileRoute("/auth/signin/")({
@@ -31,7 +30,7 @@ export const Route = createFileRoute("/auth/signin/")({
 
 // Zod schema for sign in validation
 const signInSchema = z.object({
-  email: z.string().email("Invalid email format").min(1, "Email is required"),
+  email: z.email("Invalid email format").min(1, "Email is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -87,7 +86,7 @@ function SignInPage() {
         const result = signInSchema.safeParse(value);
         if (!result.success) {
           const errors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
+          result.error.issues.forEach((err) => {
             const path = err.path.join(".");
             errors[path] = err.message;
           });
@@ -131,7 +130,6 @@ function SignInPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="flex items-center justify-center px-6 py-24">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -184,7 +182,9 @@ function SignInPage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {field.state.meta.errors[0]}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>
@@ -215,7 +215,9 @@ function SignInPage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {field.state.meta.errors[0]}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>
@@ -229,7 +231,9 @@ function SignInPage() {
                 className="w-full mt-4"
                 disabled={loading || form.state.isSubmitting}
               >
-                {loading || form.state.isSubmitting ? "Signing in..." : "Sign In"}
+                {loading || form.state.isSubmitting
+                  ? "Signing in..."
+                  : "Sign In"}
               </Button>
               <div className="text-center text-sm text-muted-foreground mt-4">
                 Don't have an account?{" "}
@@ -242,33 +246,42 @@ function SignInPage() {
               </div>
             </form>
 
-            {!isLoadingProviders && oidcProviders && oidcProviders.length > 0 && (
-              <>
-                <Separator className="my-6" />
-                <div className="space-y-2">
-                  <p className="text-sm text-center text-muted-foreground">
-                    Or sign in with
-                  </p>
+            {!isLoadingProviders &&
+              oidcProviders &&
+              oidcProviders.length > 0 && (
+                <>
+                  <Separator className="my-6" />
                   <div className="space-y-2">
-                    {oidcProviders.map((provider: { provider_id: string; name: string; enabled: boolean }) => (
-                      provider.enabled && (
-                        <Button
-                          key={provider.provider_id}
-                          type="button"
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleOIDCSignIn(provider.provider_id)}
-                          disabled={loading}
-                        >
-                          <Shield className="mr-2 h-4 w-4" />
-                          Sign in with {provider.name}
-                        </Button>
-                      )
-                    ))}
+                    <p className="text-sm text-center text-muted-foreground">
+                      Or sign in with
+                    </p>
+                    <div className="space-y-2">
+                      {oidcProviders.map(
+                        (provider: {
+                          provider_id: string;
+                          name: string;
+                          enabled: boolean;
+                        }) =>
+                          provider.enabled && (
+                            <Button
+                              key={provider.provider_id}
+                              type="button"
+                              variant="outline"
+                              className="w-full"
+                              onClick={() =>
+                                handleOIDCSignIn(provider.provider_id)
+                              }
+                              disabled={loading}
+                            >
+                              <Shield className="mr-2 h-4 w-4" />
+                              Sign in with {provider.name}
+                            </Button>
+                          ),
+                      )}
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
+                </>
+              )}
           </CardContent>
         </Card>
       </div>

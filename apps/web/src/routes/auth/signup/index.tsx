@@ -20,7 +20,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { signUp, authClient } from "@/lib/auth-client";
-import Header from "@/components/nav/header";
 
 export const Route = createFileRoute("/auth/signup/")({
   component: SignUpPage,
@@ -29,7 +28,7 @@ export const Route = createFileRoute("/auth/signup/")({
 // Zod schema for sign up validation
 const signUpSchema = z
   .object({
-    email: z.string().email("Invalid email format").min(1, "Email is required"),
+    email: z.email("Invalid email format").min(1, "Email is required"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     confirmPassword: z.string().min(1, "Please confirm your password"),
   })
@@ -57,7 +56,7 @@ function SignUpPage() {
         const result = signUpSchema.safeParse(value);
         if (!result.success) {
           const errors: Record<string, string> = {};
-          result.error.errors.forEach((err) => {
+          result.error.issues.forEach((err) => {
             const path = err.path.join(".");
             errors[path] = err.message;
           });
@@ -116,7 +115,6 @@ function SignUpPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="flex items-center justify-center px-6 py-24">
         <Card className="w-full max-w-md">
           <CardHeader>
@@ -167,7 +165,9 @@ function SignUpPage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {field.state.meta.errors[0]}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>
@@ -201,7 +201,9 @@ function SignUpPage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {field.state.meta.errors[0]}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>
@@ -239,7 +241,9 @@ function SignUpPage() {
                             aria-invalid={!!field.state.meta.errors.length}
                           />
                           {field.state.meta.errors.length > 0 && (
-                            <FieldError>{field.state.meta.errors[0]}</FieldError>
+                            <FieldError>
+                              {field.state.meta.errors[0]}
+                            </FieldError>
                           )}
                         </FieldContent>
                       </Field>

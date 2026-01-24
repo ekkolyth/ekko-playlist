@@ -1,4 +1,9 @@
-import { createFileRoute, Outlet, useNavigate, useLocation } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  useNavigate,
+  useLocation,
+} from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 
@@ -22,15 +27,13 @@ function AuthenticatedLayout() {
     // - If EMAIL_VERIFICATION=false: emailVerified=true automatically
     // - If EMAIL_VERIFICATION=true: emailVerified=false until verified
     // So we just check the user's actual status, which reflects server config
-    if (
-      !loading &&
-      isAuthenticated &&
-      user &&
-      !user.emailVerified
-    ) {
+    if (!loading && isAuthenticated && user && !user.emailVerified) {
       // Allow access to verification page itself
       const currentPath = location.pathname;
-      if (currentPath !== "/auth/verify-email" && !currentPath.startsWith("/auth/signout")) {
+      if (
+        currentPath !== "/auth/verify-email" &&
+        !currentPath.startsWith("/auth/signout")
+      ) {
         navigate({ to: "/auth/verify-email" });
       }
     }

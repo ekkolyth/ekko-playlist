@@ -159,9 +159,7 @@ func GetSmtpConfigMap(ctx context.Context, dbService *db.Service) (map[string]st
 	}
 
 	return configMap, nil
-}
-
-// HasEnvSmtpConfig checks if any SMTP environment variables are set
+}// HasEnvSmtpConfig checks if any SMTP environment variables are set
 func HasEnvSmtpConfig() bool {
 	return os.Getenv("SMTP_HOST") != "" ||
 		os.Getenv("SMTP_PORT") != "" ||

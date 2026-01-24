@@ -9,7 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as AuthRouteRouteImport } from './routes/auth/route'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiVerifyTokenRouteImport } from './routes/api/verify-token'
 import { Route as ApiExtensionTokenRouteImport } from './routes/api/extension-token'
@@ -45,6 +46,9 @@ import { Route as AuthenticatedSettingsOidcProvidersRouteRouteImport } from './r
 import { Route as AuthenticatedAppPlaylistsRouteRouteImport } from './routes/_authenticated/app/playlists/route'
 import { Route as ApiUserProfileIndexRouteImport } from './routes/api/user/profile/index'
 import { Route as ApiConfigSmtpIndexRouteImport } from './routes/api/config/smtp/index'
+import { Route as AuthenticatedSettingsProfileIndexRouteImport } from './routes/_authenticated/settings/profile/index'
+import { Route as AuthenticatedSettingsPluginsIndexRouteImport } from './routes/_authenticated/settings/plugins/index'
+import { Route as AuthenticatedSettingsOidcProvidersIndexRouteImport } from './routes/_authenticated/settings/oidc-providers/index'
 import { Route as AuthenticatedSettingsEmailIndexRouteImport } from './routes/_authenticated/settings/email/index'
 import { Route as AuthenticatedSettingsEmailVerificationIndexRouteImport } from './routes/_authenticated/settings/email-verification/index'
 import { Route as AuthenticatedSettingsApiKeysIndexRouteImport } from './routes/_authenticated/settings/api-keys/index'
@@ -57,11 +61,19 @@ import { Route as AuthenticatedSettingsAdminUsersRouteRouteImport } from './rout
 import { Route as AuthenticatedSettingsAdminOverviewRouteRouteImport } from './routes/_authenticated/settings/admin/overview/route'
 import { Route as AuthenticatedAppPlaylistsNameRouteRouteImport } from './routes/_authenticated/app/playlists/$name/route'
 import { Route as ApiPlaylistsIdVideosIndexRouteImport } from './routes/api/playlists/$id/videos/index'
+import { Route as AuthenticatedSettingsPreferencesIndexRouteImport } from './routes/_authenticated/settings/preferences/index.'
+import { Route as AuthenticatedSettingsAdminUsersIndexRouteImport } from './routes/_authenticated/settings/admin/users/index'
+import { Route as AuthenticatedSettingsAdminOverviewIndexRouteImport } from './routes/_authenticated/settings/admin/overview/index'
 import { Route as AuthenticatedAppPlaylistsNameIndexRouteImport } from './routes/_authenticated/app/playlists/$name/index'
 import { Route as ApiPlaylistsIdVideosBulkRouteImport } from './routes/api/playlists/$id/videos/bulk'
 import { Route as ApiPlaylistsIdVideosVideoIdRouteImport } from './routes/api/playlists/$id/videos/$videoId'
 
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
+const AuthRouteRoute = AuthRouteRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
@@ -89,27 +101,27 @@ const AuthenticatedSettingsRouteRoute =
   AuthenticatedSettingsRouteRouteImport.update({
     id: '/settings',
     path: '/settings',
-    getParentRoute: () => AuthenticatedRoute,
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAppRouteRoute = AuthenticatedAppRouteRouteImport.update({
   id: '/app',
   path: '/app',
-  getParentRoute: () => AuthenticatedRoute,
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthVerifyEmailIndexRoute = AuthVerifyEmailIndexRouteImport.update({
-  id: '/auth/verify-email/',
-  path: '/auth/verify-email/',
-  getParentRoute: () => rootRouteImport,
+  id: '/verify-email/',
+  path: '/verify-email/',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthSignupIndexRoute = AuthSignupIndexRouteImport.update({
-  id: '/auth/signup/',
-  path: '/auth/signup/',
-  getParentRoute: () => rootRouteImport,
+  id: '/signup/',
+  path: '/signup/',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 const AuthSigninIndexRoute = AuthSigninIndexRouteImport.update({
-  id: '/auth/signin/',
-  path: '/auth/signin/',
-  getParentRoute: () => rootRouteImport,
+  id: '/signin/',
+  path: '/signin/',
+  getParentRoute: () => AuthRouteRoute,
 } as any)
 const ApiVideosIndexRoute = ApiVideosIndexRouteImport.update({
   id: '/api/videos/',
@@ -247,6 +259,24 @@ const ApiConfigSmtpIndexRoute = ApiConfigSmtpIndexRouteImport.update({
   path: '/smtp/',
   getParentRoute: () => ApiConfigRoute,
 } as any)
+const AuthenticatedSettingsProfileIndexRoute =
+  AuthenticatedSettingsProfileIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsProfileRouteRoute,
+  } as any)
+const AuthenticatedSettingsPluginsIndexRoute =
+  AuthenticatedSettingsPluginsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsPluginsRouteRoute,
+  } as any)
+const AuthenticatedSettingsOidcProvidersIndexRoute =
+  AuthenticatedSettingsOidcProvidersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsOidcProvidersRouteRoute,
+  } as any)
 const AuthenticatedSettingsEmailIndexRoute =
   AuthenticatedSettingsEmailIndexRouteImport.update({
     id: '/email/',
@@ -316,6 +346,24 @@ const ApiPlaylistsIdVideosIndexRoute =
     path: '/api/playlists/$id/videos/',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedSettingsPreferencesIndexRoute =
+  AuthenticatedSettingsPreferencesIndexRouteImport.update({
+    id: '/index/',
+    path: '/index/',
+    getParentRoute: () => AuthenticatedSettingsPreferencesRouteRoute,
+  } as any)
+const AuthenticatedSettingsAdminUsersIndexRoute =
+  AuthenticatedSettingsAdminUsersIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsAdminUsersRouteRoute,
+  } as any)
+const AuthenticatedSettingsAdminOverviewIndexRoute =
+  AuthenticatedSettingsAdminOverviewIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsAdminOverviewRouteRoute,
+  } as any)
 const AuthenticatedAppPlaylistsNameIndexRoute =
   AuthenticatedAppPlaylistsNameIndexRouteImport.update({
     id: '/',
@@ -337,16 +385,17 @@ const ApiPlaylistsIdVideosVideoIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
-  '/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRoute
-  '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
-  '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
-  '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
+  '/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRouteWithChildren
+  '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRouteWithChildren
+  '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRouteWithChildren
+  '/settings/profile': typeof AuthenticatedSettingsProfileRouteRouteWithChildren
   '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -370,8 +419,8 @@ export interface FileRoutesByFullPath {
   '/auth/signup': typeof AuthSignupIndexRoute
   '/auth/verify-email': typeof AuthVerifyEmailIndexRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
-  '/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRoute
-  '/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRoute
+  '/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRouteWithChildren
+  '/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRouteWithChildren
   '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
   '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
@@ -380,24 +429,28 @@ export interface FileRoutesByFullPath {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/settings/email-verification': typeof AuthenticatedSettingsEmailVerificationIndexRoute
   '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
+  '/settings/oidc-providers/': typeof AuthenticatedSettingsOidcProvidersIndexRoute
+  '/settings/plugins/': typeof AuthenticatedSettingsPluginsIndexRoute
+  '/settings/profile/': typeof AuthenticatedSettingsProfileIndexRoute
   '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
   '/api/user/profile': typeof ApiUserProfileIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
+  '/settings/admin/overview/': typeof AuthenticatedSettingsAdminOverviewIndexRoute
+  '/settings/admin/users/': typeof AuthenticatedSettingsAdminUsersIndexRoute
+  '/settings/preferences/index': typeof AuthenticatedSettingsPreferencesIndexRoute
   '/api/playlists/$id/videos': typeof ApiPlaylistsIdVideosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRouteRouteWithChildren
   '/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
-  '/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRoute
-  '/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
-  '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
-  '/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
+  '/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRouteWithChildren
   '/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -420,8 +473,6 @@ export interface FileRoutesByTo {
   '/auth/signin': typeof AuthSigninIndexRoute
   '/auth/signup': typeof AuthSignupIndexRoute
   '/auth/verify-email': typeof AuthVerifyEmailIndexRoute
-  '/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRoute
-  '/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRoute
   '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
   '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
@@ -430,27 +481,34 @@ export interface FileRoutesByTo {
   '/settings/api-keys': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/settings/email-verification': typeof AuthenticatedSettingsEmailVerificationIndexRoute
   '/settings/email': typeof AuthenticatedSettingsEmailIndexRoute
+  '/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersIndexRoute
+  '/settings/plugins': typeof AuthenticatedSettingsPluginsIndexRoute
+  '/settings/profile': typeof AuthenticatedSettingsProfileIndexRoute
   '/api/config/smtp': typeof ApiConfigSmtpIndexRoute
   '/api/user/profile': typeof ApiUserProfileIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameIndexRoute
+  '/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewIndexRoute
+  '/settings/admin/users': typeof AuthenticatedSettingsAdminUsersIndexRoute
+  '/settings/preferences/index': typeof AuthenticatedSettingsPreferencesIndexRoute
   '/api/playlists/$id/videos': typeof ApiPlaylistsIdVideosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRouteRouteWithChildren
   '/_authenticated/app': typeof AuthenticatedAppRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/api/config': typeof ApiConfigRouteWithChildren
   '/api/extension-token': typeof ApiExtensionTokenRoute
   '/api/verify-token': typeof ApiVerifyTokenRoute
   '/_authenticated/app/playlists': typeof AuthenticatedAppPlaylistsRouteRouteWithChildren
-  '/_authenticated/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRoute
-  '/_authenticated/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRoute
-  '/_authenticated/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRoute
-  '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRoute
+  '/_authenticated/settings/oidc-providers': typeof AuthenticatedSettingsOidcProvidersRouteRouteWithChildren
+  '/_authenticated/settings/plugins': typeof AuthenticatedSettingsPluginsRouteRouteWithChildren
+  '/_authenticated/settings/preferences': typeof AuthenticatedSettingsPreferencesRouteRouteWithChildren
+  '/_authenticated/settings/profile': typeof AuthenticatedSettingsProfileRouteRouteWithChildren
   '/_authenticated/app/knuckles': typeof AuthenticatedAppKnucklesRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -474,8 +532,8 @@ export interface FileRoutesById {
   '/auth/signup/': typeof AuthSignupIndexRoute
   '/auth/verify-email/': typeof AuthVerifyEmailIndexRoute
   '/_authenticated/app/playlists/$name': typeof AuthenticatedAppPlaylistsNameRouteRouteWithChildren
-  '/_authenticated/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRoute
-  '/_authenticated/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRoute
+  '/_authenticated/settings/admin/overview': typeof AuthenticatedSettingsAdminOverviewRouteRouteWithChildren
+  '/_authenticated/settings/admin/users': typeof AuthenticatedSettingsAdminUsersRouteRouteWithChildren
   '/api/auth/email-otp/$': typeof ApiAuthEmailOtpSplatRoute
   '/api/auth/otp/$': typeof ApiAuthOtpSplatRoute
   '/api/config/smtp/test': typeof ApiConfigSmtpTestRoute
@@ -484,17 +542,24 @@ export interface FileRoutesById {
   '/_authenticated/settings/api-keys/': typeof AuthenticatedSettingsApiKeysIndexRoute
   '/_authenticated/settings/email-verification/': typeof AuthenticatedSettingsEmailVerificationIndexRoute
   '/_authenticated/settings/email/': typeof AuthenticatedSettingsEmailIndexRoute
+  '/_authenticated/settings/oidc-providers/': typeof AuthenticatedSettingsOidcProvidersIndexRoute
+  '/_authenticated/settings/plugins/': typeof AuthenticatedSettingsPluginsIndexRoute
+  '/_authenticated/settings/profile/': typeof AuthenticatedSettingsProfileIndexRoute
   '/api/config/smtp/': typeof ApiConfigSmtpIndexRoute
   '/api/user/profile/': typeof ApiUserProfileIndexRoute
   '/api/playlists/$id/videos/$videoId': typeof ApiPlaylistsIdVideosVideoIdRoute
   '/api/playlists/$id/videos/bulk': typeof ApiPlaylistsIdVideosBulkRoute
   '/_authenticated/app/playlists/$name/': typeof AuthenticatedAppPlaylistsNameIndexRoute
+  '/_authenticated/settings/admin/overview/': typeof AuthenticatedSettingsAdminOverviewIndexRoute
+  '/_authenticated/settings/admin/users/': typeof AuthenticatedSettingsAdminUsersIndexRoute
+  '/_authenticated/settings/preferences/index/': typeof AuthenticatedSettingsPreferencesIndexRoute
   '/api/playlists/$id/videos/': typeof ApiPlaylistsIdVideosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/auth'
     | '/app'
     | '/settings'
     | '/api/config'
@@ -538,24 +603,28 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/email-verification'
     | '/settings/email'
+    | '/settings/oidc-providers/'
+    | '/settings/plugins/'
+    | '/settings/profile/'
     | '/api/config/smtp'
     | '/api/user/profile'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/app/playlists/$name/'
+    | '/settings/admin/overview/'
+    | '/settings/admin/users/'
+    | '/settings/preferences/index'
     | '/api/playlists/$id/videos'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/auth'
     | '/app'
     | '/settings'
     | '/api/config'
     | '/api/extension-token'
     | '/api/verify-token'
-    | '/settings/oidc-providers'
-    | '/settings/plugins'
     | '/settings/preferences'
-    | '/settings/profile'
     | '/app/knuckles'
     | '/api/auth/$'
     | '/api/auth/me'
@@ -578,8 +647,6 @@ export interface FileRouteTypes {
     | '/auth/signin'
     | '/auth/signup'
     | '/auth/verify-email'
-    | '/settings/admin/overview'
-    | '/settings/admin/users'
     | '/api/auth/email-otp/$'
     | '/api/auth/otp/$'
     | '/api/config/smtp/test'
@@ -588,16 +655,23 @@ export interface FileRouteTypes {
     | '/settings/api-keys'
     | '/settings/email-verification'
     | '/settings/email'
+    | '/settings/oidc-providers'
+    | '/settings/plugins'
+    | '/settings/profile'
     | '/api/config/smtp'
     | '/api/user/profile'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/app/playlists/$name'
+    | '/settings/admin/overview'
+    | '/settings/admin/users'
+    | '/settings/preferences/index'
     | '/api/playlists/$id/videos'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/auth'
     | '/_authenticated/app'
     | '/_authenticated/settings'
     | '/api/config'
@@ -641,17 +715,24 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/api-keys/'
     | '/_authenticated/settings/email-verification/'
     | '/_authenticated/settings/email/'
+    | '/_authenticated/settings/oidc-providers/'
+    | '/_authenticated/settings/plugins/'
+    | '/_authenticated/settings/profile/'
     | '/api/config/smtp/'
     | '/api/user/profile/'
     | '/api/playlists/$id/videos/$videoId'
     | '/api/playlists/$id/videos/bulk'
     | '/_authenticated/app/playlists/$name/'
+    | '/_authenticated/settings/admin/overview/'
+    | '/_authenticated/settings/admin/users/'
+    | '/_authenticated/settings/preferences/index/'
     | '/api/playlists/$id/videos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRouteRoute: typeof AuthRouteRouteWithChildren
   ApiConfigRoute: typeof ApiConfigRouteWithChildren
   ApiExtensionTokenRoute: typeof ApiExtensionTokenRoute
   ApiVerifyTokenRoute: typeof ApiVerifyTokenRoute
@@ -673,9 +754,6 @@ export interface RootRouteChildren {
   ApiTagsIndexRoute: typeof ApiTagsIndexRoute
   ApiTokensIndexRoute: typeof ApiTokensIndexRoute
   ApiVideosIndexRoute: typeof ApiVideosIndexRoute
-  AuthSigninIndexRoute: typeof AuthSigninIndexRoute
-  AuthSignupIndexRoute: typeof AuthSignupIndexRoute
-  AuthVerifyEmailIndexRoute: typeof AuthVerifyEmailIndexRoute
   ApiAuthEmailOtpSplatRoute: typeof ApiAuthEmailOtpSplatRoute
   ApiAuthOtpSplatRoute: typeof ApiAuthOtpSplatRoute
   ApiUserProfileIndexRoute: typeof ApiUserProfileIndexRoute
@@ -686,11 +764,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated': {
       id: '/_authenticated'
       path: ''
       fullPath: ''
-      preLoaderRoute: typeof AuthenticatedRouteImport
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -726,35 +811,35 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/app': {
       id: '/_authenticated/app'
       path: '/app'
       fullPath: '/app'
       preLoaderRoute: typeof AuthenticatedAppRouteRouteImport
-      parentRoute: typeof AuthenticatedRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/auth/verify-email/': {
       id: '/auth/verify-email/'
-      path: '/auth/verify-email'
+      path: '/verify-email'
       fullPath: '/auth/verify-email'
       preLoaderRoute: typeof AuthVerifyEmailIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
     '/auth/signup/': {
       id: '/auth/signup/'
-      path: '/auth/signup'
+      path: '/signup'
       fullPath: '/auth/signup'
       preLoaderRoute: typeof AuthSignupIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
     '/auth/signin/': {
       id: '/auth/signin/'
-      path: '/auth/signin'
+      path: '/signin'
       fullPath: '/auth/signin'
       preLoaderRoute: typeof AuthSigninIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof AuthRouteRoute
     }
     '/api/videos/': {
       id: '/api/videos/'
@@ -938,6 +1023,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiConfigSmtpIndexRouteImport
       parentRoute: typeof ApiConfigRoute
     }
+    '/_authenticated/settings/profile/': {
+      id: '/_authenticated/settings/profile/'
+      path: '/'
+      fullPath: '/settings/profile/'
+      preLoaderRoute: typeof AuthenticatedSettingsProfileIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsProfileRouteRoute
+    }
+    '/_authenticated/settings/plugins/': {
+      id: '/_authenticated/settings/plugins/'
+      path: '/'
+      fullPath: '/settings/plugins/'
+      preLoaderRoute: typeof AuthenticatedSettingsPluginsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsPluginsRouteRoute
+    }
+    '/_authenticated/settings/oidc-providers/': {
+      id: '/_authenticated/settings/oidc-providers/'
+      path: '/'
+      fullPath: '/settings/oidc-providers/'
+      preLoaderRoute: typeof AuthenticatedSettingsOidcProvidersIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsOidcProvidersRouteRoute
+    }
     '/_authenticated/settings/email/': {
       id: '/_authenticated/settings/email/'
       path: '/email'
@@ -1022,6 +1128,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlaylistsIdVideosIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/settings/preferences/index/': {
+      id: '/_authenticated/settings/preferences/index/'
+      path: '/index'
+      fullPath: '/settings/preferences/index'
+      preLoaderRoute: typeof AuthenticatedSettingsPreferencesIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
+    }
+    '/_authenticated/settings/admin/users/': {
+      id: '/_authenticated/settings/admin/users/'
+      path: '/'
+      fullPath: '/settings/admin/users/'
+      preLoaderRoute: typeof AuthenticatedSettingsAdminUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsAdminUsersRouteRoute
+    }
+    '/_authenticated/settings/admin/overview/': {
+      id: '/_authenticated/settings/admin/overview/'
+      path: '/'
+      fullPath: '/settings/admin/overview/'
+      preLoaderRoute: typeof AuthenticatedSettingsAdminOverviewIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsAdminOverviewRouteRoute
+    }
     '/_authenticated/app/playlists/$name/': {
       id: '/_authenticated/app/playlists/$name/'
       path: '/'
@@ -1096,13 +1223,103 @@ const AuthenticatedAppRouteRouteWithChildren =
     AuthenticatedAppRouteRouteChildren,
   )
 
+interface AuthenticatedSettingsOidcProvidersRouteRouteChildren {
+  AuthenticatedSettingsOidcProvidersIndexRoute: typeof AuthenticatedSettingsOidcProvidersIndexRoute
+}
+
+const AuthenticatedSettingsOidcProvidersRouteRouteChildren: AuthenticatedSettingsOidcProvidersRouteRouteChildren =
+  {
+    AuthenticatedSettingsOidcProvidersIndexRoute:
+      AuthenticatedSettingsOidcProvidersIndexRoute,
+  }
+
+const AuthenticatedSettingsOidcProvidersRouteRouteWithChildren =
+  AuthenticatedSettingsOidcProvidersRouteRoute._addFileChildren(
+    AuthenticatedSettingsOidcProvidersRouteRouteChildren,
+  )
+
+interface AuthenticatedSettingsPluginsRouteRouteChildren {
+  AuthenticatedSettingsPluginsIndexRoute: typeof AuthenticatedSettingsPluginsIndexRoute
+}
+
+const AuthenticatedSettingsPluginsRouteRouteChildren: AuthenticatedSettingsPluginsRouteRouteChildren =
+  {
+    AuthenticatedSettingsPluginsIndexRoute:
+      AuthenticatedSettingsPluginsIndexRoute,
+  }
+
+const AuthenticatedSettingsPluginsRouteRouteWithChildren =
+  AuthenticatedSettingsPluginsRouteRoute._addFileChildren(
+    AuthenticatedSettingsPluginsRouteRouteChildren,
+  )
+
+interface AuthenticatedSettingsPreferencesRouteRouteChildren {
+  AuthenticatedSettingsPreferencesIndexRoute: typeof AuthenticatedSettingsPreferencesIndexRoute
+}
+
+const AuthenticatedSettingsPreferencesRouteRouteChildren: AuthenticatedSettingsPreferencesRouteRouteChildren =
+  {
+    AuthenticatedSettingsPreferencesIndexRoute:
+      AuthenticatedSettingsPreferencesIndexRoute,
+  }
+
+const AuthenticatedSettingsPreferencesRouteRouteWithChildren =
+  AuthenticatedSettingsPreferencesRouteRoute._addFileChildren(
+    AuthenticatedSettingsPreferencesRouteRouteChildren,
+  )
+
+interface AuthenticatedSettingsProfileRouteRouteChildren {
+  AuthenticatedSettingsProfileIndexRoute: typeof AuthenticatedSettingsProfileIndexRoute
+}
+
+const AuthenticatedSettingsProfileRouteRouteChildren: AuthenticatedSettingsProfileRouteRouteChildren =
+  {
+    AuthenticatedSettingsProfileIndexRoute:
+      AuthenticatedSettingsProfileIndexRoute,
+  }
+
+const AuthenticatedSettingsProfileRouteRouteWithChildren =
+  AuthenticatedSettingsProfileRouteRoute._addFileChildren(
+    AuthenticatedSettingsProfileRouteRouteChildren,
+  )
+
+interface AuthenticatedSettingsAdminOverviewRouteRouteChildren {
+  AuthenticatedSettingsAdminOverviewIndexRoute: typeof AuthenticatedSettingsAdminOverviewIndexRoute
+}
+
+const AuthenticatedSettingsAdminOverviewRouteRouteChildren: AuthenticatedSettingsAdminOverviewRouteRouteChildren =
+  {
+    AuthenticatedSettingsAdminOverviewIndexRoute:
+      AuthenticatedSettingsAdminOverviewIndexRoute,
+  }
+
+const AuthenticatedSettingsAdminOverviewRouteRouteWithChildren =
+  AuthenticatedSettingsAdminOverviewRouteRoute._addFileChildren(
+    AuthenticatedSettingsAdminOverviewRouteRouteChildren,
+  )
+
+interface AuthenticatedSettingsAdminUsersRouteRouteChildren {
+  AuthenticatedSettingsAdminUsersIndexRoute: typeof AuthenticatedSettingsAdminUsersIndexRoute
+}
+
+const AuthenticatedSettingsAdminUsersRouteRouteChildren: AuthenticatedSettingsAdminUsersRouteRouteChildren =
+  {
+    AuthenticatedSettingsAdminUsersIndexRoute:
+      AuthenticatedSettingsAdminUsersIndexRoute,
+  }
+
+const AuthenticatedSettingsAdminUsersRouteRouteWithChildren =
+  AuthenticatedSettingsAdminUsersRouteRoute._addFileChildren(
+    AuthenticatedSettingsAdminUsersRouteRouteChildren,
+  )
+
 interface AuthenticatedSettingsRouteRouteChildren {
-  AuthenticatedSettingsOidcProvidersRouteRoute: typeof AuthenticatedSettingsOidcProvidersRouteRoute
-  AuthenticatedSettingsPluginsRouteRoute: typeof AuthenticatedSettingsPluginsRouteRoute
-  AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRoute
-  AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRoute
-  AuthenticatedSettingsAdminOverviewRouteRoute: typeof AuthenticatedSettingsAdminOverviewRouteRoute
-  AuthenticatedSettingsAdminUsersRouteRoute: typeof AuthenticatedSettingsAdminUsersRouteRoute
+  AuthenticatedSettingsOidcProvidersRouteRoute: typeof AuthenticatedSettingsOidcProvidersRouteRouteWithChildren
+  AuthenticatedSettingsPluginsRouteRoute: typeof AuthenticatedSettingsPluginsRouteRouteWithChildren
+  AuthenticatedSettingsPreferencesRouteRoute: typeof AuthenticatedSettingsPreferencesRouteRouteWithChildren
+  AuthenticatedSettingsProfileRouteRoute: typeof AuthenticatedSettingsProfileRouteRouteWithChildren
+  AuthenticatedSettingsAdminOverviewRouteRoute: typeof AuthenticatedSettingsAdminOverviewRouteRouteWithChildren
+  AuthenticatedSettingsAdminUsersRouteRoute: typeof AuthenticatedSettingsAdminUsersRouteRouteWithChildren
   AuthenticatedSettingsApiKeysIndexRoute: typeof AuthenticatedSettingsApiKeysIndexRoute
   AuthenticatedSettingsEmailVerificationIndexRoute: typeof AuthenticatedSettingsEmailVerificationIndexRoute
   AuthenticatedSettingsEmailIndexRoute: typeof AuthenticatedSettingsEmailIndexRoute
@@ -1111,17 +1328,17 @@ interface AuthenticatedSettingsRouteRouteChildren {
 const AuthenticatedSettingsRouteRouteChildren: AuthenticatedSettingsRouteRouteChildren =
   {
     AuthenticatedSettingsOidcProvidersRouteRoute:
-      AuthenticatedSettingsOidcProvidersRouteRoute,
+      AuthenticatedSettingsOidcProvidersRouteRouteWithChildren,
     AuthenticatedSettingsPluginsRouteRoute:
-      AuthenticatedSettingsPluginsRouteRoute,
+      AuthenticatedSettingsPluginsRouteRouteWithChildren,
     AuthenticatedSettingsPreferencesRouteRoute:
-      AuthenticatedSettingsPreferencesRouteRoute,
+      AuthenticatedSettingsPreferencesRouteRouteWithChildren,
     AuthenticatedSettingsProfileRouteRoute:
-      AuthenticatedSettingsProfileRouteRoute,
+      AuthenticatedSettingsProfileRouteRouteWithChildren,
     AuthenticatedSettingsAdminOverviewRouteRoute:
-      AuthenticatedSettingsAdminOverviewRouteRoute,
+      AuthenticatedSettingsAdminOverviewRouteRouteWithChildren,
     AuthenticatedSettingsAdminUsersRouteRoute:
-      AuthenticatedSettingsAdminUsersRouteRoute,
+      AuthenticatedSettingsAdminUsersRouteRouteWithChildren,
     AuthenticatedSettingsApiKeysIndexRoute:
       AuthenticatedSettingsApiKeysIndexRoute,
     AuthenticatedSettingsEmailVerificationIndexRoute:
@@ -1134,18 +1351,33 @@ const AuthenticatedSettingsRouteRouteWithChildren =
     AuthenticatedSettingsRouteRouteChildren,
   )
 
-interface AuthenticatedRouteChildren {
+interface AuthenticatedRouteRouteChildren {
   AuthenticatedAppRouteRoute: typeof AuthenticatedAppRouteRouteWithChildren
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
 }
 
-const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAppRouteRoute: AuthenticatedAppRouteRouteWithChildren,
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
 }
 
-const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AuthRouteRouteChildren {
+  AuthSigninIndexRoute: typeof AuthSigninIndexRoute
+  AuthSignupIndexRoute: typeof AuthSignupIndexRoute
+  AuthVerifyEmailIndexRoute: typeof AuthVerifyEmailIndexRoute
+}
+
+const AuthRouteRouteChildren: AuthRouteRouteChildren = {
+  AuthSigninIndexRoute: AuthSigninIndexRoute,
+  AuthSignupIndexRoute: AuthSignupIndexRoute,
+  AuthVerifyEmailIndexRoute: AuthVerifyEmailIndexRoute,
+}
+
+const AuthRouteRouteWithChildren = AuthRouteRoute._addFileChildren(
+  AuthRouteRouteChildren,
 )
 
 interface ApiConfigRouteChildren {
@@ -1164,7 +1396,8 @@ const ApiConfigRouteWithChildren = ApiConfigRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRouteRoute: AuthRouteRouteWithChildren,
   ApiConfigRoute: ApiConfigRouteWithChildren,
   ApiExtensionTokenRoute: ApiExtensionTokenRoute,
   ApiVerifyTokenRoute: ApiVerifyTokenRoute,
@@ -1186,9 +1419,6 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTagsIndexRoute: ApiTagsIndexRoute,
   ApiTokensIndexRoute: ApiTokensIndexRoute,
   ApiVideosIndexRoute: ApiVideosIndexRoute,
-  AuthSigninIndexRoute: AuthSigninIndexRoute,
-  AuthSignupIndexRoute: AuthSignupIndexRoute,
-  AuthVerifyEmailIndexRoute: AuthVerifyEmailIndexRoute,
   ApiAuthEmailOtpSplatRoute: ApiAuthEmailOtpSplatRoute,
   ApiAuthOtpSplatRoute: ApiAuthOtpSplatRoute,
   ApiUserProfileIndexRoute: ApiUserProfileIndexRoute,

@@ -73,6 +73,8 @@ func NewRouter(dbService *db.Service, luaService *lua.Service) http.Handler {
 	// OIDC Provider routes (public for listing enabled providers)
 	oidcProviderHandler := handlers.NewOIDCProviderHandler(dbService)
 	router.Get("/api/oidc-providers", oidcProviderHandler.ListOIDCProviders)
+	// Internal endpoint for Better Auth (localhost only, returns unmasked secrets)
+	router.Get("/api/oidc-providers/internal", oidcProviderHandler.ListOIDCProvidersForAuth)
 
 	// Auth routes (public)
 	authHandler := handlers.NewAuthHandler(dbService)

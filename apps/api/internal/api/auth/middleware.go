@@ -56,24 +56,30 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 
 			// If not a stored API token, try to validate as JWT token
 			if IsJWT(token) {
+				logging.Info("Auth: Attempting JWT validation")
 				claims, err := VerifyJWT(ctx, token)
 				if err == nil && claims != nil {
 					// Extract user info from JWT claims
 					// Better Auth JWT includes user info in the payload
+					// OIDC tokens typically use "sub" (subject) claim for user ID
 					userID, ok := claims["sub"].(string)
 					if !ok {
-						// Try "id" field as fallback
+						// Try "id" field as fallback (for non-OIDC tokens)
 						if id, ok := claims["id"].(string); ok {
 							userID = id
+							logging.Info("Auth: JWT user ID extracted from 'id' claim (fallback)")
 						} else {
-							logging.Info("Auth: JWT validated but no user ID in claims")
+							// Log all available claims for debugging
+							logging.Info("Auth: JWT validated but no user ID in claims. Available claims: %v", getClaimKeys(claims))
 							http.Error(w, "Invalid token: missing user ID", http.StatusUnauthorized)
 							return
 						}
+					} else {
+						logging.Info("Auth: JWT user ID extracted from 'sub' claim (OIDC standard)")
 					}
 
 					email, _ := claims["email"].(string)
-					logging.Info("Auth: JWT validated - User ID: %s, Email: %s", userID, email)
+					logging.Info("Auth: JWT validated successfully - User ID: %s, Email: %s", userID, email)
 					// Add user info to request context
 					ctx = context.WithValue(ctx, userIDKey, userID)
 					ctx = context.WithValue(ctx, userEmailKey, email)
@@ -97,7 +103,6 @@ func AuthMiddleware(dbService *db.Service) func(http.Handler) http.Handler {
 			// Token not found in session, JWT, or verification table
 			logging.Info("Auth: Failed to validate token - not found in session, JWT, or verification table")
 			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
-			return
 		})
 	}
 }
@@ -129,5 +134,14 @@ func extractTokenFromRequest(r *http.Request) string {
 	}
 
 	return ""
+}
+
+// getClaimKeys returns a slice of claim keys for logging purposes
+func getClaimKeys(claims map[string]interface{}) []string {
+	keys := make([]string, 0, len(claims))
+	for k := range claims {
+		keys = append(keys, k)
+	}
+	return keys
 }
 

@@ -9,14 +9,18 @@ export function ColorPicker() {
   const { updatePreferences, isUpdating } = usePreferences();
 
   const colors: Array<{ id: ThemeColor; label: string; value: string }> = [
-    { id: "red", label: "Red", value: colorPalette.red },
+    { id: "amber", label: "Amber", value: colorPalette.amber },
     { id: "blue", label: "Blue", value: colorPalette.blue },
-    { id: "purple", label: "Purple", value: colorPalette.purple },
+    { id: "cyan", label: "Cyan", value: colorPalette.cyan },
+    { id: "emerald", label: "Emerald", value: colorPalette.emerald },
+    { id: "fuchsia", label: "Fuchsia", value: colorPalette.fuchsia },
     { id: "green", label: "Green", value: colorPalette.green },
-    { id: "yellow", label: "Yellow", value: colorPalette.yellow },
+    { id: "indigo", label: "Indigo", value: colorPalette.indigo },
+    { id: "lime", label: "Lime", value: colorPalette.lime },
     { id: "orange", label: "Orange", value: colorPalette.orange },
     { id: "pink", label: "Pink", value: colorPalette.pink },
-    { id: "indigo", label: "Indigo", value: colorPalette.indigo },
+    { id: "purple", label: "Purple", value: colorPalette.purple },
+    { id: "red", label: "Red", value: colorPalette.red },
   ];
 
   return (
@@ -24,7 +28,7 @@ export function ColorPicker() {
       <div className="text-xs font-medium text-muted-foreground mb-2">
         Theme Color
       </div>
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-3">
         {colors.map((color) => (
           <button
             key={color.id}

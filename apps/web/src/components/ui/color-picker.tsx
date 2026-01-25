@@ -15,25 +15,29 @@ export function ColorPicker({
   className,
 }: ColorPickerProps) {
   const colors: ThemeColor[] = [
-    "red",
+    "amber",
     "blue",
-    "purple",
+    "cyan",
+    "emerald",
+    "fuchsia",
     "green",
-    "yellow",
+    "indigo",
+    "lime",
     "orange",
     "pink",
-    "indigo",
+    "purple",
+    "red",
   ];
 
   return (
-    <div className={cn("grid grid-cols-4 gap-2", className)}>
+    <div className={cn("grid grid-cols-4 gap-3", className)}>
       {colors.map((color) => (
         <button
           key={color}
           type="button"
           onClick={() => onValueChange(color)}
           className={cn(
-            "h-10 w-full rounded-md border-2 transition-all hover:scale-105",
+            "h-10 w-10 rounded-full border-2 transition-all hover:scale-110",
             value === color
               ? "border-foreground ring-2 ring-ring ring-offset-2"
               : "border-border hover:border-foreground/50"

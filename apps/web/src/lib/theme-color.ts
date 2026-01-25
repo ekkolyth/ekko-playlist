@@ -1,32 +1,44 @@
 export type ThemeColor =
-  | "red"
+  | "amber"
   | "blue"
-  | "purple"
+  | "cyan"
+  | "emerald"
+  | "fuchsia"
   | "green"
-  | "yellow"
+  | "indigo"
+  | "lime"
   | "orange"
   | "pink"
-  | "indigo";
+  | "purple"
+  | "red";
 
 export const colorPalette: Record<ThemeColor, string> = {
-  red: "#ef4444",
+  amber: "#f59e0b",
   blue: "#3b82f6",
-  purple: "#8b5cf6",
-  green: "#10b981",
-  yellow: "#f59e0b",
+  cyan: "#06b6d4",
+  emerald: "#10b981",
+  fuchsia: "#d946ef",
+  green: "#22c55e",
+  indigo: "#6366f1",
+  lime: "#84cc16",
   orange: "#f97316",
   pink: "#ec4899",
-  indigo: "#6366f1",
+  purple: "#a855f7",
+  red: "#ef4444",
 };
 
 // Map theme colors to CSS variable values for primary color
 export const themeColorToCSS: Record<ThemeColor, string> = {
-  red: "#ef4444",
+  amber: "#f59e0b",
   blue: "#3b82f6",
-  purple: "#8b5cf6",
-  green: "#10b981",
-  yellow: "#f59e0b",
+  cyan: "#06b6d4",
+  emerald: "#10b981",
+  fuchsia: "#d946ef",
+  green: "#22c55e",
+  indigo: "#6366f1",
+  lime: "#84cc16",
   orange: "#f97316",
   pink: "#ec4899",
-  indigo: "#6366f1",
+  purple: "#a855f7",
+  red: "#ef4444",
 };

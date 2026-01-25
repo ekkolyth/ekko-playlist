@@ -18,6 +18,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { VideoCollection } from "../../-components/video-collection";
+import { VideoPlayerDialog } from "@/components/video/video-player-dialog";
 import {
   usePlaylist,
   decodeSlug,
@@ -25,6 +26,7 @@ import {
 } from "@/hooks/use-playlist";
 import { assertDefined } from "@/lib/assert";
 import { useQuery } from "@tanstack/react-query";
+import { type Video } from "@/lib/api-types";
 
 export const Route = createFileRoute("/_authenticated/app/playlists/$name/")({
   component: PlaylistDetailPage,
@@ -42,6 +44,8 @@ function PlaylistDetailPage() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [isVideoPlayerDialogOpen, setIsVideoPlayerDialogOpen] = useState(false);
   // Read search value from URL (set by HeaderSearch component)
   const searchParams = useRouterSearch({ strict: false }) as { search?: string };
   const debouncedSearchValue = searchParams.search || '';
@@ -107,8 +111,9 @@ function PlaylistDetailPage() {
   const openDeleteDialog = () => setIsDeleteDialogOpen(true);
   const closeDeleteDialog = () => setIsDeleteDialogOpen(false);
 
-  const videoClick = (video: { id: number; normalizedUrl: string }) => {
-    window.open(video.normalizedUrl, "_blank");
+  const videoClick = (video: Video) => {
+    setSelectedVideo(video);
+    setIsVideoPlayerDialogOpen(true);
   };
 
   if (isLoading) {
@@ -304,6 +309,12 @@ function PlaylistDetailPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <VideoPlayerDialog
+          video={selectedVideo}
+          open={isVideoPlayerDialogOpen}
+          onOpenChange={setIsVideoPlayerDialogOpen}
+        />
       </div>
     </div>
   );

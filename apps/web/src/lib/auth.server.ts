@@ -59,7 +59,94 @@ function loadOIDCProvidersFromEnv(): Array<{
   }
 }
 
-// Initialize better-auth
+// Database provider response format
+interface OIDCProviderDBResponse {
+  provider_id: string;
+  client_id: string;
+  client_secret: string;
+  discovery_url: string;
+  scopes: string[];
+}
+
+async function loadOIDCProvidersFromDatabase(): Promise<Array<{
+  providerId: string;
+  clientId: string;
+  clientSecret: string;
+  discoveryUrl: string;
+  scopes: string[];
+}>> {
+  const apiUrl = getEnvVar("API_URL", "http://localhost:1337");
+  const internalEndpoint = `${apiUrl}/api/oidc-providers/internal`;
+
+  try {
+    const response = await fetch(internalEndpoint, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      // If endpoint is not available or returns error, log and return empty array
+      console.warn(
+        `Failed to load OIDC providers from database: ${response.status} ${response.statusText}. Falling back to ENV providers only.`,
+      );
+      return [];
+    }
+
+    const providers: OIDCProviderDBResponse[] = await response.json();
+    return providers.map((p) => ({
+      providerId: p.provider_id,
+      clientId: p.client_id,
+      clientSecret: p.client_secret,
+      discoveryUrl: p.discovery_url,
+      scopes: p.scopes && p.scopes.length > 0
+        ? p.scopes
+        : ["openid", "profile", "email"],
+    }));
+  } catch (error) {
+    // Log error but don't throw - fallback to ENV providers only
+    console.error(
+      "Error loading OIDC providers from database:",
+      error instanceof Error ? error.message : error,
+    );
+    console.warn("Falling back to ENV providers only.");
+    return [];
+  }
+}
+
+// Load OIDC providers - ENV takes precedence over database
+// If ENV providers exist, use ONLY ENV providers (database providers are ignored)
+async function loadOIDCProviders(): Promise<Array<{
+  providerId: string;
+  clientId: string;
+  clientSecret: string;
+  discoveryUrl: string;
+  scopes: string[];
+}>> {
+  const envProviders = loadOIDCProvidersFromEnv();
+  
+  // If ENV providers exist, use ONLY ENV providers (database providers disabled)
+  if (envProviders.length > 0) {
+    console.log(
+      `Using ${envProviders.length} ENV-configured OIDC provider(s). Database providers are disabled when ENV providers are present.`,
+    );
+    return envProviders;
+  }
+
+  // No ENV providers, load from database
+  const dbProviders = await loadOIDCProvidersFromDatabase();
+  console.log(
+    `Using ${dbProviders.length} database-configured OIDC provider(s).`,
+  );
+  
+  return dbProviders;
+}
+
+// Initialize better-auth with providers
+// Using top-level await to load providers before initialization
+const oidcProviders = await loadOIDCProviders();
+
 let auth: ReturnType<typeof betterAuth>;
 
 try {
@@ -132,11 +219,11 @@ try {
       oneTimeToken({
         expiresIn: 90 * 24 * 60, // 90 days in minutes (keep for other uses)
       }),
-      // Load OIDC providers from ENV
-      ...(loadOIDCProvidersFromEnv().length > 0
+      // Load OIDC providers (ENV takes precedence - if ENV exists, database is ignored)
+      ...(oidcProviders.length > 0
         ? [
             genericOAuth({
-              config: loadOIDCProvidersFromEnv(),
+              config: oidcProviders,
             }),
           ]
         : []),

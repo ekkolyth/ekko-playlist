@@ -57,6 +57,7 @@ import { usePlaylist } from "@/hooks/use-playlist";
 import { useTags } from "@/hooks/use-tags";
 import { TagSelector } from "@/components/tags/tag-selector";
 import { TagDetailsDialog } from "@/components/tags/tag-details-dialog";
+import { VideoPlayerDialog } from "@/components/video/video-player-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Playlist } from "@/lib/types";
@@ -100,6 +101,8 @@ export function VideoCollection({
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [tagDetailsVideo, setTagDetailsVideo] = useState<Video | null>(null);
   const [isTagDetailsDialogOpen, setIsTagDetailsDialogOpen] = useState(false);
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null);
+  const [isVideoPlayerDialogOpen, setIsVideoPlayerDialogOpen] = useState(false);
 
   const playlist = usePlaylist();
   const playlists = playlist.list;
@@ -272,7 +275,8 @@ export function VideoCollection({
       if (onVideoClick) {
         onVideoClick(video);
       } else {
-        window.open(video.normalizedUrl, "_blank");
+        setSelectedVideo(video);
+        setIsVideoPlayerDialogOpen(true);
       }
     }
   };
@@ -678,6 +682,12 @@ export function VideoCollection({
         video={tagDetailsVideo}
         open={isTagDetailsDialogOpen}
         onOpenChange={setIsTagDetailsDialogOpen}
+      />
+
+      <VideoPlayerDialog
+        video={selectedVideo}
+        open={isVideoPlayerDialogOpen}
+        onOpenChange={setIsVideoPlayerDialogOpen}
       />
     </>
   );

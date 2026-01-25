@@ -721,6 +721,489 @@ function handleMessage(
     return false;
 }
 
+// Storage keys (matching popup.ts)
+const STORAGE_KEY_TOKEN = "auth_token";
+const STORAGE_KEY_SERVER_URL = "server_url";
+const DEFAULT_API_BASE_URL = "http://localhost:1337";
+
+// Storage helper functions
+async function getStoredToken(): Promise<string | null> {
+    return new Promise((resolve) => {
+        chrome.storage.local.get([STORAGE_KEY_TOKEN], (result) => {
+            resolve(result[STORAGE_KEY_TOKEN] || null);
+        });
+    });
+}
+
+async function getStoredServerUrl(): Promise<string | null> {
+    return new Promise((resolve) => {
+        chrome.storage.local.get([STORAGE_KEY_SERVER_URL], (result) => {
+            resolve(result[STORAGE_KEY_SERVER_URL] || null);
+        });
+    });
+}
+
+async function getApiBaseUrl(): Promise<string> {
+    const storedUrl = await getStoredServerUrl();
+    return storedUrl || DEFAULT_API_BASE_URL;
+}
+
+// API communication function
+interface ProcessVideoResponse {
+    processed: {
+        channel: string;
+        originalUrl: string;
+        normalizedUrl: string;
+        title: string;
+        isValid: boolean;
+        error?: string;
+    };
+}
+
+async function sendVideoToAPI(
+    video: VideoInfo,
+): Promise<ProcessVideoResponse> {
+    // Get authentication token and server URL
+    const token = await getStoredToken();
+    const apiUrl = await getApiBaseUrl();
+
+    // If no token, user needs to configure
+    if (!token) {
+        throw new Error(
+            "Authentication required. Please configure your API connection.",
+        );
+    }
+
+    try {
+        const response = await fetch(`${apiUrl}/api/process/video`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ video }),
+        });
+
+        if (!response.ok) {
+            // Handle 401 Unauthorized - token might be expired
+            if (response.status === 401) {
+                throw new Error("Session expired. Please log in again.");
+            }
+
+            const errorData = await response
+                .json()
+                .catch(() => ({ message: "Unknown error" }));
+            throw new Error(
+                errorData.message || `HTTP error! status: ${response.status}`,
+            );
+        }
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        if (error instanceof TypeError && error.message.includes("fetch")) {
+            const apiUrl = await getApiBaseUrl();
+            throw new Error(
+                "Failed to connect to API. Make sure the API server is running on " +
+                    apiUrl,
+            );
+        }
+        throw error;
+    }
+}
+
+// User feedback system (toast notification)
+function showToast(message: string, type: "success" | "error" | "info" = "info"): void {
+    // Remove existing toast if any
+    const existingToast = document.getElementById("ekko-playlist-toast");
+    if (existingToast) {
+        existingToast.remove();
+    }
+
+    // Create toast element
+    const toast = document.createElement("div");
+    toast.id = "ekko-playlist-toast";
+    toast.textContent = message;
+    
+    // Style the toast to match YouTube's design
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 24px;
+        border-radius: 4px;
+        font-family: "Roboto", "Arial", sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        z-index: 10000;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        word-wrap: break-word;
+        transition: opacity 0.3s ease;
+        ${type === "success" 
+            ? "background-color: #0f9d58; color: white;" 
+            : type === "error" 
+            ? "background-color: #ea4335; color: white;" 
+            : "background-color: #1f1f1f; color: white;"
+        }
+    `;
+
+    // Check if YouTube is in dark mode
+    const htmlElement = document.documentElement;
+    const isDarkMode = htmlElement.getAttribute("dark") !== null || 
+                       window.getComputedStyle(htmlElement).colorScheme === "dark";
+    
+    if (!isDarkMode) {
+        // Light mode adjustments
+        if (type === "info") {
+            toast.style.backgroundColor = "#f1f1f1";
+            toast.style.color = "#030303";
+        }
+    }
+
+    document.body.appendChild(toast);
+
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Extract video info from menu context
+function extractVideoInfoFromMenu(menuElement: HTMLElement): VideoInfo | null {
+    try {
+        // Find the closest video container
+        const videoContainers = [
+            "ytd-video-renderer",
+            "ytd-rich-item-renderer",
+            "ytd-compact-video-renderer",
+            "ytd-grid-video-renderer",
+            "ytd-playlist-video-renderer",
+            "ytd-watch-flexy", // For watch page
+        ];
+
+        let videoContainer: HTMLElement | null = null;
+        for (const selector of videoContainers) {
+            videoContainer = menuElement.closest(selector) as HTMLElement;
+            if (videoContainer) break;
+        }
+
+        // If no container found, try finding from the menu's parent structure
+        if (!videoContainer) {
+            // Try to find video link in the menu's context
+            const videoLink = menuElement.querySelector('a[href*="/watch?v="]') as HTMLAnchorElement;
+            if (videoLink) {
+                videoContainer = videoLink.closest("ytd-menu-popup-renderer")?.parentElement as HTMLElement;
+            }
+        }
+
+        // If still no container, try to find from document (for watch page)
+        if (!videoContainer && window.location.pathname === "/watch") {
+            videoContainer = document.querySelector("ytd-watch-flexy") as HTMLElement;
+        }
+
+        if (!videoContainer) {
+            console.warn("Could not find video container for menu");
+            return null;
+        }
+
+        // Extract video URL
+        let videoUrl: string | null = null;
+        const videoLink = videoContainer.querySelector('a[href*="/watch?v="]') as HTMLAnchorElement;
+        if (videoLink && videoLink.href) {
+            videoUrl = videoLink.href;
+        } else if (window.location.pathname === "/watch") {
+            // On watch page, use current URL
+            videoUrl = window.location.href;
+        }
+
+        if (!videoUrl) {
+            console.warn("Could not extract video URL");
+            return null;
+        }
+
+        // Normalize URL
+        const parsedUrl = parseYouTubeUrl(videoUrl);
+        if (!parsedUrl.isValid || !parsedUrl.normalizedUrl) {
+            console.warn("Invalid YouTube URL:", parsedUrl.error);
+            return null;
+        }
+
+        // Extract title
+        let title = "Unknown Title";
+        const titleSelectors = [
+            "#video-title",
+            "#video-title-link",
+            "a#video-title",
+            "h1.ytd-watch-metadata yt-formatted-string",
+            "h1.ytd-video-primary-info-renderer",
+        ];
+
+        for (const selector of titleSelectors) {
+            const titleElement = videoContainer.querySelector(selector) as HTMLElement;
+            if (titleElement) {
+                title = titleElement.textContent?.trim() || 
+                        titleElement.getAttribute("title")?.trim() || 
+                        titleElement.getAttribute("aria-label")?.trim() || 
+                        "Unknown Title";
+                if (title !== "Unknown Title") break;
+            }
+        }
+
+        // Extract channel
+        const channelName = extractChannelName(
+            videoContainer.querySelector(
+                'a.yt-simple-endpoint.style-scope.yt-formatted-string, ytd-channel-name a, #channel-name a, ytd-channel-name #text, ytd-video-owner-renderer a'
+            ) as HTMLElement
+        );
+
+        return {
+            channel: channelName,
+            url: parsedUrl.normalizedUrl,
+            title: title,
+        };
+    } catch (error) {
+        console.error("Error extracting video info from menu:", error);
+        return null;
+    }
+}
+
+// Check if menu is associated with a video (not channel or other type)
+function isVideoMenu(menuElement: HTMLElement): boolean {
+    // Check if menu is near a video container
+    const videoContainers = [
+        "ytd-video-renderer",
+        "ytd-rich-item-renderer",
+        "ytd-compact-video-renderer",
+        "ytd-grid-video-renderer",
+        "ytd-playlist-video-renderer",
+    ];
+
+    // Check if we're on a watch page
+    if (window.location.pathname === "/watch") {
+        return true;
+    }
+
+    // Check if menu is within or near a video container
+    for (const selector of videoContainers) {
+        const container = menuElement.closest(selector);
+        if (container) {
+            return true;
+        }
+    }
+
+    // Check if menu contains video-related links
+    const videoLink = menuElement.querySelector('a[href*="/watch?v="]');
+    if (videoLink) {
+        return true;
+    }
+
+    return false;
+}
+
+// Inject menu item into YouTube dropdown menu
+async function injectMenuItem(menuElement: HTMLElement): Promise<void> {
+    // Check if user is logged in
+    const token = await getStoredToken();
+    if (!token) {
+        // User not logged in, don't inject menu item
+        return;
+    }
+
+    // Check if menu item already exists
+    const existingItem = menuElement.querySelector("#ekko-playlist-menu-item");
+    if (existingItem) {
+        return; // Already injected
+    }
+
+    // Check if this is a video menu
+    if (!isVideoMenu(menuElement)) {
+        return; // Not a video menu, skip
+    }
+
+    try {
+        // Find the menu items container
+        // YouTube uses different structures, try multiple selectors
+        const menuContainers = [
+            "ytd-menu-popup-renderer #items",
+            "ytd-menu-popup-renderer ytd-menu-service-item-renderer",
+            "#items.ytd-menu-popup-renderer",
+        ];
+
+        let itemsContainer: HTMLElement | null = null;
+        for (const selector of menuContainers) {
+            itemsContainer = menuElement.querySelector(selector) as HTMLElement;
+            if (itemsContainer) break;
+        }
+
+        // If no items container found, try to find any menu service item to clone
+        if (!itemsContainer) {
+            const firstMenuItem = menuElement.querySelector("ytd-menu-service-item-renderer") as HTMLElement;
+            if (firstMenuItem && firstMenuItem.parentElement) {
+                itemsContainer = firstMenuItem.parentElement as HTMLElement;
+            }
+        }
+
+        if (!itemsContainer) {
+            console.warn("Could not find menu items container");
+            return;
+        }
+
+        // Create menu item element
+        // Try to clone an existing menu item for structure
+        const existingMenuItem = itemsContainer.querySelector("ytd-menu-service-item-renderer") as HTMLElement;
+        let menuItem: HTMLElement;
+
+        if (existingMenuItem) {
+            // Clone existing structure
+            menuItem = existingMenuItem.cloneNode(true) as HTMLElement;
+            menuItem.id = "ekko-playlist-menu-item";
+            menuItem.removeAttribute("role"); // Remove role to avoid conflicts
+            
+            // Clear content and add our content
+            const linkElement = menuItem.querySelector("a, ytd-menu-service-item-renderer a") as HTMLElement;
+            if (linkElement) {
+                linkElement.textContent = "";
+                linkElement.setAttribute("role", "menuitem");
+                
+                // Add icon (using + symbol)
+                const icon = document.createElement("span");
+                icon.textContent = "+";
+                icon.style.cssText = "margin-right: 16px; font-size: 20px; font-weight: bold;";
+                linkElement.appendChild(icon);
+                
+                // Add text
+                const text = document.createTextNode("Add to Ekko Playlist");
+                linkElement.appendChild(text);
+            }
+        } else {
+            // Fallback: create simple menu item
+            menuItem = document.createElement("div");
+            menuItem.id = "ekko-playlist-menu-item";
+            menuItem.style.cssText = `
+                padding: 12px 16px;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                font-family: "Roboto", "Arial", sans-serif;
+                font-size: 14px;
+            `;
+            
+            const icon = document.createElement("span");
+            icon.textContent = "+";
+            icon.style.cssText = "margin-right: 16px; font-size: 20px; font-weight: bold;";
+            menuItem.appendChild(icon);
+            
+            const text = document.createTextNode("Add to Ekko Playlist");
+            menuItem.appendChild(text);
+        }
+
+        // Add click handler
+        menuItem.addEventListener("click", async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Extract video info
+            const videoInfo = extractVideoInfoFromMenu(menuElement);
+            if (!videoInfo) {
+                showToast("Failed to extract video information", "error");
+                return;
+            }
+
+            // Show loading feedback
+            showToast("Adding to Ekko Playlist...", "info");
+
+            try {
+                // Send to API
+                await sendVideoToAPI(videoInfo);
+                showToast("Video added to Ekko Playlist!", "success");
+                
+                // Close the menu (click outside or press escape)
+                const menuPopup = menuElement.closest("ytd-menu-popup-renderer");
+                if (menuPopup) {
+                    // Try to close menu by clicking outside or dispatching escape
+                    document.body.click();
+                }
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                console.error("Error adding video to playlist:", error);
+                showToast(`Error: ${errorMessage}`, "error");
+            }
+        });
+
+        // Insert at the beginning of the menu (after "Add to queue" if it exists)
+        const addToQueueItem = Array.from(itemsContainer.children).find(
+            (item) => {
+                const text = item.textContent?.toLowerCase() || "";
+                return text.includes("add to queue") || text.includes("queue");
+            }
+        );
+
+        if (addToQueueItem && addToQueueItem.nextSibling) {
+            itemsContainer.insertBefore(menuItem, addToQueueItem.nextSibling);
+        } else {
+            // Insert at the beginning
+            itemsContainer.insertBefore(menuItem, itemsContainer.firstChild);
+        }
+    } catch (error) {
+        console.error("Error injecting menu item:", error);
+    }
+}
+
+// MutationObserver to detect YouTube menu openings
+let menuObserver: MutationObserver | null = null;
+let debounceTimeout: NodeJS.Timeout | null = null;
+
+function setupMenuObserver(): void {
+    // Clean up existing observer
+    if (menuObserver) {
+        menuObserver.disconnect();
+    }
+
+    // Create new observer
+    menuObserver = new MutationObserver((mutations) => {
+        // Debounce to avoid multiple rapid calls
+        if (debounceTimeout) {
+            clearTimeout(debounceTimeout);
+        }
+
+        debounceTimeout = setTimeout(() => {
+            // Look for YouTube menu popups
+            const menuSelectors = [
+                "ytd-menu-popup-renderer",
+                "ytd-menu-service-item-renderer",
+            ];
+
+            for (const selector of menuSelectors) {
+                const menus = document.querySelectorAll(selector);
+                menus.forEach((menu) => {
+                    const menuElement = menu as HTMLElement;
+                    // Check if menu is visible
+                    if (menuElement.offsetParent !== null) {
+                        injectMenuItem(menuElement).catch((error) => {
+                            console.error("Error in injectMenuItem:", error);
+                        });
+                    }
+                });
+            }
+        }, 100); // 100ms debounce
+    });
+
+    // Start observing
+    menuObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+}
+
+// Initialize menu observer when content script loads
+setupMenuObserver();
+
 console.log("Content script loaded and ready");
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log("Content script received message:", message);

@@ -148,6 +148,63 @@ func (h *OIDCProviderHandler) ListAllOIDCProviders(w http.ResponseWriter, r *htt
 	httpx.RespondJSON(w, http.StatusOK, response)
 }
 
+// ListOIDCProvidersForAuth handles GET /api/oidc-providers/internal - List providers with unmasked secrets for Better Auth (internal only)
+// This endpoint is only accessible from localhost and returns unmasked client secrets
+func (h *OIDCProviderHandler) ListOIDCProvidersForAuth(w http.ResponseWriter, r *http.Request) {
+	// Only allow requests from localhost for security
+	host := r.RemoteAddr
+	if r.Header.Get("X-Forwarded-For") != "" {
+		host = r.Header.Get("X-Forwarded-For")
+	}
+	// Check if request is from localhost (127.0.0.1 or ::1)
+	if host != "" && !strings.HasPrefix(host, "127.0.0.1") && !strings.HasPrefix(host, "::1") && !strings.HasPrefix(host, "[::1]") && !strings.Contains(host, "localhost") {
+		logging.Info("OIDC providers internal endpoint accessed from non-localhost: %s", host)
+		httpx.RespondError(w, http.StatusForbidden, "This endpoint is only accessible from localhost")
+		return
+	}
+
+	ctx := r.Context()
+
+	// Get config to determine source (this returns unmasked secrets)
+	configs, err := config.GetOIDCProviders(ctx, h.dbService)
+	if err != nil {
+		logging.Info("Error getting OIDC providers config: %v", err)
+		httpx.RespondError(w, http.StatusInternalServerError, "failed to load OIDC providers configuration")
+		return
+	}
+
+	// Convert to Better Auth format (only enabled providers, with unmasked secrets)
+	type AuthProviderResponse struct {
+		ProviderID   string   `json:"provider_id"`
+		ClientID     string   `json:"client_id"`
+		ClientSecret string   `json:"client_secret"`
+		DiscoveryURL string   `json:"discovery_url"`
+		Scopes       []string `json:"scopes"`
+	}
+
+	response := make([]AuthProviderResponse, 0, len(configs))
+	for _, cfg := range configs {
+		if !cfg.Enabled {
+			continue // Skip disabled providers
+		}
+
+		scopes := cfg.Scopes
+		if len(scopes) == 0 {
+			scopes = []string{"openid", "profile", "email"}
+		}
+
+		response = append(response, AuthProviderResponse{
+			ProviderID:   cfg.ProviderID,
+			ClientID:     cfg.ClientID,
+			ClientSecret: cfg.ClientSecret, // Unmasked for Better Auth
+			DiscoveryURL: cfg.DiscoveryURL,
+			Scopes:       scopes,
+		})
+	}
+
+	httpx.RespondJSON(w, http.StatusOK, response)
+}
+
 // CreateOIDCProvider handles POST /api/oidc-providers - Create new provider (admin)
 func (h *OIDCProviderHandler) CreateOIDCProvider(w http.ResponseWriter, r *http.Request) {
 	// Check if ENV vars are present - if so, block updates

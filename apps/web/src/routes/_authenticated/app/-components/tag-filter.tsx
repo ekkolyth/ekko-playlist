@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Tag } from 'lucide-react';
+import { Tag, Plus, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { TagBadge } from '@/components/tags/tag-badge';
+import { TagCreateDialog } from '@/components/tags/tag-create-dialog';
 import { useTags } from '@/hooks/use-tags';
 
 interface TagFilterProps {
@@ -19,6 +20,7 @@ export function TagFilter({
   onSelectionChange,
 }: TagFilterProps) {
   const [open, setOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const tags = useTags();
 
   const handleToggleTag = (tagId: number, checked: boolean) => {
@@ -101,43 +103,80 @@ export function TagFilter({
         <ScrollArea className='h-75'>
           <div className='p-2'>
             {tags.isLoading ? (
-              <div className='text-sm text-muted-foreground py-4 text-center'>
-                Loading tags...
+              <div className='flex items-center justify-center py-4'>
+                <Loader2 className='h-4 w-4 animate-spin text-muted-foreground' />
+                <span className='ml-2 text-sm text-muted-foreground'>
+                  Loading tags...
+                </span>
               </div>
             ) : sortedTags.length === 0 ? (
-              <div className='text-sm text-muted-foreground py-4 text-center'>
-                No tags available
+              <div className='py-4 text-center space-y-3'>
+                <p className='text-sm text-muted-foreground'>
+                  No tags available
+                </p>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='w-full'
+                  onClick={() => {
+                    setIsCreateDialogOpen(true);
+                    setOpen(false);
+                  }}
+                >
+                  <Plus className='mr-2 h-4 w-4' />
+                  Create Your First Tag
+                </Button>
               </div>
             ) : (
-              sortedTags.map((tag) => (
-                <Field
-                  key={tag.id}
-                  orientation='horizontal'
-                  className='cursor-pointer w-auto space-x-2 rounded-sm px-2 py-2 hover:bg-accent'
-                >
-                  <Checkbox
-                    id={`tag-${tag.id}`}
-                    checked={selectedTagIds.includes(tag.id)}
-                    onCheckedChange={(checked) => handleToggleTag(tag.id, checked === true)}
-                  />
-                  <FieldLabel
-                    htmlFor={`tag-${tag.id}`}
-                    className='flex text-sm cursor-pointer font-normal text-nowrap text-ellipsis leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+              <>
+                {sortedTags.map((tag) => (
+                  <Field
+                    key={tag.id}
+                    orientation='horizontal'
+                    className='cursor-pointer w-auto space-x-2 rounded-sm px-2 py-2 hover:bg-accent'
                   >
-                    <TagBadge
-                      tag={{
-                        id: tag.id,
-                        name: tag.name,
-                        color: tag.color,
-                      }}
+                    <Checkbox
+                      id={`tag-${tag.id}`}
+                      checked={selectedTagIds.includes(tag.id)}
+                      onCheckedChange={(checked) => handleToggleTag(tag.id, checked === true)}
                     />
-                  </FieldLabel>
-                </Field>
-              ))
+                    <FieldLabel
+                      htmlFor={`tag-${tag.id}`}
+                      className='flex text-sm cursor-pointer font-normal text-nowrap text-ellipsis leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'
+                    >
+                      <TagBadge
+                        tag={{
+                          id: tag.id,
+                          name: tag.name,
+                          color: tag.color,
+                        }}
+                      />
+                    </FieldLabel>
+                  </Field>
+                ))}
+                <div className='pt-2 border-t mt-2'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='w-full justify-start'
+                    onClick={() => {
+                      setIsCreateDialogOpen(true);
+                      setOpen(false);
+                    }}
+                  >
+                    <Plus className='mr-2 h-4 w-4' />
+                    Create New Tag
+                  </Button>
+                </div>
+              </>
             )}
           </div>
         </ScrollArea>
       </PopoverContent>
+      <TagCreateDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+      />
     </Popover>
   );
 }
